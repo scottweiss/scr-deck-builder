@@ -1,6 +1,5 @@
 import { parse } from 'csv-parse/sync';
 import { RawCard, Card, Element, CardRarity, ProcessedCard, CardSet, CardType } from '../types/Card'; // Added CardSet, CardType
-import * as sorceryCards from '../data/processed/sorceryCards';
 
 export function getCardAttribute(card: RawCard | ProcessedCard | null | undefined, attributeName: string): string {
     if (!card) return "";
@@ -91,52 +90,36 @@ export function extractKeywords(text: string): string[] {
 }
 
 export async function readCardData(dataSets?: string[]): Promise<RawCard[]> { // Made async, returns Promise<RawCard[]>
-    console.log('Using optimized card data loading...');
-    const startTime = performance.now();
-    let filteredCards: RawCard[] = [];
-
+    // Require here to avoid circular dependency at module load
+    const sorceryCards = require('../data/processed/sorceryCards');
+    
+    let cards: RawCard[] = [];
     if (dataSets && Array.isArray(dataSets)) {
         if (dataSets.length < 2) {
-            const setName = dataSets[0] as CardSet;
-            try {
-                filteredCards = await sorceryCards.getCardsBySet(setName);
-                console.log(`Using only ${setName} set cards: ${filteredCards.length} cards`);
-            } catch (error) {
-                console.error(`Error loading cards for set ${setName}:`, error);
-            }
+            // If specific set was requested, filter the cards
+            const setName = dataSets[0];
+            cards = await sorceryCards.getCardsBySet(setName);
+            console.log(`Using only ${setName} set cards: ${cards.length} cards`);
         } else {
-            try {
-                filteredCards = await sorceryCards.getAllCards();
-                console.log(`Using all card sets: ${filteredCards.length} cards from ${dataSets.join(', ')}`);
-            } catch (error) {
-                console.error('Error loading all cards:', error);
-            }
+            cards = await sorceryCards.getAllCards();
+            console.log(`Using consolidated card data: ${cards.length} cards from ${dataSets.join(', ')}`);
         }
     } else {
-        console.log(`Using all consolidated card data`);
-        try {
-            filteredCards = await sorceryCards.getAllCards();
-        } catch (error) {
-            console.error('Error loading all cards:', error);
-        }
+        cards = await sorceryCards.getAllCards();
+        console.log(`Using all consolidated card data: ${cards.length} cards`);
     }
-
-    const endTime = performance.now();
-    // Moved logging of load time to be more general
-    if (filteredCards.length > 0) {
-      console.log(`Loaded ${filteredCards.length} cards in ${((endTime - startTime) / 1000).toFixed(3)}s`);
-    } else {
-      console.log(`Card data loading attempt finished in ${((endTime - startTime) / 1000).toFixed(3)}s, but no cards were loaded.`);
-    }
-    // Removed the warning about returning potentially empty list as it should now be properly awaited.
-    return filteredCards;
-}
-
-export function getHighValueCards(cards: RawCard[], limit: number = 10): RawCard[] { // Parameter type RawCard[]
-    return [...cards]
-        .filter(card => parseFloat(card.marketPrice || '0') > 0)
-        .sort((a, b) => parseFloat(b.marketPrice || '0') - parseFloat(a.marketPrice || '0'))
-        .slice(0, limit);
+    
+    // Add processed attributes to each card for easy access
+    return cards.map(card => ({
+        ...card,
+        type: getCardType(card),
+        mana_cost: getCardCost(card),
+        text: getCardDescription(card),
+        elements: getCardElements(card),
+        power: getCardPower(card),
+        rarity: getCardRarity(card),
+        baseName: getBaseCardName(card.name || '')
+    }));
 }
 
 export function parseThreshold(thresholdStr: string): Record<string, number> {

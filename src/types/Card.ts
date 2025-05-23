@@ -55,11 +55,6 @@ export interface RawCard {
   extTypeLine: string;
   extCardCategory: string;
   extCardType: string;
-  lowPrice: string;
-  midPrice: string;
-  highPrice: string;
-  marketPrice: string;
-  directLowPrice: string;
   subTypeName: string;
   extPowerRating: string;
   extCardSubtype: string;

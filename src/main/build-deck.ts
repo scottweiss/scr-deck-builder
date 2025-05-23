@@ -114,17 +114,15 @@ async function buildDeckInternal(): Promise<void> {
     // For each group, keep the most desirable version of each card
     const uniqueCards: Card[] = []; // Holds RawCard instances, but typed as Card[]
     for (const [name, versions] of Object.entries(cardsByName)) {
-        // Sort by preferring non-preconstructed versions, then by higher market price (if available)
+        // Sort by preferring non-preconstructed versions (pricing logic removed)
         versions.sort((a, b) => {
-            // First, prioritize cards that are not from preconstructed decks
+            // Prioritize cards that are not from preconstructed decks
             const aIsPrecon = (a.cleanName || "").includes("Preconstructed");
             const bIsPrecon = (b.cleanName || "").includes("Preconstructed");
             if (aIsPrecon !== bIsPrecon) return aIsPrecon ? 1 : -1;
 
-            // Then, prioritize cards with higher market price (if available)
-            const aPrice = parseFloat(a.marketPrice || "0");
-            const bPrice = parseFloat(b.marketPrice || "0");
-            return bPrice - aPrice;
+            // For cards with same precon status, maintain original order
+            return 0;
         });
 
         // Add the best version to our unique cards list, transformed to Card

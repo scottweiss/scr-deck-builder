@@ -24,7 +24,7 @@ export const CARD_KEYS = [
     "productId", "name", "cleanName", "imageUrl", "categoryId", 
     "groupId", "url", "modifiedOn", "imageCount", "extRarity", 
     "extDescription", "extCost", "extThreshold", "extElement", "extCardType",
-    "marketPrice", "subTypeName", "setName"
+    "subTypeName", "setName"
 ];
 
 /**

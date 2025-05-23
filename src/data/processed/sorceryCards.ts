@@ -20,7 +20,7 @@
 import { RawCard, Card, CardSet } from '../../types/Card';
 
 // Import utils for card transformation
-import * as utils from '../../utils/utils';
+const utils = require('../../utils/utils');
 
 // Compressed card data structure to reduce file size
 // Each card is stored as an array with a consistent index map
@@ -28,7 +28,7 @@ const CARD_KEYS: string[] = [
   "productId", "name", "cleanName", "imageUrl", "categoryId", 
   "groupId", "url", "modifiedOn", "imageCount", "extRarity", 
   "extDescription", "extCost", "extThreshold", "extElement", "extCardType",
-  "marketPrice", "subTypeName", "setName"
+  "subTypeName", "setName"
 ];
 
 // Import the cards only when needed (lazy loading)

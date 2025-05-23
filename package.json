@@ -5,15 +5,16 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc && mkdir -p dist/data && cp -R src/data/raw dist/data/",
-    "build:force": "tsc --skipLibCheck || true; mkdir -p dist/data && cp -R src/data/raw dist/data/",
-    "build:nocheck": "tsc --skipLibCheck --noEmitOnError false && mkdir -p dist/data && cp -R src/data/raw dist/data/",
+    "build": "tsc && mkdir -p dist/data && cp -R src/data/raw dist/data/ && node dist/data/processed/processCards.js",
+    "build:force": "tsc --skipLibCheck || true; mkdir -p dist/data && cp -R src/data/raw dist/data/ && node dist/data/processed/processCards.js",
+    "build:nocheck": "tsc --skipLibCheck --noEmitOnError false && mkdir -p dist/data && cp -R src/data/raw dist/data/ && node dist/data/processed/processCards.js",
     "dev": "tsc --watch",
     "type-check": "tsc --noEmit",
     "prepare": "npm run build:force && node dist/data/processed/processCards.js",
     "start": "node dist/index.js",
     "start:js": "npx ts-node index.ts",
-    "build-deck": "npx ts-node scripts/build-deck.ts",
+    "build-deck": "npm run build && node dist/main/build-deck.js",
+    "build-deck:quick": "node dist/main/build-deck.js",
     "test:playability": "npx ts-node src/tests/test-playability.ts",
     "test:position": "npx ts-node scripts/test-position-decks.ts",
     "test:performance": "npx ts-node scripts/test-performance.ts",
@@ -32,12 +33,13 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "csv-parse": "^4.16.0",
+    "@types/csv-parse": "^1.2.5",
+    "csv-parse": "^5.6.0",
     "express": "^4.18.2"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",
-    "typescript": "^5.8.3",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "typescript": "^5.8.3"
   }
 }
