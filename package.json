@@ -19,7 +19,9 @@
     "test:performance": "npx ts-node scripts/test-performance.ts",
     "test:imports": "npx ts-node src/tests/test-imports.ts",
     "process-cards": "npx ts-node src/data/processed/processCards.ts",
-    "system:status": "node -e \"const config = require('./dist/config'); console.log('Using optimized system')\""
+    "system:status": "node -e \"const config = require('./dist/config'); console.log('Using optimized system')\"",
+    "serve": "node server.js",
+    "web": "npm run build && node server.js"
   },
   "keywords": [
     "sorcery",
@@ -30,7 +32,8 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "csv-parse": "^4.16.0"
+    "csv-parse": "^4.16.0",
+    "express": "^4.18.2"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",
