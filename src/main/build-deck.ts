@@ -296,79 +296,8 @@ async function buildDeckInternal(): Promise<void> {
         bestElementPair = [dominantElement, ""];
     }
 
-    // Output the recommended deck
-    console.log("\n=== RECOMMENDED SORCERY: CONTESTED REALM DECK ===\n");
-
-    console.log("AVATAR:");
-    if (selectedAvatar) {
-        console.log(`- ${selectedAvatar.name || 'Unknown Avatar'}`);
-    } else {
-        console.log("- No suitable avatar found");
-    }
-
-    console.log("\nSITES (Atlas Deck):");
-    for (const site of selectedSites) {
-        console.log(`- ${site.name || 'Unknown Site'}`);
-    }
-
-    console.log("\nSPELLS (Spellbook Deck):");
-    // Sort by mana cost for easier reading
-    selectedSpells.sort((a, b) => (a.mana_cost || 0) - (a.mana_cost || 0));
-
-    for (const spell of selectedSpells) {
-        const rarityLabel = spell.rarity ? `(${spell.rarity})` : '';
-        console.log(`- ${spell.name || 'Unknown Spell'} (${spell.mana_cost || 0} mana) ${rarityLabel}`);
-    }
-
-    // Count cards by name to verify rarity limits
-    const cardCounts: CardCounts = {};
-    for (const spell of selectedSpells) {
-        const baseName = spell.baseName;
-        cardCounts[baseName] = (cardCounts[baseName] || 0) + 1;
-    }
-
-    console.log("\nCard Counts (for rarity limit verification):");
-    Object.entries(cardCounts)
-        .sort((a, b) => b[1] - a[1])
-        .forEach(([name, count]) => {
-            const card = selectedSpells.find(c => c.baseName === name);
-            const rarityLabel = card?.rarity || 'Unknown';
-            console.log(`- ${name}: ${count}x (${rarityLabel})`);
-        });
-
-    // Get expanded deck stats
-    const deckStatsData: DeckStatsData = deckStats.getDeckStats(selectedSpells);
-
-    // Expand the deck analysis output
-    console.log("\nDETAILED DECK ANALYSIS:");
-    console.log(`Recommended element combination: ${bestElementPair[0]} + ${bestElementPair[1] || ''}`);
-
-    console.log("\nMana Curve:");
-    const sortedCosts = Object.keys(deckStatsData.mana_curve).sort((a, b) => parseInt(a) - parseInt(b));
-    for (const cost of sortedCosts) {
-        const count = deckStatsData.mana_curve[cost];
-        const percentage = (count / selectedSpells.length) * 100;
-        const bar = '#'.repeat(Math.floor(percentage / 2));
-        console.log(`${cost} mana (${count} cards, ${percentage.toFixed(1)}%): ${bar}`);
-    }
-
-    console.log("\nElement Distribution:");
-    const elementEntries = Object.entries(deckStatsData.elements).sort((a, b) => b[1] - a[1]);
-    const totalElements = elementEntries.reduce((sum, [_, count]) => sum + count, 0);
-    for (const [element, count] of elementEntries) {
-        const percentage = totalElements > 0 ? (count / totalElements) * 100 : 0;
-        console.log(`${element}: ${count} cards (${percentage.toFixed(1)}%)`);
-    }
-
-    console.log("\nRarity Distribution:");
-    const rarityEntries = Object.entries(deckStatsData.rarities).sort((a, b) => b[1] - a[1]);
-    for (const [rarity, count] of rarityEntries) {
-        const percentage = (count / selectedSpells.length) * 100;
-        console.log(`${rarity}: ${count} cards (${percentage.toFixed(1)}%)`);
-    }
-
-    // Display strategy information about the deck
-    displayDeckStrategy(selectedSpells, deckStatsData);
+    // Generate minimal deck report
+    generateMinimalDeckReport(selectedAvatar, selectedSites, selectedSpells, dominantElement, bestElementPair);
 
     // Export deck to JSON if requested
     if (options.exportJson) {
@@ -391,100 +320,7 @@ async function buildDeckInternal(): Promise<void> {
     console.log(`\nDeck building completed in ${((endTime - startTime) / 1000).toFixed(2)} seconds.`);
 }
 
-function displayDeckStrategy(selectedSpells: Card[], deckStatsData: DeckStatsData): void {
-    console.log("\nStrategy Guide:");
-    // Identify deck archetype based on card composition
-    const minionCount = selectedSpells.filter(card => card.type && card.type.includes("Minion")).length;
-    const magicCount = selectedSpells.filter(card => card.type && card.type.includes("Magic")).length;
-    const artifactCount = selectedSpells.filter(card => card.type && card.type.includes("Artifact")).length;
 
-    let archetype: string;
-    let strategy: string;
-
-    if (minionCount > selectedSpells.length * 0.6) {
-        archetype = "Minion-Heavy";
-        strategy = "Focus on controlling the board with your numerous minions. Use your sites to establish territorial advantage.";
-    } else if (magicCount > selectedSpells.length * 0.4) {
-        archetype = "Spell-Heavy Control";
-        strategy = "Control the game with powerful spells. Use your minions as defensive tools while you set up game-winning combos.";
-    } else if (artifactCount > selectedSpells.length * 0.3) {
-        archetype = "Artifact Combo";
-        strategy = "Build up a powerful artifact engine to overwhelm your opponent with value.";
-    } else {
-        archetype = "Balanced";
-        strategy = "Maintain flexibility by balancing minions, artifacts, and spells. Adapt your strategy based on your opponent's deck.";
-    }
-
-    console.log(`Deck Archetype: ${archetype}`);
-    console.log(`Strategy: ${strategy}`);
-
-    console.log("\nKey Synergies:");
-    // Identify powerful card combinations
-    const keywordEntries = Object.entries(deckStatsData.keywords).sort((a, b) => b[1] - a[1]);
-    for (const [keyword, count] of keywordEntries.slice(0, 3)) {
-        console.log(`- ${keyword} synergy: ${count} cards with this keyword`);
-    }
-
-    console.log("\nRecommended Mulligan Strategy:");
-    console.log("Look for these cards in your opening hand:");
-    // Suggest early game cards
-    const earlyGameCards = selectedSpells.filter(card => (card.mana_cost || 0) <= 2)
-        .sort((a, b) => synergyCalculator.calculateSynergy(b, selectedSpells) - synergyCalculator.calculateSynergy(a, selectedSpells))
-        .slice(0, 3);
-
-    for (const card of earlyGameCards) {
-        console.log(`- ${card.name || 'Unknown Card'} (${card.mana_cost || 0} mana)`);
-    }
-
-    console.log("\nWin Conditions:");
-    // Identify potential win conditions
-    const highPowerMinions = selectedSpells.filter(card => (card.power || 0) >= 5)
-        .sort((a, b) => (b.power || 0) - (a.power || 0))
-        .slice(0, 3);
-
-    if (highPowerMinions.length > 0) {
-        console.log("High-power minions:");
-        for (const card of highPowerMinions) {
-            console.log(`- ${card.name || 'Unknown Card'} (Power: ${card.power || 0})`);
-        }
-    }
-
-    console.log("\nThis deck was optimized for maximum synergy and balanced mana curve using AI analysis.");
-    console.log("Note: Foil cards were excluded from consideration.");
-    console.log("Rarity limits enforced: 4× ordinary, 3× exceptional, 2× elite, 1× unique");
-
-    console.log("\nHighest Value Cards in Deck:");
-    const highValueCards = utils.getHighValueCards(selectedSpells, 10);
-    if (highValueCards.length > 0) {
-        for (const card of highValueCards) {
-            const price = parseFloat(card.marketPrice || "0").toFixed(2);
-            console.log(`- ${card.name || 'Unknown Card'} (${card.mana_cost || 0} mana) - $${price}`);
-        }
-    } else {
-        console.log("No cards with market price data found.");
-    }
-
-    // DISPLAY OFFICIAL RULES SUMMARY FOR REFERENCE
-    if (options.showRules) {
-        const rulesSummary = RuleEnforcer.generateRulesSummary();
-        console.log("\n📖 OFFICIAL SORCERY: CONTESTED REALM RULES SUMMARY:");
-        
-        console.log("\nDeck Construction:");
-        rulesSummary.deckConstruction.forEach((rule: string) => console.log(`  • ${rule}`));
-        
-        console.log("\nRarity Limits:");
-        rulesSummary.rarityLimits.forEach((rule: string) => console.log(`  • ${rule}`));
-        
-        console.log("\nElemental Rules:");
-        rulesSummary.elementalRules.forEach((rule: string) => console.log(`  • ${rule}`));
-        
-        console.log("\nSpellcaster Rules:");
-        rulesSummary.spellcasterRules.forEach((rule: string) => console.log(`  • ${rule}`));
-        
-        console.log("\nRegional Strategy:");
-        rulesSummary.regionalStrategy.forEach((rule: string) => console.log(`  • ${rule}`));
-    }
-}
 
 /**
  * Build a Sorcery: Contested Realm deck with specified parameters
@@ -530,4 +366,105 @@ if (require.main === module) {
     buildDeckInternal().catch((error: Error) => {
         console.error("An error occurred while building the deck:", error);
     });
+}
+
+function generateMinimalDeckReport(
+    selectedAvatar: Card | undefined, 
+    selectedSites: Card[], 
+    selectedSpells: Card[], 
+    dominantElement: string, 
+    bestElementPair: [string, string]
+): void {
+    console.log("\n=== SORCERY: CONTESTED REALM DECK SUMMARY ===\n");
+
+    // Avatar
+    if (selectedAvatar) {
+        console.log(`🧙 Avatar: ${selectedAvatar.name || 'Unknown Avatar'}`);
+    }
+
+    // Deck composition
+    console.log(`📚 Spellbook: ${selectedSpells.length} cards`);
+    console.log(`🗺️  Sites: ${selectedSites.length} cards`);
+    console.log(`⚡ Primary Element: ${dominantElement}`);
+    if (bestElementPair[1]) {
+        console.log(`🔗 Element Combo: ${bestElementPair[0]} + ${bestElementPair[1]}`);
+    }
+
+    // Get deck stats
+    const deckStatsData: DeckStatsData = deckStats.getDeckStats(selectedSpells);
+
+    // Mana curve
+    console.log("\n📊 Mana Curve:");
+    const sortedCosts = Object.keys(deckStatsData.mana_curve).sort((a, b) => parseInt(a) - parseInt(b));
+    for (const cost of sortedCosts) {
+        const count = deckStatsData.mana_curve[cost];
+        const percentage = (count / selectedSpells.length) * 100;
+        const bar = '█'.repeat(Math.floor(percentage / 5)) + '░'.repeat(Math.max(0, 4 - Math.floor(percentage / 5)));
+        console.log(`  ${cost} mana: ${count.toString().padStart(2)} cards (${percentage.toFixed(0).padStart(2)}%) ${bar}`);
+    }
+
+    // Deck archetype and strategy
+    const minionCount = selectedSpells.filter(card => card.type && card.type.toString().includes("Minion")).length;
+    const magicCount = selectedSpells.filter(card => card.type && card.type.toString().includes("Magic")).length;
+    const artifactCount = selectedSpells.filter(card => card.type && card.type.toString().includes("Artifact")).length;
+
+    let archetype: string;
+    let strategy: string;
+
+    if (minionCount > selectedSpells.length * 0.6) {
+        archetype = "Minion-Heavy";
+        strategy = "Control the board with numerous minions and establish territorial advantage.";
+    } else if (magicCount > selectedSpells.length * 0.4) {
+        archetype = "Spell-Heavy Control";
+        strategy = "Control with powerful spells while setting up game-winning combos.";
+    } else if (artifactCount > selectedSpells.length * 0.3) {
+        archetype = "Artifact Combo";
+        strategy = "Build a powerful artifact engine to overwhelm with value.";
+    } else {
+        archetype = "Balanced";
+        strategy = "Maintain flexibility and adapt based on opponent's strategy.";
+    }
+
+    console.log(`\n🎯 Archetype: ${archetype}`);
+    console.log(`📋 Strategy: ${strategy}`);
+
+    // Key synergies
+    const keywordEntries = Object.entries(deckStatsData.keywords).sort((a, b) => b[1] - a[1]);
+    if (keywordEntries.length > 0) {
+        console.log("\n🔄 Key Synergies:");
+        keywordEntries.slice(0, 3).forEach(([keyword, count]) => {
+            console.log(`  • ${keyword}: ${count} cards`);
+        });
+    }
+
+    // Early game recommendations
+    const earlyGameCards = selectedSpells.filter(card => (card.mana_cost || 0) <= 2)
+        .sort((a, b) => synergyCalculator.calculateSynergy(b, selectedSpells) - synergyCalculator.calculateSynergy(a, selectedSpells))
+        .slice(0, 3);
+
+    if (earlyGameCards.length > 0) {
+        console.log("\n🎲 Mulligan Targets (early game):");
+        earlyGameCards.forEach(card => {
+            console.log(`  • ${card.name || 'Unknown Card'} (${card.mana_cost || 0} mana)`);
+        });
+    }
+
+    // Win conditions
+    const highPowerMinions = selectedSpells.filter(card => (card.power || 0) >= 5)
+        .sort((a, b) => (b.power || 0) - (a.power || 0))
+        .slice(0, 3);
+
+    if (highPowerMinions.length > 0) {
+        console.log("\n🏆 Win Conditions:");
+        highPowerMinions.forEach(card => {
+            console.log(`  • ${card.name || 'Unknown Card'} (${card.power || 0} power)`);
+        });
+    }
+
+    // Rarity distribution (compact)
+    const rarityEntries = Object.entries(deckStatsData.rarities).sort((a, b) => b[1] - a[1]);
+    const rarityString = rarityEntries.map(([rarity, count]) => `${count} ${rarity}`).join(', ');
+    console.log(`\n💎 Rarity: ${rarityString}`);
+
+    console.log("\n" + "=".repeat(50));
 }
