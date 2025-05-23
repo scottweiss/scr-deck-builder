@@ -1,0 +1,99 @@
+import { Card, Element } from '../../types/Card';
+import { extractKeywords } from '../../utils/utils';
+
+export interface DeckStats {
+    elements: Record<Element, number>;
+    types: Record<string, number>;
+    keywords: Record<string, number>;
+    mana_curve: Record<number, number>;
+    rarities: Record<string, number>;
+}
+
+/**
+ * Create an empty DeckStats object
+ * @returns An empty DeckStats object
+ */
+function createEmptyDeckStats(): DeckStats {
+    return {
+        elements: {
+            Water: 0,
+            Fire: 0,
+            Earth: 0,
+            Air: 0,
+            Void: 0
+        },
+        types: {},
+        keywords: {},
+        mana_curve: {},
+        rarities: {}
+    };
+}
+
+/**
+ * Calculate statistics for a deck
+ * @param deck The deck to analyze
+ * @returns Object containing various deck statistics
+ */
+export function getDeckStats(deck: Card[]): DeckStats {
+    const stats: DeckStats = createEmptyDeckStats();
+
+    for (const card of deck) {
+        // Count elements
+        for (const element of card.elements) {
+            stats.elements[element] = (stats.elements[element] || 0) + 1;
+        }
+
+        // Count card types
+        const cardType = card.type;
+        stats.types[cardType] = (stats.types[cardType] || 0) + 1;
+
+        // Count keywords
+        const text = card.text;
+        if (text) {
+            const foundKeywords = extractKeywords(text);
+            for (const keyword of foundKeywords) {
+                stats.keywords[keyword] = (stats.keywords[keyword] || 0) + 1;
+            }
+        }
+
+        // Track mana cost
+        const cost = card.mana_cost;
+        stats.mana_curve[cost] = (stats.mana_curve[cost] || 0) + 1;
+
+        // Track rarities
+        const rarity = card.rarity;
+        stats.rarities[rarity] = (stats.rarities[rarity] || 0) + 1;
+    }
+
+    return stats;
+}
+
+/**
+ * Analyze elemental synergies in a deck
+ * @param cards The cards to analyze
+ * @returns Array of element pairs and their frequency counts
+ */
+export function analyzeElementalSynergy(cards: Card[]): [string[], number][] {
+    const cardElements: Element[] = [];
+    for (const card of cards) {
+        const elements = card.elements;
+        if (elements.length > 0) {
+            cardElements.push(...elements);
+        }
+    }
+
+    const elementPairs: [string[], number][] = [];
+    const elementsList = [...new Set(cardElements)];
+    for (let i = 0; i < elementsList.length; i++) {
+        for (let j = i + 1; j < elementsList.length; j++) {
+            const pair = [elementsList[i], elementsList[j]];
+            const count = cards.filter(
+                card => card.elements.includes(pair[0] as Element) && 
+                       card.elements.includes(pair[1] as Element)
+            ).length;
+            elementPairs.push([pair, count]);
+        }
+    }
+
+    return elementPairs.sort((a, b) => b[1] - a[1]);
+}

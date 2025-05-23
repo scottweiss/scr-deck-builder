@@ -1,0 +1,40 @@
+{
+  "name": "scr-deck-builder",
+  "version": "1.0.0",
+  "description": "Deck building system for Sorcery: Contested Realm card game",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc && mkdir -p dist/data && cp -R src/data/raw dist/data/",
+    "build:force": "tsc --skipLibCheck || true; mkdir -p dist/data && cp -R src/data/raw dist/data/",
+    "build:nocheck": "tsc --skipLibCheck --noEmitOnError false && mkdir -p dist/data && cp -R src/data/raw dist/data/",
+    "dev": "tsc --watch",
+    "type-check": "tsc --noEmit",
+    "prepare": "npm run build:force && node dist/optimization/processCards.optimized.js",
+    "start": "NODE_OPTIMIZED=true node dist/index.js",
+    "start:js": "NODE_OPTIMIZED=true npx ts-node index.ts",
+    "build-deck": "NODE_OPTIMIZED=true npx ts-node scripts/build-deck.ts",
+    "test:playability": "NODE_OPTIMIZED=true npx ts-node src/tests/test-playability.ts",
+    "test:position": "NODE_OPTIMIZED=true npx ts-node scripts/test-position-decks.ts",
+    "test:performance": "npx ts-node scripts/test-performance.ts",
+    "test:imports": "npx ts-node src/tests/test-imports.ts",
+    "optimize": "npx ts-node src/optimization/processCards.optimized.ts",
+    "system:status": "node -e \"const config = require('./dist/config'); console.log('Using ' + (config.SYSTEM_MODE.OPTIMIZED ? 'optimized' : 'original') + ' system')\""
+  },
+  "keywords": [
+    "sorcery",
+    "contested-realm",
+    "deck-builder",
+    "card-game"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "csv-parse": "^4.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "typescript": "^5.8.3",
+    "ts-node": "^10.9.1"
+  }
+}
