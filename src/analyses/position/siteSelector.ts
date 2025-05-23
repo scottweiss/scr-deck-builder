@@ -3,6 +3,7 @@
  */
 
 import { Card, Element } from '../../types/Card';
+import { filterOutRubble } from '../../utils/utils';
 
 interface SiteSelectionOptions {
     preferAggressive?: boolean;
@@ -42,6 +43,9 @@ export function selectSites(
     minRequired: number = 30, 
     options: SiteSelectionOptions = {}
 ): Card[] {
+    // Exclude all sites whose name includes 'Rubble'
+    sites = filterOutRubble(sites);
+
     const selectedSites: Card[] = [];
     
     // Separate water and land sites

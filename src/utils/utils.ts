@@ -1,178 +1,75 @@
-import { readFileSync } from 'fs';
 import { parse } from 'csv-parse/sync';
-import { SORCERY_CARDS, getAllCards } from '../data/processed/sorceryCards';
-import { 
-    RawCard, 
-    Card, 
-    Element, 
-    CardType, 
-    CardRarity,
-    ProcessedCard 
-} from '../types/Card';
+import { RawCard, Card, Element, CardRarity, ProcessedCard, CardSet, CardType } from '../types/Card'; // Added CardSet, CardType
+import * as sorceryCards from '../data/processed/sorceryCards';
 
-/**
- * Mapping of attribute names to field names in the card data
- */
-const ATTRIBUTE_MAP: Record<string, string> = {
-    "CardType": "extCardType",
-    "Cost": "extCost",
-    "Description": "extDescription",
-    "Element": "extElement",
-    "Rarity": "extRarity"
-};
-
-/**
- * Element keywords for automatic element detection
- */
-const ELEMENT_KEYWORDS: {[key in Element]: string[]} = {
-    [Element.Water]: ["water", "aqua", "sea", "ocean", "river", "lake", "flood", "tide", "wave"],
-    [Element.Fire]: ["fire", "flame", "burn", "ember", "blaze", "inferno", "scorch", "heat"],
-    [Element.Earth]: ["earth", "stone", "rock", "mountain", "quake", "terrain", "ground"],
-    [Element.Air]: ["air", "wind", "sky", "storm", "breeze", "gust", "tornado", "cloud"],
-    [Element.Void]: ["void", "abyss", "darkness", "shadow", "ethereal", "astral", "cosmic"]
-};
-
-/**
- * Extract attribute from card data
- */
-export function getCardAttribute(card: RawCard | null | undefined, attributeName: string): string {
-    if (!card) {
-        return "";
-    }
-
-    const fieldName = ATTRIBUTE_MAP[attributeName] || attributeName;
+export function getCardAttribute(card: RawCard | ProcessedCard | null | undefined, attributeName: string): string {
+    if (!card) return "";
+    const attrMap: Record<string, string> = {
+        "CardType": "extCardType",
+        "Cost": "extCost",
+        "Description": "extDescription",
+        "Element": "extElement",
+        "Rarity": "extRarity"
+    };
+    const fieldName = attrMap[attributeName] || attributeName;
     return (card as any)[fieldName] || "";
 }
 
-/**
- * Extract card type from data
- */
-export function getCardType(card: RawCard): CardType {
+export function getCardType(card: RawCard | ProcessedCard): CardType { // Return CardType enum
     const typeStr = getCardAttribute(card, "CardType");
-    // Convert string to CardType enum, defaulting to Unknown if not found
-    return Object.values(CardType).includes(typeStr as CardType) 
-        ? typeStr as CardType 
-        : CardType.Unknown;
+    const typeKey = Object.keys(CardType).find(key => key.toLowerCase() === typeStr.toLowerCase());
+    return typeKey ? CardType[typeKey as keyof typeof CardType] : CardType.Unknown;
 }
 
-/**
- * Extract rarity from card data
- */
-export function getCardRarity(card: RawCard): CardRarity {
+export function getCardRarity(card: RawCard | ProcessedCard): CardRarity { // Return CardRarity enum
     const rarityStr = getCardAttribute(card, "Rarity");
-    // Convert string to CardRarity enum, defaulting to Common if not found
-    return Object.values(CardRarity).includes(rarityStr as CardRarity) 
-        ? rarityStr as CardRarity 
-        : CardRarity.Common;
+    const rarityKey = Object.keys(CardRarity).find(key => key.toLowerCase() === rarityStr.toLowerCase());
+    return rarityKey ? CardRarity[rarityKey as keyof typeof CardRarity] : CardRarity.Ordinary; // Default to Ordinary if not found
 }
 
-/**
- * Extract mana cost from data
- */
-export function getCardCost(card: RawCard): number {
+export function getCardCost(card: RawCard | ProcessedCard): number {
     const costStr = getCardAttribute(card, "Cost");
-    if (costStr === "X") return 0; // Handle X cost
+    if (costStr === "X") return 0;
     const cost = parseInt(costStr);
     return isNaN(cost) ? 0 : cost;
 }
 
-/**
- * Extract card description from data
- */
-export function getCardDescription(card: RawCard): string {
+export function getCardDescription(card: RawCard | ProcessedCard): string {
     return getCardAttribute(card, "Description");
 }
 
-/**
- * Extract elements from card data
- */
-export function getCardElements(card: RawCard): Element[] {
-    const elements: Element[] = [];
-
-    // Check extElement field
-    const elementStr = card.extElement || "";
-    if (elementStr) {
-        // Handle multiple elements separated by semicolons if present
-        const elementList = elementStr.split(';').map(e => e.trim());
-        elementList.forEach(e => {
-            const normalizedElement = e.charAt(0).toUpperCase() + e.slice(1).toLowerCase() as Element;
-            if (Object.values(Element).includes(normalizedElement)) {
-                elements.push(normalizedElement);
-            }
-        });
+export function getCardElements(card: RawCard | ProcessedCard): Element[] {
+    if ((card as any).elements && Array.isArray((card as any).elements)) {
+        return (card as any).elements; // Already ProcessedCard
     }
-
-    // If no elements found, try to parse from other attributes
-    if (elements.length === 0) {
-        const name = (card.name || "").toLowerCase();
-        const description = getCardDescription(card).toLowerCase();
-        const combinedText = name + " " + description;
-
-        // Check for element keywords
-        for (const [element, keywords] of Object.entries(ELEMENT_KEYWORDS)) {
-            for (const keyword of keywords) {
-                if (combinedText.includes(keyword)) {
-                    elements.push(element as Element);
-                    break;
-                }
-            }
-        }
+    const rawCard = card as RawCard;
+    if (rawCard.extElement) {
+        const elementStrings = rawCard.extElement.split(',').map(e => e.trim());
+        return elementStrings.map(elStr => {
+            const elKey = Object.keys(Element).find(key => key.toLowerCase() === elStr.toLowerCase());
+            return elKey ? Element[elKey as keyof typeof Element] : undefined;
+        }).filter(el => el !== undefined) as Element[];
     }
-
-    // Remove duplicates and return
-    return [...new Set(elements)];
+    return [];
 }
 
-/**
- * Extract power from card data
- */
-export function getCardPower(card: RawCard): number {
-    // First try powerRating
-    const powerStr = card.extPowerRating || "";
-    if (powerStr) {
-        const power = parseInt(powerStr);
-        if (!isNaN(power)) {
-            return power;
-        }
+export function getCardPower(card: RawCard | ProcessedCard): number {
+    if ((card as any).power !== undefined) {
+        return (card as any).power; // Already ProcessedCard
     }
-
-    // Then try defensePower
-    const defenseStr = card.extDefensePower || "";
-    if (defenseStr) {
-        const defense = parseInt(defenseStr);
-        if (!isNaN(defense)) {
-            return defense;
-        }
-    }
-
-    // Try to extract power from description using regex
-    const description = getCardDescription(card);
-    const powerMatch = description.match(/Power\s*:?\s*(\d+)/);
-    if (powerMatch) {
-        return parseInt(powerMatch[1]);
-    }
-
-    // Default power based on card type
-    const cardType = getCardType(card);
-    if (cardType === CardType.Minion) {
-        return 2;  // Default power for minions
+    const rawCard = card as RawCard;
+    if (rawCard.extPowerRating) {
+        const power = parseInt(rawCard.extPowerRating);
+        return isNaN(power) ? 0 : power;
     }
     return 0;
 }
 
-/**
- * Get the base name of a card, removing set-specific suffixes like "(Foil)" or "(Preconstructed Deck)"
- */
 export function getBaseCardName(name: string): string {
     if (!name) return "";
-
-    // Remove common suffixes
     return name.replace(/\s*\([^)]*\)\s*$/, '').trim();
 }
 
-/**
- * Count occurrences in an array (similar to Python's Counter)
- */
 export function countOccurrences<T extends string | number>(arr: T[]): Record<T, number> {
     return arr.reduce((acc, val) => {
         acc[val] = (acc[val] || 0) + 1;
@@ -180,84 +77,162 @@ export function countOccurrences<T extends string | number>(arr: T[]): Record<T,
     }, {} as Record<T, number>);
 }
 
-/**
- * Get the n most common items from a counter object
- */
-export function getMostCommon<T extends string | number>(
-    counter: Record<T, number>, 
-    n: number = 1
-): Array<[T, number]> {
+export function getMostCommon<T extends string | number>(counter: Record<T, number>, n: number = 1): Array<[T, number]> {
     return Object.entries(counter)
-        .sort((a, b) => (b[1] as number) - (a[1] as number))
+        .sort(([, a], [, b]) => (b as number) - (a as number))
         .slice(0, n) as Array<[T, number]>;
 }
 
-/**
- * Extract keywords from card text
- */
 export function extractKeywords(text: string): string[] {
     if (!text) return [];
-
     const keywordRegex = /\b(Airborne|Burrowing|Charge|Deathrite|Spellcaster|Stealth|Submerge|Voidwalk|Movement \+\d+|Ranged \d+|Lethal|Lance|Waterbound)\b/g;
     const matches = text.match(keywordRegex);
     return matches || [];
 }
 
-/**
- * Read and process card data from consolidated data source
- */
-export function readCardData(dataSets?: string[]): ProcessedCard[] {
-    // Use the pre-loaded consolidated data based on requested data sets
+export async function readCardData(dataSets?: string[]): Promise<RawCard[]> { // Made async, returns Promise<RawCard[]>
+    console.log('Using optimized card data loading...');
+    const startTime = performance.now();
+    let filteredCards: RawCard[] = [];
+
     if (dataSets && Array.isArray(dataSets)) {
-        // Filter cards by requested sets
-        let filteredCards = [...SORCERY_CARDS];
-        
         if (dataSets.length < 2) {
-            // If specific set was requested, filter the cards
-            const setName = dataSets[0];
-            filteredCards = filteredCards.filter(card => card.setName === setName);
-            console.log(`Using only ${setName} set cards: ${filteredCards.length} cards`);
+            const setName = dataSets[0] as CardSet;
+            try {
+                filteredCards = await sorceryCards.getCardsBySet(setName);
+                console.log(`Using only ${setName} set cards: ${filteredCards.length} cards`);
+            } catch (error) {
+                console.error(`Error loading cards for set ${setName}:`, error);
+            }
         } else {
-            console.log(`Using consolidated card data: ${filteredCards.length} cards from ${dataSets.join(', ')}`);
+            try {
+                filteredCards = await sorceryCards.getAllCards();
+                console.log(`Using all card sets: ${filteredCards.length} cards from ${dataSets.join(', ')}`);
+            } catch (error) {
+                console.error('Error loading all cards:', error);
+            }
         }
-        
-        // Add processed attributes to each card for easy access
-        const processedCards: ProcessedCard[] = filteredCards.map(card => ({
-            ...card,
-            type: getCardType(card),
-            mana_cost: getCardCost(card),
-            text: getCardDescription(card),
-            elements: getCardElements(card),
-            power: getCardPower(card),
-            rarity: getCardRarity(card),
-            baseName: getBaseCardName(card.name || '')
-        }));
-        
-        return processedCards;
+    } else {
+        console.log(`Using all consolidated card data`);
+        try {
+            filteredCards = await sorceryCards.getAllCards();
+        } catch (error) {
+            console.error('Error loading all cards:', error);
+        }
     }
-    
-    // If no specific sets were requested, return all cards
-    console.log(`Using all consolidated card data: ${SORCERY_CARDS.length} cards`);
-    const processedCards: ProcessedCard[] = SORCERY_CARDS.map(card => ({
-        ...card,
-        type: getCardType(card),
-        mana_cost: getCardCost(card),
-        text: getCardDescription(card),
-        elements: getCardElements(card),
-        power: getCardPower(card),
-        rarity: getCardRarity(card),
-        baseName: getBaseCardName(card.name || '')
-    }));
-    
-    return processedCards;
+
+    const endTime = performance.now();
+    // Moved logging of load time to be more general
+    if (filteredCards.length > 0) {
+      console.log(`Loaded ${filteredCards.length} cards in ${((endTime - startTime) / 1000).toFixed(3)}s`);
+    } else {
+      console.log(`Card data loading attempt finished in ${((endTime - startTime) / 1000).toFixed(3)}s, but no cards were loaded.`);
+    }
+    // Removed the warning about returning potentially empty list as it should now be properly awaited.
+    return filteredCards;
 }
 
-/**
- * Get high value cards sorted by market price
- */
-export function getHighValueCards(cards: ProcessedCard[], limit: number = 10): ProcessedCard[] {
+export function getHighValueCards(cards: RawCard[], limit: number = 10): RawCard[] { // Parameter type RawCard[]
     return [...cards]
         .filter(card => parseFloat(card.marketPrice || '0') > 0)
         .sort((a, b) => parseFloat(b.marketPrice || '0') - parseFloat(a.marketPrice || '0'))
         .slice(0, limit);
+}
+
+export function parseThreshold(thresholdStr: string): Record<string, number> {
+    if (!thresholdStr) return {};
+    
+    const thresholdMap: Record<string, number> = {};
+    
+    // Count occurrences of each element letter in the threshold string
+    // The format is like "WW" for 2 Water, "AA" for 2 Air, "F" for 1 Fire, etc.
+    for (const char of thresholdStr.toUpperCase()) {
+        let elementName: string;
+        switch (char) {
+            case 'W':
+                elementName = 'Water';
+                break;
+            case 'F':
+                elementName = 'Fire';
+                break;
+            case 'E':
+                elementName = 'Earth';
+                break;
+            case 'A':
+                elementName = 'Air';
+                break;
+            case 'V':
+                elementName = 'Void';
+                break;
+            default:
+                continue; // Skip non-element characters
+        }
+        
+        thresholdMap[elementName] = (thresholdMap[elementName] || 0) + 1;
+    }
+    
+    return thresholdMap;
+}
+
+export function getCardThreshold(card: RawCard | ProcessedCard | Card): Record<string, number> {
+    // If it's already a Card with parsed threshold somewhere, check for it
+    if ((card as any).parsedThreshold) {
+        return (card as any).parsedThreshold;
+    }
+    
+    // Get threshold string from various possible sources
+    let thresholdStr = '';
+    if ((card as any).threshold) {
+        thresholdStr = (card as any).threshold;
+    } else if ((card as RawCard).extThreshold) {
+        thresholdStr = (card as RawCard).extThreshold;
+    }
+    
+    return parseThreshold(thresholdStr);
+}
+
+export function transformRawCardToCard(rawCard: RawCard): Card {
+    const manaCost = getCardCost(rawCard);
+    const cardType = getCardType(rawCard);
+    const elements = getCardElements(rawCard);
+    const power = getCardPower(rawCard);
+    const rarity = getCardRarity(rawCard);
+    const text = getCardDescription(rawCard);
+    const baseName = getBaseCardName(rawCard.name);
+
+    let life: number | undefined = undefined;
+    if (rawCard.extLife) {
+        const parsedLife = parseInt(rawCard.extLife, 10);
+        if (!isNaN(parsedLife)) life = parsedLife;
+    }
+
+    let defense: number | undefined = undefined;
+    if (rawCard.extDefensePower) {
+        const parsedDefense = parseInt(rawCard.extDefensePower, 10);
+        if (!isNaN(parsedDefense)) defense = parsedDefense;
+    }
+
+    const card: Card = {
+        ...rawCard, // Spread all RawCard properties first
+        type: cardType,
+        mana_cost: manaCost,
+        cost: manaCost, // Assigning parsed cost to both fields
+        text: text,
+        elements: elements,
+        power: power,
+        rarity: rarity,
+        baseName: baseName,
+        life: life,
+        defense: defense,
+        threshold: rawCard.extThreshold || '', // Keep as string
+        subtype: rawCard.extCardSubtype || undefined,
+    };
+    return card;
+}
+
+/**
+ * Remove all cards whose name includes 'Rubble' (case-insensitive) from a card array
+ */
+export function filterOutRubble<T extends { name?: string }>(cards: T[]): T[] {
+    return cards.filter(card => !((card.name || '').toLowerCase().includes('rubble')));
 }

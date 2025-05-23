@@ -189,10 +189,6 @@ export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
   const hasElementDeficiencies = Object.keys(elementalAnalysis.elementDeficiencies || {}).length > 0;
 
   if (hasElementDeficiencies) {
-    console.log("Elemental threshold requirements detected:");
-    for (const [element, info] of Object.entries(elementalAnalysis.elementDeficiencies as Record<string, any>)) {
-      console.log(`- ${element}: ${info.current}/${info.required} (deficit: ${info.deficit})`);
-      
       // Find cards that could address this elemental deficiency
       const allAvailableCards = [...minions, ...artifacts, ...auras, ...magics]
         .filter((card: Card) => !selectedSpells.some((s: Card) => s.baseName === card.baseName));
@@ -211,7 +207,6 @@ export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
           selectedSpells.push(card);
           copiesInDeck[card.baseName] = (copiesInDeck[card.baseName] || 0) + 1;
           addedCount++;
-          console.log(`  Added ${card.name} to address ${element} deficiency`);
         }
       }
     }

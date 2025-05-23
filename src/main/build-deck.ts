@@ -9,9 +9,9 @@ import config from '../config';
 import { Card, CardType, Element as ElementEnum } from '../types/Card'; // Added CardType, ElementEnum
 import { Deck } from '../types/Deck';
 
-// Import modules based on system mode
-const utils = require(config.SYSTEM_MODE.OPTIMIZED ? '../optimization/utils.optimized' : '../utils/utils');
-const sorceryCards = require(config.SYSTEM_MODE.OPTIMIZED ? '../optimization/sorceryCards.optimized' : '../data/processed/sorceryCards');
+// Import modules
+const utils = require('../utils/utils');
+const sorceryCards = require('../data/processed/sorceryCards');
 const cardAnalysis = require('../core/cards/cardAnalysis');
 const synergyCalculator = require('../analyses/synergy/synergyCalculator');
 const deckOptimizer = require('../core/deck/deckOptimizer');

@@ -4,21 +4,14 @@
 
 // System mode configuration
 export const SYSTEM_MODE = {
-  OPTIMIZED: true, // Always use optimized versions
   DEBUG: process.env.NODE_ENV === 'development',
 };
 
-// Paths for different system modes
+// Direct paths to optimized utilities
 export const SYSTEM_PATHS = {
-  UTILS: SYSTEM_MODE.OPTIMIZED 
-    ? './optimization/utils.optimized' 
-    : './utils/utils',
-  CARDS: SYSTEM_MODE.OPTIMIZED 
-    ? './optimization/sorceryCards.optimized' 
-    : './data/processed/sorceryCards',
-  PROCESS: SYSTEM_MODE.OPTIMIZED 
-    ? './optimization/processCards.optimized' 
-    : './data/processed/processCards',
+  UTILS: './utils/utils',
+  CARDS: './data/processed/sorceryCards',
+  PROCESS: './data/processed/processCards',
 };
 
 // Performance settings
@@ -30,7 +23,7 @@ export const PERFORMANCE_CONFIG = {
 
 // Feature flags
 export const FEATURES = {
-  USE_OPTIMIZED_ALGORITHMS: SYSTEM_MODE.OPTIMIZED,
+  USE_OPTIMIZED_ALGORITHMS: true, // Always use optimized algorithms
   ENABLE_ADVANCED_SYNERGY: true,
   ENABLE_POSITION_ANALYSIS: true,
 };

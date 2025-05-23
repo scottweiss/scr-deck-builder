@@ -5,14 +5,9 @@
 
 import { SYSTEM_MODE, SYSTEM_PATHS } from './config';
 
-// Use optimized system by default
-const utils = SYSTEM_MODE.OPTIMIZED 
-  ? require('./optimization/utils.optimized')
-  : require('./utils/utils');
-
-const sorceryCards = SYSTEM_MODE.OPTIMIZED
-  ? require('./optimization/sorceryCards.optimized')
-  : require('./data/processed/sorceryCards');
+// Use optimized system (now the only system)
+const utils = require('./utils/utils');
+const sorceryCards = require('./data/processed/sorceryCards');
 
 const cardAnalysis = require('./core/cards/cardAnalysis');
 const synergyCalculator = require('./analyses/synergy/synergyCalculator');
@@ -31,8 +26,8 @@ module.exports = {
     deckValidator,
     elementAnalyzer,
     
-    // Helper function to check if optimized mode is enabled
-    isOptimized: () => SYSTEM_MODE.OPTIMIZED,
+    // Helper function to check if optimized mode is enabled (always returns true now)
+    isOptimized: () => true,
     
     // Helper function to get current system paths
     getPaths: () => SYSTEM_PATHS

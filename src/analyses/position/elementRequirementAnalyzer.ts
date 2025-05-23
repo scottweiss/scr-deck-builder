@@ -1,4 +1,5 @@
 import { Card, Element } from '../../types/Card';
+import { getCardThreshold } from '../../utils/utils';
 
 /**
  * Represents a card with its elemental requirement amount
@@ -88,33 +89,34 @@ export function analyzeElementalRequirements(deck: Card[]): ElementAnalysis {
             elementCounts[element] = (elementCounts[element] || 0) + 1;
         }
         
-        // Look for element threshold requirements in text
-        const text = (card.text || "").toLowerCase();
-        // Parse threshold requirements like "requires 3 water"
-        const thresholdMatches = text.match(/requires? (\d+) (water|earth|fire|air|void)/gi) || [];
-        
-        for (const match of thresholdMatches) {
-            const parts = match.toLowerCase().match(/requires? (\d+) (water|earth|fire|air|void)/i);
-            if (parts && parts.length === 3) {
-                const amount = parseInt(parts[1], 10);
-                const elementStr = parts[2];
-                const element = elementStr.charAt(0).toUpperCase() + elementStr.slice(1) as Element;
-                
-                // Track the highest threshold for each element
-                if (!elementThresholds[element] || amount > elementThresholds[element]) {
-                    elementThresholds[element] = amount;
+        // Parse threshold requirements using the proper threshold parsing function
+        try {
+            const cardThresholds = getCardThreshold(card);
+            
+            for (const [elementName, amount] of Object.entries(cardThresholds)) {
+                if (amount > 0) {
+                    const element = elementName as Element;
+                    
+                    // Track the highest threshold for each element
+                    if (!elementThresholds[element] || amount > elementThresholds[element]) {
+                        elementThresholds[element] = amount;
+                    }
+                    
+                    // Track cards requiring specific elements
+                    if (!elementRequirements[element]) {
+                        elementRequirements[element] = [];
+                    }
+                    elementRequirements[element].push({
+                        card,
+                        amount
+                    });
                 }
-                
-                // Track cards requiring specific elements
-                if (!elementRequirements[element]) {
-                    elementRequirements[element] = [];
-                }
-                elementRequirements[element].push({
-                    card,
-                    amount
-                });
             }
+        } catch (error) {
+            console.error(`Error parsing thresholds for card ${card.name}:`, error);
         }
+        
+        // Note: We no longer need to parse threshold from text as getCardThreshold handles all threshold formats
     }
     
     // Calculate element deficiencies (where count < threshold)

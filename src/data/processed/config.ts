@@ -5,8 +5,8 @@
 import path from 'path';
 
 // Base paths
-const RAW_DATA_DIR = path.join(__dirname, '..', 'data', 'raw');
-const PROCESSED_DATA_DIR = path.join(__dirname, '..', 'data', 'processed');
+const RAW_DATA_DIR = path.join(__dirname, '..', 'raw');
+const PROCESSED_DATA_DIR = path.join(__dirname);
 
 // Input CSV files
 export const CSV_FILES = [
@@ -16,7 +16,7 @@ export const CSV_FILES = [
 
 // Output files
 export const OUTPUT_DATA_FILE = path.join(PROCESSED_DATA_DIR, 'sorceryCards.data.js');
-export const OUTPUT_OPTIMIZED_FILE = path.join(PROCESSED_DATA_DIR, 'sorceryCards.optimized.js');
+export const OUTPUT_OPTIMIZED_FILE = path.join(PROCESSED_DATA_DIR, 'sorceryCards.js');
 export const OUTPUT_DOC_FILE = path.join(PROCESSED_DATA_DIR, 'CARD_DATA.md');
 
 // The order of keys is important for the compression

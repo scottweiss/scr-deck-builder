@@ -1,11 +1,26 @@
+/**
+ * Advanced Card Processor with Compression
+ * 
+ * This script processes CSV files for Sorcery: Contested Realm and generates
+ * optimized JavaScript data files for better performance.
+ * 
+ * Features:
+ * - CSV data extraction and filtering
+ * - Card data compression for reduced file size
+ * - Generates two output files:
+ *   1. sorceryCards.data.js - Compressed card data
+ *   2. sorceryCards.optimized.js - Lazy loading wrapper
+ */
+
 import fs from 'fs';
 import { parse } from 'csv-parse/sync';
-import { Card, Element, CardType, CardRarity } from '../../types/Card';
+import path from 'path';
+import { getConfig } from './config';
 
 /**
- * Processing statistics interface
+ * Statistics tracking interface
  */
-interface ProcessingStats {
+interface Stats {
     beta: number;
     arthurian: number;
     foils: number;
@@ -17,61 +32,36 @@ interface ProcessingStats {
  * Raw card data from CSV
  */
 interface RawCard {
-    productId?: string;
-    name?: string;
-    cleanName?: string;
-    imageUrl?: string;
-    categoryId?: string;
-    groupId?: string;
-    url?: string;
-    modifiedOn?: string;
-    imageCount?: string;
-    extRarity?: string;
-    extDescription?: string;
-    extCost?: string;
-    extThreshold?: string;
-    extElement?: string;
-    extCardType?: string;
-    marketPrice?: string;
+    [key: string]: any;
     subTypeName?: string;
-    setName?: string;
-    // Added missing fields based on usage
-    extCardSubtype?: string;
-    extTypeLine?: string;
-    extCardCategory?: string;
-    extPowerRating?: string;
-    extFlavorText?: string;
-    extDefensePower?: string;
-    extLife?: string;
-    lowPrice?: string;
-    midPrice?: string;
-    highPrice?: string;
-    directLowPrice?: string;
+    cleanName?: string;
+    name?: string;
 }
 
 /**
- * Card collection with utility methods
+ * Processed card with compression keys
  */
-export interface CardCollection {
-    SORCERY_CARDS: Card[];
-    getCardCount: () => number;
-    getBetaCards: () => Card[];
-    getArthurianCards: () => Card[];
-    getCardsBySet: (setName: string) => Card[];
-    getAllCards: () => Card[];
+interface ProcessedCard {
+    [key: string]: any;
 }
 
-const csvFiles = [
-    './BetaProductsAndPrices.csv',
-    './ArthurianLegendsProductsAndPrices.csv'
-];
+// Import configuration
+const config = getConfig();
+const csvFiles = config.csvFiles;
+const CARD_KEYS = config.cardKeys;
 
-let allCards: Card[] = [];
-let stats: ProcessingStats = { beta: 0, arthurian: 0, foils: 0, boosters: 0, total: 0 };
+// Statistics tracking
+let stats: Stats = { beta: 0, arthurian: 0, foils: 0, boosters: 0, total: 0 };
 
-console.log('Processing CSV files to create consolidated card data...');
+console.log('Processing CSV files to create optimized card data...');
 
-for (const csvFile of csvFiles) {
+// Process all cards from CSV files
+let allCards: ProcessedCard[] = [];
+
+// Ensure csvFiles is an array
+const files = Array.isArray(csvFiles) ? csvFiles : [csvFiles];
+
+for (const csvFile of files) {
     try {
         console.log(`Processing: ${csvFile}`);
         const fileContent = fs.readFileSync(csvFile, 'utf8');
@@ -99,89 +89,36 @@ for (const csvFile of csvFiles) {
 
             // Skip boosters and sealed products
             const name = (card.name || '').toLowerCase();
-            const cleanName = (card.cleanName || '').toLowerCase();
-            
             if (name.includes('booster') || 
-                cleanName.includes('booster') || 
-                name.includes('pack') || 
-                name.includes('box') || 
-                name.includes('case')) {
+                name.includes('display') ||
+                name.includes('preconstructed deck') ||
+                name.includes('promo pack')) {
                 stats.boosters++;
                 return false;
             }
 
-            // Skip preconstructed decks
-            if (name.includes('preconstructed') || 
-                name.includes('precon deck') ||
-                cleanName.includes('preconstructed') || 
-                cleanName.includes('precon deck')) {
-                return false;
-            }
-
-            // Include cards with card type or in category 77 (excluding problematic products)
-            return card.extCardType ||
-                (card.categoryId === '77' && 
-                 !['Booster Box', 'Booster Case', 'Booster Pack', 'Preconstructed'].some(term => 
-                    (card.cleanName || '').includes(term)
-                 )
-                );
+            return true;
         });
 
-        // Add set identifier and convert to Card format
-        const setName = csvFile.includes('Beta') ? 'Beta' : 'ArthurianLegends';
-        const processedCards = filteredCards.map(card => {
-            const processedCard: Partial<Card> = {
-                productId: card.productId,
-                name: card.name || '',
-                cleanName: card.cleanName,
-                baseName: card.cleanName || card.name || '',
-                imageUrl: card.imageUrl,
-                categoryId: card.categoryId,
-                groupId: card.groupId,
-                url: card.url,
-                modifiedOn: card.modifiedOn,
-                imageCount: card.imageCount, // Keep as string, or ensure Card.imageCount is number
-                rarity: card.extRarity as CardRarity, // Cast to CardRarity
-                text: card.extDescription,
-                extDescription: card.extDescription,
-                mana_cost: card.extCost ? parseInt(card.extCost, 10) : 0,
-                threshold: card.extThreshold,
-                elements: card.extElement ? [card.extElement as Element] : [],
-                type: card.extCardType as CardType,
-                marketPrice: card.marketPrice, // Keep as string, or ensure Card.marketPrice is number
-                subTypeName: card.subTypeName,
-                setName: setName,
-                // Required fields for Card interface
-                power: 0, // Default power
-                extRarity: card.extRarity || '',
-                extCost: card.extCost || '',
-                extThreshold: card.extThreshold || '',
-                extElement: card.extElement || '',
-                extCardType: card.extCardType || '',
-                extCardSubtype: card.extCardSubtype || '',
-                extTypeLine: card.extTypeLine || '',
-                extCardCategory: card.extCardCategory || '',
-                extPowerRating: card.extPowerRating || '',
-                extFlavorText: card.extFlavorText || '',
-                extDefensePower: card.extDefensePower || '',
-                extLife: card.extLife || '',
-                lowPrice: card.lowPrice || '',
-                midPrice: card.midPrice || '',
-                highPrice: card.highPrice || '',
-                directLowPrice: card.directLowPrice || ''
-            };
-            return processedCard as Card;
-        });
+        // Add source set information
+        const setName = path.basename(csvFile).includes('Beta') ? 'Beta' : 'ArthurianLegends';
         
-        allCards = [...allCards, ...processedCards];
-        
-        if (csvFile.includes('Beta')) {
-            stats.beta = processedCards.length;
+        // Update statistics
+        if (setName === 'Beta') {
+            stats.beta += filteredCards.length;
         } else {
-            stats.arthurian = processedCards.length;
+            stats.arthurian += filteredCards.length;
         }
         
-        console.log(`Filtered cards from ${csvFile}: ${processedCards.length}`);
+        // Add set name to each card
+        filteredCards.forEach(card => {
+            card.setName = setName;
+        });
+        
+        // Add to all cards
+        allCards = [...allCards, ...filteredCards];
+        
+        console.log(`Filtered cards from ${csvFile}: ${filteredCards.length}`);
     } catch (error) {
         console.error(`Error reading from ${csvFile}: ${(error as Error).message}`);
     }
@@ -195,52 +132,184 @@ console.log(`Foils filtered: ${stats.foils}`);
 console.log(`Boosters filtered: ${stats.boosters}`);
 console.log(`Final card count: ${allCards.length}`);
 
-// Create the JavaScript file with the consolidated data
-const jsContent = `/**
- * Consolidated Sorcery Trading Card Game Data
- *
- * This file contains the combined data from BetaProductsAndPrices.csv and ArthurianLegendsProductsAndPrices.csv
- * Pre-filtered to exclude foil cards, booster products, and preconstructed decks
- * 
- * Generated: ${new Date().toISOString()}
- * 
- * Statistics:
- * - Beta cards: ${stats.beta}
- * - Arthurian Legends cards: ${stats.arthurian}
- * - Total cards: ${allCards.length}
- * - Foils filtered: ${stats.foils}
- * - Boosters filtered: ${stats.boosters}
+/**
+ * Compress card data by extracting values in a specific order
  */
-
-const SORCERY_CARDS = ${JSON.stringify(allCards, null, 2)};
-
-module.exports = {
-    SORCERY_CARDS,
-    getCardCount: () => SORCERY_CARDS.length,
-    getBetaCards: () => SORCERY_CARDS.filter(card => card.setName === 'Beta'),
-    getArthurianCards: () => SORCERY_CARDS.filter(card => card.setName === 'ArthurianLegends'),
-    getCardsBySet: (setName) => SORCERY_CARDS.filter(card => card.setName === setName),
-    getAllCards: () => SORCERY_CARDS
-};
-`;
-
-fs.writeFileSync('./sorceryCards.js', jsContent);
-console.log('\nSuccessfully created sorceryCards.js');
-console.log(`File size: ${(fs.statSync('./sorceryCards.js').size / 1024 / 1024).toFixed(2)} MB`);
-
-console.log('\nFirst card sample:');
-if (allCards.length > 0) {
-    console.log(JSON.stringify(allCards[0], null, 2));
+function compressCard(card: RawCard): any[] {
+    return CARD_KEYS.map(key => card[key] || null);
 }
 
 /**
- * Export the processed card collection
+ * Create compressed data structure
  */
-export const cardCollection: CardCollection = {
-    SORCERY_CARDS: allCards,
-    getCardCount: () => allCards.length,
-    getBetaCards: () => allCards.filter(card => card.setName === 'Beta'),
-    getArthurianCards: () => allCards.filter(card => card.setName === 'ArthurianLegends'),
-    getCardsBySet: (setName: string) => allCards.filter(card => card.setName === setName),
-    getAllCards: () => allCards
+const compressedData = {
+    keys: CARD_KEYS,
+    cards: allCards.map(compressCard),
+    stats: {
+        total: allCards.length,
+        beta: stats.beta,
+        arthurian: stats.arthurian,
+        generated: new Date().toISOString()
+    }
 };
+
+// Generate the compressed data file
+const dataFileContent = `/**
+ * Compressed Sorcery Trading Card Game Data
+ * 
+ * This file contains optimized card data with compression to reduce file size.
+ * Data is stored as arrays with a key mapping for reconstruction.
+ * 
+ * Generated: ${new Date().toISOString()}
+ * Total cards: ${allCards.length}
+ * File size reduction: ~${Math.round((1 - JSON.stringify(compressedData).length / JSON.stringify(allCards).length) * 100)}%
+ */
+
+const COMPRESSED_CARD_DATA = ${JSON.stringify(compressedData, null, 2)};
+
+module.exports = COMPRESSED_CARD_DATA;
+`;
+
+// Generate the optimized wrapper file
+const optimizedFileContent = `/**
+ * Optimized Sorcery Card Data Loader
+ * 
+ * This module provides lazy loading and caching for card data,
+ * with automatic decompression from the compressed format.
+ * 
+ * Generated: ${new Date().toISOString()}
+ */
+
+const compressedData = require('./sorceryCards.data');
+
+let cachedCards = null;
+
+/**
+ * Decompress a single card from array format back to object
+ */
+function decompressCard(cardArray) {
+    const card = {};
+    compressedData.keys.forEach((key, index) => {
+        if (cardArray[index] !== null) {
+            card[key] = cardArray[index];
+        }
+    });
+    return card;
+}
+
+/**
+ * Get all cards (lazy loaded and cached)
+ */
+function getAllCards() {
+    if (!cachedCards) {
+        console.log('Decompressing card data...');
+        const startTime = Date.now();
+        
+        cachedCards = compressedData.cards.map(decompressCard);
+        
+        const endTime = Date.now();
+        console.log(\`Decompressed \${cachedCards.length} cards in \${endTime - startTime}ms\`);
+    }
+    return cachedCards;
+}
+
+/**
+ * Get cards filtered by set
+ */
+function getCardsBySet(setName) {
+    return getAllCards().filter(card => card.setName === setName);
+}
+
+/**
+ * Get card count without loading all data
+ */
+function getCardCount() {
+    return compressedData.stats.total;
+}
+
+/**
+ * Get statistics without loading all data
+ */
+function getStats() {
+    return compressedData.stats;
+}
+
+module.exports = {
+    getAllCards,
+    getCardsBySet,
+    getCardCount,
+    getStats,
+    getBetaCards: () => getCardsBySet('Beta'),
+    getArthurianCards: () => getCardsBySet('ArthurianLegends')
+};
+`;
+
+// Write the files
+try {
+    fs.writeFileSync(config.outputDataFile, dataFileContent);
+    console.log(`\\nSuccessfully created ${path.basename(config.outputDataFile)}`);
+    
+    fs.writeFileSync(config.outputOptimizedFile, optimizedFileContent);
+    console.log(`Successfully created ${path.basename(config.outputOptimizedFile)}`);
+    
+    // Calculate file sizes
+    const dataSize = fs.statSync(config.outputDataFile).size;
+    const optimizedSize = fs.statSync(config.outputOptimizedFile).size;
+    
+    console.log(`\\nFile sizes:`);
+    console.log(`Data file: ${(dataSize / 1024 / 1024).toFixed(2)} MB`);
+    console.log(`Optimized wrapper: ${(optimizedSize / 1024).toFixed(2)} KB`);
+    
+    // Generate documentation
+    const docContent = `# Sorcery Card Data Documentation
+
+## Overview
+This directory contains processed card data for Sorcery: Contested Realm.
+
+## Files Generated
+- \`sorceryCards.data.js\`: Compressed card data (\${(dataSize / 1024 / 1024).toFixed(2)} MB)
+- \`sorceryCards.optimized.js\`: Lazy loading wrapper (\${(optimizedSize / 1024).toFixed(2)} KB)
+
+## Statistics
+- Total cards: \${stats.total} raw records processed
+- Beta cards: \${stats.beta}
+- Arthurian Legends cards: \${stats.arthurian}
+- Final card count: \${allCards.length}
+- Foil cards filtered: \${stats.foils}
+- Booster products filtered: \${stats.boosters}
+
+## Usage
+
+\\\`\\\`\\\`javascript
+const cardData = require('./sorceryCards.optimized');
+
+// Get all cards (lazy loaded)
+const allCards = cardData.getAllCards();
+
+// Get cards by set
+const betaCards = cardData.getBetaCards();
+const arthurianCards = cardData.getArthurianCards();
+
+// Get statistics without loading data
+const stats = cardData.getStats();
+console.log(\`Total cards: \${stats.total}\`);
+\\\`\\\`\\\`
+
+Generated: \${new Date().toISOString()}
+`;
+
+    fs.writeFileSync(config.outputDocFile, docContent);
+    console.log(`Successfully created ${path.basename(config.outputDocFile)}`);
+    
+} catch (error) {
+    console.error(`Error writing files: ${(error as Error).message}`);
+    process.exit(1);
+}
+
+console.log('\\nOptimized card processing complete!');
+
+// Sample card output
+console.log('\\nFirst card sample:');
+if (allCards.length > 0) {
+    console.log(JSON.stringify(allCards[0], null, 2));
+}
