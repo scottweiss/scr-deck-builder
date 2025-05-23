@@ -210,7 +210,7 @@ export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
         }
       }
     }
-  }
+  
 
   // ENHANCEMENT: Fill remaining slots with high-synergy cards
   const targetDeckSize = 55; // Target deck size
