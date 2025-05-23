@@ -19,8 +19,8 @@ const deckStats = require('../analyses/synergy/deckStats');
 const siteSelector = require('../analyses/position/siteSelector');
 const deckBuilder = require('../core/deck/deckBuilder');
 const deckExporter = require('../core/deck/deckExporter');
-const DeckValidator = require('../core/deck/deckValidator');
-const RuleEnforcer = require('../core/rules/ruleEnforcer');
+const { DeckValidator } = require('../core/deck/deckValidator');
+const RuleEnforcer = require('../core/rules/ruleEnforcer').default;
 
 interface BuildOptions {
     dataSets: string[];
