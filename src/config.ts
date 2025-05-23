@@ -4,7 +4,7 @@
 
 // System mode configuration
 export const SYSTEM_MODE = {
-  OPTIMIZED: process.env.NODE_OPTIMIZED === 'true',
+  OPTIMIZED: true, // Always use optimized versions
   DEBUG: process.env.NODE_ENV === 'development',
 };
 

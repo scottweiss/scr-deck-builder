@@ -139,6 +139,7 @@ export function enforceRarityLimits(cards: Card[]): Card[] {
  * @param artifacts Available artifacts
  * @param auras Available auras
  * @param magics Available magics
+ * @param preferredArchetype Optional preferred archetype to optimize for
  * @returns Optimized deck
  */
 export function optimizeDeck(
@@ -146,7 +147,8 @@ export function optimizeDeck(
     minions: Card[],
     artifacts: Card[],
     auras: Card[],
-    magics: Card[]
+    magics: Card[],
+    preferredArchetype?: string
 ): Card[] {
     // Get synergy calculator and card combo system
     const synergyCalculator = require('../../analyses/synergy/synergyCalculator');
@@ -196,8 +198,10 @@ export function optimizeDeck(
     // Adjust mana curve based on archetype
     let idealCurve: IdealManaCurve;
     
-    if (topArchetypes.length > 0) {
-        const primaryArchetype = topArchetypes[0];
+    // Use the preferred archetype if specified, otherwise use the detected one
+    const primaryArchetype = preferredArchetype || (topArchetypes.length > 0 ? topArchetypes[0] : null);
+    
+    if (primaryArchetype) {
         
         // Customize mana curve based on the archetype
         if (primaryArchetype === "Aggro") {

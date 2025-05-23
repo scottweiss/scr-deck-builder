@@ -25,6 +25,7 @@ const RuleEnforcer = require('../core/rules/ruleEnforcer').default;
 interface BuildOptions {
     dataSets: string[];
     preferredElement: string | null;
+    preferredArchetype: string | null;
     exportJson: boolean;
     showRules: boolean;
 }
@@ -45,6 +46,7 @@ const args: string[] = process.argv.slice(2);
 const options: BuildOptions = {
     dataSets: ['Beta', 'ArthurianLegends'],
     preferredElement: null,
+    preferredArchetype: null,
     exportJson: false,
     showRules: false
 };
@@ -53,6 +55,9 @@ const options: BuildOptions = {
 for (let i = 0; i < args.length; i++) {
     if (args[i] === '--element' && i + 1 < args.length) {
         options.preferredElement = args[i+1];
+        i++;
+    } else if (args[i] === '--archetype' && i + 1 < args.length) {
+        options.preferredArchetype = args[i+1];
         i++;
     } else if (args[i] === '--set' && i + 1 < args.length) {
         // Allow filtering to specific card set
@@ -68,18 +73,19 @@ Sorcery: Contested Realm Deck Builder
 Usage: node build-deck.js [options]
 
 Options:
-  --element <element>   Preferred element (Water, Fire, Earth, Air, Void)
-  --set <setName>       Use specific card set (Beta, ArthurianLegends)
-  --export-json         Export deck to JSON file
-  --show-rules          Display official rules summary
-  --help                Show this help message
+  --element <element>       Preferred element (Water, Fire, Earth, Air, Void)
+  --archetype <archetype>   Preferred deck archetype (Aggro, Control, Midrange, Combo, Balanced, Minion-Heavy, Artifact-Combo, Spell-Heavy)
+  --set <setName>           Use specific card set (Beta, ArthurianLegends)
+  --export-json             Export deck to JSON file
+  --show-rules              Display official rules summary
+  --help                    Show this help message
         `);
         process.exit(0);
     }
 }
 
 // Main function to build the deck
-async function buildDeck(): Promise<void> {
+async function buildDeckInternal(): Promise<void> {
     console.log("Loading card data...");
     const startTime = performance.now();
 
@@ -224,7 +230,8 @@ async function buildDeck(): Promise<void> {
         auras,
         magics,
         uniqueCards,
-        avatar: selectedAvatar
+        avatar: selectedAvatar,
+        preferredArchetype: options.preferredArchetype
     });
 
     // Log statistics about card copies
@@ -306,7 +313,7 @@ async function buildDeck(): Promise<void> {
 
     console.log("\nSPELLS (Spellbook Deck):");
     // Sort by mana cost for easier reading
-    selectedSpells.sort((a, b) => (a.mana_cost || 0) - (b.mana_cost || 0));
+    selectedSpells.sort((a, b) => (a.mana_cost || 0) - (a.mana_cost || 0));
 
     for (const spell of selectedSpells) {
         const rarityLabel = spell.rarity ? `(${spell.rarity})` : '';
@@ -479,7 +486,48 @@ function displayDeckStrategy(selectedSpells: Card[], deckStatsData: DeckStatsDat
     }
 }
 
-// Run the deck builder
-buildDeck().catch((error: Error) => {
-    console.error("An error occurred while building the deck:", error);
-});
+/**
+ * Build a Sorcery: Contested Realm deck with specified parameters
+ * @param setName The card set name (e.g., 'Beta', 'ArthurianLegends')
+ * @param element The preferred element (e.g., 'Water', 'Fire', 'Earth', 'Air', 'Void')
+ * @param archetype The preferred archetype (e.g., 'Aggro', 'Control', 'Combo', 'Balanced')
+ * @param exportJson Whether to export the deck to JSON
+ * @param showRules Whether to display the official rules summary
+ * @returns Promise that resolves when the deck is built
+ */
+export function buildDeck(
+    setName?: string, 
+    element?: string, 
+    archetype?: string,
+    exportJson?: boolean,
+    showRules?: boolean
+): Promise<void> {
+    // Update options with provided parameters
+    if (setName) {
+        options.dataSets = [setName];
+    }
+    if (element) {
+        options.preferredElement = element;
+    }
+    if (archetype) {
+        options.preferredArchetype = archetype;
+    }
+    if (exportJson !== undefined) {
+        options.exportJson = exportJson;
+    }
+    if (showRules !== undefined) {
+        options.showRules = showRules;
+    }
+
+    // Run the deck builder with updated options
+    return buildDeckInternal().catch((error: Error) => {
+        console.error("An error occurred while building the deck:", error);
+    });
+}
+
+// Run the deck builder if this module is run directly
+if (require.main === module) {
+    buildDeckInternal().catch((error: Error) => {
+        console.error("An error occurred while building the deck:", error);
+    });
+}

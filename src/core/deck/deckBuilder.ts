@@ -243,7 +243,7 @@ export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
 
   // Optimize the deck
   console.log("Running deck optimization...");
-  selectedSpells = (deckOptimizer as any).optimizeDeck(selectedSpells, minions, artifacts, auras, magics);
+  selectedSpells = (deckOptimizer as any).optimizeDeck(selectedSpells, minions, artifacts, auras, magics, options.preferredArchetype);
 
   // Calculate final synergy
   const totalSynergy = selectedSpells.reduce((sum: number, card: Card) => 
