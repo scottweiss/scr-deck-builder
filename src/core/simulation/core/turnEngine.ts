@@ -3,7 +3,7 @@
  */
 
 import { GameStateManager, GameState, Player, Unit, Position } from './gameState';
-import { Card } from '../../types/Card';
+import { Card } from '../../../types/Card';
 
 export interface TurnAction {
   type: 'play_site' | 'cast_spell' | 'move_attack' | 'activate_ability' | 'pass';

@@ -1,5 +1,5 @@
 // Type and interface definitions for deck test suite and related modules
-import { Card } from './gameState';
+import { Card } from '../core/gameState';
 
 export interface DeckComposition {
     units: number;

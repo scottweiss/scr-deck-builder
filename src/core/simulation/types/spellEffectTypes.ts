@@ -1,5 +1,5 @@
 // Type and interface definitions for spell effect system
-import { Position, GameEvent } from './gameState';
+import { Position, GameEvent } from '../core/gameState';
 
 export interface SpellEffect {
     type: 'damage' | 'heal' | 'draw' | 'summon' | 'modify' | 'move' | 'destroy' | 'counter' | 'search' | 'custom';

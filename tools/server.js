@@ -9,16 +9,19 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'web')));
+app.use(express.static(path.join(__dirname, '..', 'web')));
+
+// Serve compiled JavaScript files from dist directory
+app.use('/dist', express.static(path.join(__dirname, '..', 'dist')));
 
 // Serve simulation specific static files if requested directly
-app.use('/simulation', express.static(path.join(__dirname, 'web', 'simulation')));
+app.use('/simulation', express.static(path.join(__dirname, '..', 'web', 'simulation')));
 
 // API endpoint to list all available avatars
 app.get('/api/list-avatars', async (req, res) => {
     try {
         // Import card data system from compiled JavaScript
-        const { getAllCards } = require('./dist/data/processed/sorceryCards');
+        const { getAllCards } = require('../dist/data/processed/sorceryCards');
         
         // Get all cards and filter for avatars
         const allCards = await getAllCards();
@@ -116,7 +119,7 @@ app.get('/api/list-avatars', async (req, res) => {
 
 // Route to serve the web interface
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'web', 'index.html'));
+    res.sendFile(path.join(__dirname, '..', 'web', 'index.html'));
 });
 
 // API endpoint to build deck
@@ -150,11 +153,11 @@ app.post('/api/build-deck', async (req, res) => {
         console.log('Building deck with args:', args);
 
         // Path to the compiled JavaScript deck builder
-        const scriptPath = path.join(__dirname, 'dist', 'main', 'build-deck.js');
+        const scriptPath = path.join(__dirname, '..', 'dist', 'main', 'build-deck.js');
         
         // Execute the deck builder
         const deckBuilderProcess = spawn('node', [scriptPath, ...args], {
-            cwd: __dirname,
+            cwd: path.join(__dirname, '..'),
             env: { ...process.env }
         });
 
@@ -190,7 +193,7 @@ app.post('/api/build-deck', async (req, res) => {
             if (exportJson) {
                 try {
                     // Look for the most recent JSON file in the exports directory
-                    const exportsDir = path.join(__dirname, 'exports');
+                    const exportsDir = path.join(__dirname, '..', 'exports');
                     if (fs.existsSync(exportsDir)) {
                         const files = fs.readdirSync(exportsDir)
                             .filter(file => file.endsWith('.json'))
@@ -305,7 +308,7 @@ app.post('/api/initialize-simulation', async (req, res) => {
 
         // Path to a new or existing TypeScript script that handles simulation initialization
         // For now, let's assume a script named 'initialize-simulation.ts' in 'src/main/'
-        const scriptPath = path.join(__dirname, 'src', 'main', 'initialize-simulation.ts');
+        const scriptPath = path.join(__dirname, '..', 'src', 'main', 'initialize-simulation.ts');
 
         // Check if the script exists, if not, we'll need to create it.
         if (!fs.existsSync(scriptPath)) {
@@ -335,12 +338,12 @@ app.post('/api/initialize-simulation', async (req, res) => {
         ];
 
         // Try compiled JavaScript first, then fall back to TypeScript
-        const compiledScriptPath = path.join(__dirname, 'dist', 'main', 'initialize-simulation.js');
+        const compiledScriptPath = path.join(__dirname, '..', 'dist', 'main', 'initialize-simulation.js');
         
         if (fs.existsSync(compiledScriptPath)) {
             console.log('Using compiled simulation script');
             const simulationProcess = spawn('node', [compiledScriptPath, ...args], {
-                cwd: __dirname,
+                cwd: path.join(__dirname, '..'),
                 env: { ...process.env }
             });
 
@@ -390,7 +393,7 @@ app.post('/api/initialize-simulation', async (req, res) => {
             // Fall back to TypeScript execution
             console.log('Compiled script not found, trying TypeScript');
             const simulationProcess = spawn('node', ['-r', 'ts-node/register', scriptPath, ...args], {
-                cwd: __dirname,
+                cwd: path.join(__dirname, '..'),
                 env: { ...process.env }
             });
 
@@ -458,8 +461,8 @@ app.use((error, req, res, next) => {
 app.listen(PORT, () => {
     console.log(`🎯 Sorcery: Contested Realm Deck Builder Server`);
     console.log(`🌐 Server running at: http://localhost:${PORT}`);
-    console.log(`📁 Serving web interface from: ${path.join(__dirname, 'web')}`);
-    console.log(`⚙️  Deck builder script: ${path.join(__dirname, 'src', 'main', 'build-deck.ts')}`);
+    console.log(`📁 Serving web interface from: ${path.join(__dirname, '..', 'web')}`);
+    console.log(`⚙️  Deck builder script: ${path.join(__dirname, '..', 'src', 'main', 'build-deck.ts')}`);
 });
 
 module.exports = app;

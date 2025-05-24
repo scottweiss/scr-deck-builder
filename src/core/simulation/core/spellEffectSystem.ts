@@ -11,7 +11,7 @@ import {
     ConditionCheck,
     SpellTarget,
     SpellExecutionResult
-} from './spellEffectTypes';
+} from '../types/spellEffectTypes';
 import { spellParser } from './spellParser';
 
 export class SpellEffectSystem {

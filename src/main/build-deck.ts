@@ -21,7 +21,7 @@ import { exportDeck, logCardDistribution } from './deckExportManager';
 const utils = require('../utils/utils');
 const deckStats = require('../analyses/synergy/deckStats');
 const siteSelector = require('../analyses/position/siteSelector');
-const deckBuilder = require('../core/deck/deckBuilder');
+const deckBuilder = require('../core/deck/builder/deckBuilder');
 const synergyCalculator = require('../analyses/synergy/synergyCalculator');
 
 interface CardCounts {

@@ -3,7 +3,7 @@ import { SYSTEM_MODE } from '../../../../../src/config';
 import { calculateSynergy } from '../../../../../src/analyses/synergy/synergyCalculator';
 import { identifyCardMechanics, canIncludeWithAvatar, evaluateRegionalStrategy } from '../../../../../src/core/cards/cardAnalysis';
 import { analyzeElementalRequirements, calculateElementalDeficitContribution } from '../../../../../src/analyses/position/elementRequirementAnalyzer';
-import { getMaxCopiesForRarity } from './deckOptimizer';
+import { getMaxCopiesForRarity } from '../../../../../src/core/deck/optimization/deckOptimizer';
 import { debugElementalThresholds } from '../../../../../src/core/simulation/analysis/metaTester';
 import { getCardThreshold } from '../../../../../src/utils/utils'; // Added import
 

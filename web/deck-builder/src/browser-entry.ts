@@ -10,7 +10,7 @@ import { Card, Element } from '../../src/types/Card';
 import { Deck } from '../../src/types/Deck';
 
 // Import deck building core
-import * as deckBuilder from '../../src/core/deck/deckBuilder';
+import * as deckBuilder from '../../../src/core/deck/builder/deckBuilder';
 import * as synergyCalculator from '../../src/analyses/synergy/synergyCalculator';
 
 // Browser-compatible data loading

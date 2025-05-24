@@ -15,9 +15,9 @@ interface ModuleTest {
 const modules: ModuleTest[] = [
   { name: 'Core Utils', path: '../utils/utils' },
   { name: 'Core Card Data', path: '../data/processed/sorceryCards' },
-  { name: 'Deck Builder', path: '../core/deck/deckBuilder' },
-  { name: 'Deck Optimizer', path: '../core/deck/deckOptimizer' },
-  { name: 'Deck Exporter', path: '../core/deck/deckExporter' },
+  { name: 'Deck Builder', path: '../core/deck/builder/deckBuilder' },
+  { name: 'Deck Optimizer', path: '../core/deck/optimization/deckOptimizer' },
+  { name: 'Deck Exporter', path: '../core/deck/builder/deckExporter' },
   { name: 'Card Analysis', path: '../core/cards/cardAnalysis' },
   { name: 'Card Combos', path: '../core/cards/cardCombos' },
   { name: 'Synergy Calculator', path: '../analyses/synergy/synergyCalculator' },

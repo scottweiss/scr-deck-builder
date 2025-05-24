@@ -56,8 +56,8 @@ export function optimizeDeck(
     sites: Card[] = [] // Add optional sites parameter
 ): Card[] {
     // Get synergy calculator and card combo system
-    const synergyCalculator = require('../../analyses/synergy/synergyCalculator');
-    const cardCombos = require('../cards/cardCombos');
+    const synergyCalculator = require('../../../analyses/synergy/synergyCalculator');
+    const cardCombos = require('../../cards/cardCombos');
     
     // ENHANCEMENT: Analyze elemental requirements first
     console.log("Analyzing elemental requirements and thresholds...");

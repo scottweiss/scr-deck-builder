@@ -1,7 +1,7 @@
 import { Card } from '../types/Card';
 import { Deck } from '../types/Deck';
 
-const deckExporter = require('../core/deck/deckExporter');
+const deckExporter = require('../core/deck/builder/deckExporter');
 const deckStats = require('../analyses/synergy/deckStats');
 
 export interface ExportOptions {

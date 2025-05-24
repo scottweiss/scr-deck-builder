@@ -4,7 +4,7 @@ import {
     TargetSpecification,
     TargetRestriction,
     ConditionCheck
-} from './spellEffectTypes';
+} from '../types/spellEffectTypes';
 
 class SpellParser {
     public parseSpellText(spellText: string): SpellEffect[] {

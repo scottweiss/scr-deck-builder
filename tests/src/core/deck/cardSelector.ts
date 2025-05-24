@@ -1,11 +1,11 @@
-import { Card } from '../../types/Card';
-import { SYSTEM_MODE } from '../../config';
-import { calculateSynergy } from '../../analyses/synergy/synergyCalculator';
-import { identifyCardMechanics, canIncludeWithAvatar, evaluateRegionalStrategy } from '../cards/cardAnalysis';
-import { analyzeElementalRequirements, calculateElementalDeficitContribution } from '../../analyses/position/elementRequirementAnalyzer';
-import { getMaxCopiesForRarity } from './allocation/rarityManager';
-import { debugElementalThresholds } from '../simulation/analysis/metaTester';
-import { getCardThreshold } from '../../utils/utils'; // Added import
+import { Card } from '../../../../src/types/Card';
+import { SYSTEM_MODE } from '../../../../src/config';
+import { calculateSynergy } from '../../../../src/analyses/synergy/synergyCalculator';
+import { identifyCardMechanics, canIncludeWithAvatar, evaluateRegionalStrategy } from '../../../../src/core/cards/cardAnalysis';
+import { analyzeElementalRequirements, calculateElementalDeficitContribution } from '../../../../src/analyses/position/elementRequirementAnalyzer';
+import { getMaxCopiesForRarity } from '../../../../src/core/deck/allocation/rarityManager';
+import { debugElementalThresholds } from '../../../../src/core/simulation/analysis/metaTester';
+import { getCardThreshold } from '../../../../src/utils/utils'; // Added import
 
 /**
  * Find candidate cards of a specific mana cost

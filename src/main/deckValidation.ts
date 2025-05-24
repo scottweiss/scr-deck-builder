@@ -1,6 +1,6 @@
 import { Card } from '../types/Card';
 
-const { DeckValidator } = require('../core/deck/deckValidator');
+const { DeckValidator } = require('../core/deck/analysis/deckValidator');
 const RuleEnforcer = require('../core/rules/ruleEnforcer').default;
 
 export interface ValidationResult {

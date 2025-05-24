@@ -2,10 +2,10 @@
  * Core game state management for Sorcery: Contested Realm match simulation
  */
 
-import { Card, Element } from '../../types/Card';
+import { Card, Element } from '../../../types/Card';
 
 // Re-export Card type for use in other simulation modules
-export { Card } from '../../types/Card';
+export { Card } from '../../../types/Card';
 
 export interface Position {
   x: number; // 0-4 (5 columns)
