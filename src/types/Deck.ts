@@ -144,3 +144,12 @@ export interface PlayabilityFactor {
   description: string;
   impact: 'positive' | 'negative' | 'neutral';
 }
+
+/**
+ * Player deck interface
+ */
+export interface PlayerDeck {
+  avatar?: string;
+  cards: Card[];
+  // Add other player-specific deck properties here
+}

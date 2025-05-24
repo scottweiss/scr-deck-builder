@@ -284,3 +284,11 @@ export function buildCompleteDeck(options: DeckBuildOptions): Deck {
     metadata
   };
 }
+
+/**
+ * DeckBuilder object containing all deck building functions
+ */
+export const DeckBuilder = {
+  buildSpellbook,
+  buildCompleteDeck
+};

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorcery: Gameplay Simulation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sorcery: Gameplay Simulation Viewer</h1>
+        </header>
+        <main>
+            <div id="setupControls" class="setup-container">
+                <h2>Simulation Setup</h2>
+                <div class="player-setup">
+                    <h3>Player 1</h3>
+                    <div class="form-group">
+                        <label for="p1Avatar">Avatar:</label>
+                        <select id="p1Avatar" name="p1Avatar">
+                            <option value="Avatar of Fire">Avatar of Fire</option>
+                            <option value="Avatar of Water">Avatar of Water</option>
+                            <option value="Avatar of Earth">Avatar of Earth</option>
+                            <option value="Avatar of Air">Avatar of Air</option>
+                            <option value="Void Magus">Void Magus</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="p1Strategy">Strategy (Optional):</label>
+                        <select id="p1Strategy" name="p1Strategy">
+                            <option value="">None</option>
+                            <option value="Aggro">Aggro</option>
+                            <option value="Control">Control</option>
+                            <option value="Midrange">Midrange</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="p1Element">Element Preference:</label>
+                        <select id="p1Element" name="p1Element">
+                            <option value="Fire">🔥 Fire</option>
+                            <option value="Water">💧 Water</option>
+                            <option value="Earth">🌍 Earth</option>
+                            <option value="Air">💨 Air</option>
+                            <option value="Void">🌌 Void</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="player-setup">
+                    <h3>Player 2</h3>
+                    <div class="form-group">
+                        <label for="p2Avatar">Avatar:</label>
+                        <select id="p2Avatar" name="p2Avatar">
+                            <option value="Avatar of Water">Avatar of Water</option>
+                            <option value="Avatar of Fire">Avatar of Fire</option>
+                            <option value="Avatar of Earth">Avatar of Earth</option>
+                            <option value="Avatar of Air">Avatar of Air</option>
+                            <option value="Void Sorcerer">Void Sorcerer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="p2Strategy">Strategy (Optional):</label>
+                        <select id="p2Strategy" name="p2Strategy">
+                            <option value="">None</option>
+                            <option value="Midrange">Midrange</option>
+                            <option value="Aggro">Aggro</option>
+                            <option value="Control">Control</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="p2Element">Element Preference:</label>
+                        <select id="p2Element" name="p2Element">
+                            <option value="Water">💧 Water</option>
+                            <option value="Fire">🔥 Fire</option>
+                            <option value="Earth">🌍 Earth</option>
+                            <option value="Air">💨 Air</option>
+                            <option value="Void">🌌 Void</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="simulationControls">
+                <button id="buildAndStartSimulation">Build Decks & Start Simulation</button>
+                <button id="loadSampleSimulation">Load Sample Simulation Data</button>
+            </div>
+            <div id="gameBoard">
+                <!-- Game board will be rendered here -->
+                <p>Game board placeholder</p>
+            </div>
+            <div id="gameStateInfo">
+                <!-- Game state information will be displayed here -->
+                <p>Game state placeholder</p>
+            </div>
+            <div id="eventLog">
+                <!-- Simulation event log -->
+                <p>Event log placeholder</p>
+            </div>
+        </main>
+        <footer>
+            <p><a href="../index.html">Back to Deck Builder</a></p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

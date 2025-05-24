@@ -11,6 +11,9 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'web')));
 
+// Serve simulation specific static files if requested directly
+app.use('/simulation', express.static(path.join(__dirname, 'web', 'simulation')));
+
 // Route to serve the web interface
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'web', 'index.html'));
@@ -126,6 +129,104 @@ app.post('/api/build-deck', async (req, res) => {
 
     } catch (error) {
         console.error('API error:', error);
+        res.status(500).json({
+            error: `Server error: ${error.message}`
+        });
+    }
+});
+
+// API endpoint to initialize a simulation
+app.post('/api/initialize-simulation', async (req, res) => {
+    try {
+        const { player1Setup, player2Setup } = req.body;
+
+        // TODO: Implement the logic to call your TypeScript simulation initialization script
+        // This script would:
+        // 1. Take player1Setup and player2Setup (avatar, strategy, element) as input.
+        // 2. Use deckBuilder.ts to create decks for P1 and P2.
+        // 3. Initialize a GameState from simulationIntegration.ts or testFramework.ts.
+        // 4. Return the initial GameState JSON.
+
+        console.log('Initializing simulation with setups:', player1Setup, player2Setup);
+
+        // Path to a new or existing TypeScript script that handles simulation initialization
+        // For now, let's assume a script named 'initialize-simulation.ts' in 'src/main/'
+        const scriptPath = path.join(__dirname, 'src', 'main', 'initialize-simulation.ts');
+
+        // Check if the script exists, if not, we'll need to create it.
+        if (!fs.existsSync(scriptPath)) {
+            console.warn(`Simulation script not found at ${scriptPath}. Please create it.`);
+            // For now, return a mock response
+            return res.status(501).json({
+                message: "Simulation initialization script not found. Returning mock data.",
+                mockGameState: {
+                    turn: 1,
+                    phase: 'Start of Game (Mock)',
+                    activePlayer: 'Player 1',
+                    players: {
+                        'Player 1': { id: 'Player 1', life: 20, mana: 1, avatarName: player1Setup.avatar, deckStats: { spells: 20, sites: 10 }, hand: [{name: 'Mock Card'}] },
+                        'Player 2': { id: 'Player 2', life: 20, mana: 1, avatarName: player2Setup.avatar, deckStats: { spells: 20, sites: 10 }, hand: [{name: 'Mock Card'}] }
+                    },
+                    grid: Array(5).fill(null).map(() => Array(4).fill(null)),
+                    storyline: [`Mock game started with P1: ${player1Setup.avatar} and P2: ${player2Setup.avatar}`],
+                    gameOver: false,
+                    firstPlayer: 'Player 1'
+                }
+            });
+        }
+
+        const args = [
+            JSON.stringify(player1Setup),
+            JSON.stringify(player2Setup)
+        ];
+
+        const simulationProcess = spawn('node', ['-r', 'ts-node/register', scriptPath, ...args], {
+            cwd: __dirname,
+            env: { ...process.env }
+        });
+
+        let output = '';
+        let errorOutput = '';
+
+        simulationProcess.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        simulationProcess.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+        });
+
+        simulationProcess.on('close', (code) => {
+            if (code !== 0) {
+                console.error('Simulation initialization failed with code:', code);
+                console.error('Error output:', errorOutput);
+                return res.status(500).json({
+                    error: `Simulation initialization failed: ${errorOutput || 'Unknown error'}`
+                });
+            }
+
+            try {
+                const gameState = JSON.parse(output);
+                res.json({ success: true, gameState });
+            } catch (parseError) {
+                console.error('Failed to parse simulation output:', parseError);
+                console.error('Raw output was:', output);
+                res.status(500).json({
+                    error: 'Failed to parse simulation output.',
+                    rawOutput: output
+                });
+            }
+        });
+
+        simulationProcess.on('error', (error) => {
+            console.error('Failed to start simulation process:', error);
+            res.status(500).json({
+                error: `Failed to start simulation process: ${error.message}`
+            });
+        });
+
+    } catch (error) {
+        console.error('API /api/initialize-simulation error:', error);
         res.status(500).json({
             error: `Server error: ${error.message}`
         });
