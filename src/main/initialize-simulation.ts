@@ -1,5 +1,5 @@
-import { GameStateManager } from '../core/simulation/gameState';
-import { DeckBuilder } from '../core/deck/deckBuilder';
+import { GameStateManager, GameEvent } from '../core/simulation/gameState';
+import { buildSpellbook, buildCompleteDeck } from '../core/deck/deckBuilder';
 import { SimulationTestFramework } from '../core/simulation/testFramework';
 import { Card } from '../types/Card';
 import { PlayerDeck } from '../types/Deck';
@@ -15,8 +15,13 @@ function generateId(): string {
     return 'id-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
 }
 
+// Helper function to log to stderr instead of stdout
+function logToStderr(message: string): void {
+    process.stderr.write(message + '\n');
+}
+
 async function initializeNewSimulation(player1Setup: PlayerSetup, player2Setup: PlayerSetup): Promise<any> {
-    console.log('TypeScript: Initializing simulation with:', player1Setup, player2Setup);
+    logToStderr('TypeScript: Initializing simulation with: ' + JSON.stringify(player1Setup) + ' ' + JSON.stringify(player2Setup));
 
     // Using mock deck creation logic from testFramework as a placeholder
     const framework = new SimulationTestFramework();
@@ -26,26 +31,26 @@ async function initializeNewSimulation(player1Setup: PlayerSetup, player2Setup: 
     const mockPlayer2Deck = framework['createMockPlayerDeck']();
     mockPlayer2Deck.avatar.name = player2Setup.avatar;
 
-    console.log('TypeScript: Mock decks created.');
+    logToStderr('TypeScript: Mock decks created.');
 
     // Using mock game state creation logic from testFramework as a placeholder
     const initialGameState = framework['createMockGameState']();
     initialGameState.players.player1.avatar.name = player1Setup.avatar;
     initialGameState.players.player2.avatar.name = player2Setup.avatar;
 
-    // Add storyline entries with valid event types and number timestamps
-    const initialEvents = [
+    // Add storyline entries with valid event types and proper structure
+    const initialEvents: GameEvent[] = [
         {
             id: generateId(),
-            type: 'spell_cast', // Using valid event type
+            type: 'spell_cast',
             description: `Game started: ${player1Setup.avatar} (P1) vs ${player2Setup.avatar} (P2)`,
-            timestamp: Date.now(), // Using number timestamp
+            timestamp: Date.now(),
             activePlayer: 'player1',
             resolved: true
         },
         {
             id: generateId(),
-            type: 'spell_cast', // Using valid event type
+            type: 'spell_cast',
             description: `P1 Element: ${player1Setup.element}, Strategy: ${player1Setup.strategy || 'Default'}`,
             timestamp: Date.now(),
             activePlayer: 'player1',
@@ -53,7 +58,7 @@ async function initializeNewSimulation(player1Setup: PlayerSetup, player2Setup: 
         },
         {
             id: generateId(),
-            type: 'spell_cast', // Using valid event type
+            type: 'spell_cast',
             description: `P2 Element: ${player2Setup.element}, Strategy: ${player2Setup.strategy || 'Default'}`,
             timestamp: Date.now(),
             activePlayer: 'player2',
@@ -61,7 +66,7 @@ async function initializeNewSimulation(player1Setup: PlayerSetup, player2Setup: 
         },
         {
             id: generateId(),
-            type: 'spell_cast', // Using valid event type
+            type: 'spell_cast',
             description: 'Turn 1 - Player 1 (Initial state)',
             timestamp: Date.now(),
             activePlayer: 'player1',
@@ -71,7 +76,7 @@ async function initializeNewSimulation(player1Setup: PlayerSetup, player2Setup: 
 
     initialGameState.storyline = initialEvents;
 
-    console.log('TypeScript: Mock game state created.');
+    logToStderr('TypeScript: Mock game state created.');
 
     return initialGameState;
 }
@@ -84,7 +89,7 @@ if (require.main === module) {
             const p2SetupArg = process.argv[3];
 
             if (!p1SetupArg || !p2SetupArg) {
-                console.error('Usage: node initialize-simulation.ts <player1SetupJson> <player2SetupJson>');
+                process.stderr.write('Usage: node initialize-simulation.ts <player1SetupJson> <player2SetupJson>\n');
                 process.exit(1);
             }
 
@@ -92,9 +97,11 @@ if (require.main === module) {
             const player2Setup: PlayerSetup = JSON.parse(p2SetupArg);
 
             const gameState = await initializeNewSimulation(player1Setup, player2Setup);
+            
+            // Output ONLY JSON to stdout - no other text
             process.stdout.write(JSON.stringify(gameState, null, 2));
         } catch (error) {
-            console.error('Error during simulation initialization:', error);
+            process.stderr.write('Error during simulation initialization: ' + (error instanceof Error ? error.message : String(error)) + '\n');
             process.exit(1);
         }
     })();

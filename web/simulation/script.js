@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (buildAndStartButton) {
-        buildAndStartButton.addEventListener('click', async () => { // Make async
+        buildAndStartButton.addEventListener('click', async () => {
             logEvent('Gathering player selections...', eventLogElement);
 
             const player1Setup = {
@@ -90,39 +90,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch('/api/initialize-simulation', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ player1Setup, player2Setup }),
+                    body: JSON.stringify({
+                        player1Setup,
+                        player2Setup
+                    })
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `Server error: ${response.status}`);
+                    throw new Error(`Server error: ${response.status}`);
                 }
 
-                const result = await response.json();
-                let newGame;
-
-                if (result.success && result.gameState) {
-                    newGame = result.gameState;
-                    logEvent('Simulation initialized successfully by server.', eventLogElement);
-                } else if (result.mockGameState) { // Fallback for when script is not found
-                    newGame = result.mockGameState;
-                    logEvent('Server returned mock game state. Actual script might be missing.', eventLogElement);
-                    logEvent(result.message, eventLogElement);
+                const data = await response.json();
+                
+                if (data.success && data.gameState) {
+                    logEvent('✅ Simulation initialized successfully!', eventLogElement);
+                    
+                    // Display the game state
+                    renderGameBoard(data.gameState, gameBoardElement);
+                    updateGameStateInfo(data.gameState, gameStateInfoElement);
+                    
+                    // Display deck information
+                    displayDeckLists(data.gameState, player1Setup, player2Setup);
+                    
+                    // Display storyline if available
+                    if (data.gameState.storyline && Array.isArray(data.gameState.storyline)) {
+                        const storylineText = data.gameState.storyline.map(event => 
+                            typeof event === 'string' ? event : event.description || 'Game event'
+                        );
+                        displayStoryline(storylineText, eventLogElement);
+                    }
                 } else {
-                    throw new Error('Invalid response from server for simulation initialization.');
+                    throw new Error('Invalid response from server');
                 }
-
-                renderGameBoard(newGame, gameBoardElement);
-                updateGameStateInfo(newGame, gameStateInfoElement);
-                displayStoryline(newGame.storyline, eventLogElement);
-                logEvent('New simulation with server-generated state is ready.', eventLogElement);
-
             } catch (error) {
-                console.error('Error initializing simulation:', error);
-                logEvent(`Error initializing simulation: ${error.message}`, eventLogElement);
-                // Optionally, display a more user-friendly error on the page
+                console.error('Simulation initialization failed:', error);
+                logEvent(`❌ Failed to initialize simulation: ${error.message}`, eventLogElement);
+                
+                // Show mock data as fallback
+                logEvent('🔄 Loading mock simulation data...', eventLogElement);
+                const mockGameState = createMockGameState();
+                renderGameBoard(mockGameState, gameBoardElement);
+                updateGameStateInfo(mockGameState, gameStateInfoElement);
+                displayDeckLists(mockGameState, player1Setup, player2Setup);
+                displayStoryline(['Mock simulation loaded due to server error'], eventLogElement);
             }
         });
     }
@@ -248,8 +260,161 @@ function logEvent(message, eventLogElement) {
     eventLogElement.scrollTop = eventLogElement.scrollHeight;
 }
 
-// Remove example calls from global scope, they are triggered by button now
-// renderGameBoard({});
-// updateGameStateInfo({ turn: 1, activePlayer: 'Player A', phase: 'Main', player1: { life: 20 }, player2: { life: 20 } });
-// logEvent('Game initialized.');
-// logEvent('Player A drew a card.');
+function displayDeckLists(gameState, player1Setup, player2Setup) {
+    // Create or get deck display container
+    let deckContainer = document.getElementById('deckLists');
+    if (!deckContainer) {
+        deckContainer = document.createElement('div');
+        deckContainer.id = 'deckLists';
+        deckContainer.className = 'deck-lists-container';
+        
+        // Insert after game state info
+        const gameStateInfo = document.getElementById('gameStateInfo');
+        if (gameStateInfo && gameStateInfo.parentNode) {
+            gameStateInfo.parentNode.insertBefore(deckContainer, gameStateInfo.nextSibling);
+        }
+    }
+
+    // Extract deck information from game state
+    const player1Deck = extractPlayerDeck(gameState, 'player1', player1Setup);
+    const player2Deck = extractPlayerDeck(gameState, 'player2', player2Setup);
+
+    deckContainer.innerHTML = `
+        <h3>Deck Lists</h3>
+        <div class="deck-lists">
+            <div class="deck-column">
+                <h4>Player 1: ${player1Setup.avatar}</h4>
+                <div class="deck-stats">
+                    <p>Element: ${player1Setup.element}</p>
+                    <p>Strategy: ${player1Setup.strategy || 'Default'}</p>
+                    <p>Total Cards: ${player1Deck.length}</p>
+                </div>
+                <div class="deck-list">
+                    ${renderDeckList(player1Deck)}
+                </div>
+            </div>
+            <div class="deck-column">
+                <h4>Player 2: ${player2Setup.avatar}</h4>
+                <div class="deck-stats">
+                    <p>Element: ${player2Setup.element}</p>
+                    <p>Strategy: ${player2Setup.strategy || 'Default'}</p>
+                    <p>Total Cards: ${player2Deck.length}</p>
+                </div>
+                <div class="deck-list">
+                    ${renderDeckList(player2Deck)}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function extractPlayerDeck(gameState, playerId, playerSetup) {
+    // Try to get deck from game state
+    const player = gameState.players && gameState.players[playerId];
+    let deck = [];
+
+    if (player) {
+        // Get cards from hand and deck
+        if (player.hand && player.hand.spells) {
+            deck = deck.concat(player.hand.spells);
+        }
+        if (player.hand && player.hand.sites) {
+            deck = deck.concat(player.hand.sites);
+        }
+        if (player.decks && player.decks.spellbook) {
+            deck = deck.concat(player.decks.spellbook);
+        }
+        if (player.decks && player.decks.atlas) {
+            deck = deck.concat(player.decks.atlas);
+        }
+    }
+
+    // If no deck found, create a mock deck
+    if (deck.length === 0) {
+        deck = createMockDeck(playerSetup);
+    }
+
+    return deck;
+}
+
+function createMockDeck(playerSetup) {
+    const element = playerSetup.element;
+    const strategy = playerSetup.strategy || 'Balanced';
+    const deck = [];
+
+    // Create themed cards based on element and strategy
+    const cardCount = strategy === 'Aggro' ? 50 : strategy === 'Control' ? 55 : 52;
+    
+    for (let i = 0; i < cardCount; i++) {
+        const cardType = i % 4 === 0 ? 'Site' : 
+                        i % 4 === 1 ? 'Minion' : 
+                        i % 4 === 2 ? 'Magic' : 'Artifact';
+        
+        const cost = strategy === 'Aggro' ? Math.min(4, Math.floor(i / 10) + 1) :
+                    strategy === 'Control' ? Math.floor(i / 8) + 2 :
+                    Math.floor(i / 12) + 1;
+
+        deck.push({
+            name: `${element} ${cardType} ${Math.floor(i / 4) + 1}`,
+            type: cardType,
+            cost: cardType === 'Site' ? 0 : cost,
+            element: element,
+            text: `A ${strategy.toLowerCase()} ${element.toLowerCase()} ${cardType.toLowerCase()}`
+        });
+    }
+
+    return deck;
+}
+
+function renderDeckList(deck) {
+    if (!deck || deck.length === 0) {
+        return '<p class="no-cards">No cards available</p>';
+    }
+
+    // Group cards by type
+    const groupedCards = deck.reduce((groups, card) => {
+        const type = card.type || card.extCardType || 'Unknown';
+        if (!groups[type]) {
+            groups[type] = [];
+        }
+        groups[type].push(card);
+        return groups;
+    }, {});
+
+    let html = '';
+    
+    // Sort types for consistent display
+    const typeOrder = ['Site', 'Minion', 'Magic', 'Artifact', 'Aura', 'Unknown'];
+    const sortedTypes = Object.keys(groupedCards).sort((a, b) => {
+        const aIndex = typeOrder.indexOf(a);
+        const bIndex = typeOrder.indexOf(b);
+        return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+    });
+
+    sortedTypes.forEach(type => {
+        const cards = groupedCards[type];
+        html += `<div class="card-type-group">`;
+        html += `<h5 class="card-type-header">${type}s (${cards.length})</h5>`;
+        html += `<div class="card-list">`;
+        
+        cards.forEach(card => {
+            const cardName = card.name || card.cleanName || 'Unknown Card';
+            const cardCost = card.cost !== undefined ? card.cost : 
+                           card.extCost !== undefined ? card.extCost : '?';
+            const cardElement = card.element || card.extElement || '';
+            
+            html += `<div class="deck-card">`;
+            html += `<span class="card-cost">${cardCost}</span>`;
+            html += `<span class="card-name">${cardName}</span>`;
+            if (cardElement) {
+                html += `<span class="card-element">${cardElement}</span>`;
+            }
+            html += `</div>`;
+        });
+        
+        html += `</div>`; // close card-list
+        html += `</div>`; // close card-type-group
+    });
+    
+    return html;
+}
