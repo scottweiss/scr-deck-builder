@@ -15,7 +15,7 @@ export const CSV_FILES = [
 ];
 
 // Output files
-export const OUTPUT_DATA_FILE = path.join(PROCESSED_DATA_DIR, 'sorceryCards.data.js');
+export const OUTPUT_DATA_FILE = path.join(PROCESSED_DATA_DIR, 'sorceryCards.compressed.js');
 export const OUTPUT_OPTIMIZED_FILE = path.join(PROCESSED_DATA_DIR, 'sorceryCards.generated.js');
 export const OUTPUT_DOC_FILE = path.join(PROCESSED_DATA_DIR, 'CARD_DATA.md');
 
