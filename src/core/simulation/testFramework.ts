@@ -1,4 +1,4 @@
-import { GameStateManager, GameState, Player, GamePhase } from './gameState';
+import { GameStateManager, GameState, Player, GamePhase, Unit } from './gameState';
 import { TurnEngine } from './turnEngine';
 import { AIEngine, AI_STRATEGIES } from './aiEngine';
 import { CombatSystem } from './combatSystem';
@@ -562,28 +562,47 @@ export class SimulationTestFramework {
   private createMockGameState(): GameState {
     const mockPlayer: Player = {
       id: 'player1',
+      avatar: {} as Unit, // Mock avatar unit
       life: 20,
+      maxLife: 20,
+      atDeathsDoor: false,
       mana: 0,
       hand: {
         spells: [],
         sites: []
       },
-      deck: [],
-      graveyard: [],
-      inPlay: []
+      decks: {
+        spellbook: [],
+        atlas: []
+      },
+      cemetery: [],
+      controlledSites: [],
+      elementalAffinity: {
+        air: 0,
+        earth: 0,
+        fire: 0,
+        water: 0
+      }
     };
 
     return {
       turn: 1,
-      phase: 'start' as any,
+      phase: {
+        type: 'start' as any,
+        step: 1,
+        activePlayer: 'player1'
+      },
       grid: Array(5).fill(null).map(() => Array(4).fill(null)),
       players: {
         player1: mockPlayer,
         player2: { ...mockPlayer, id: 'player2' }
       },
-      currentPlayerId: 'player1',
-      winner: undefined,
-      gameLog: []
+      units: new Map(),
+      artifacts: new Map(),
+      sites: new Map(),
+      storyline: [],
+      gameOver: false,
+      firstPlayer: 'player1'
     };
   }
 }
