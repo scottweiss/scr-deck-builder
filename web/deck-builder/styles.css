@@ -368,3 +368,53 @@ footer {
 .element-earth { color: #27ae60; }
 .element-air { color: #9b59b6; }
 .element-void { color: #34495e; }
+
+/* Element Checkbox Styles */
+.element-selector {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 0.5rem;
+}
+
+.element-selector legend {
+    font-weight: 600;
+    padding: 0 10px;
+    color: var(--primary-color);
+}
+
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 0.5rem;
+}
+
+.element-checkbox {
+    display: flex;
+    align-items: center;
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+}
+
+.element-checkbox:hover {
+    background: #e9ecef;
+}
+
+.element-checkbox input[type="checkbox"] {
+    margin-right: 8px;
+    accent-color: var(--secondary-color);
+}
+
+.element-checkbox input[type="checkbox"]:checked + label {
+    font-weight: 600;
+    color: var(--secondary-color);
+}
+
+.element-checkbox label {
+    cursor: pointer;
+}

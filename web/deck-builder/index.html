@@ -30,15 +30,31 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="element">Preferred Element:</label>
-                        <select id="element" name="element">
-                            <option value="">Auto-detect</option>
-                            <option value="Water">💧 Water</option>
-                            <option value="Fire">🔥 Fire</option>
-                            <option value="Earth">🌍 Earth</option>
-                            <option value="Air">💨 Air</option>
-                            <option value="Void">🌌 Void</option>
-                        </select>
+                        <fieldset class="element-selector">
+                            <legend>Preferred Elements:</legend>
+                            <div class="checkbox-group">
+                                <div class="element-checkbox">
+                                    <input type="checkbox" id="elementWater" name="elements[]" value="Water">
+                                    <label for="elementWater">💧 Water</label>
+                                </div>
+                                <div class="element-checkbox">
+                                    <input type="checkbox" id="elementFire" name="elements[]" value="Fire">
+                                    <label for="elementFire">🔥 Fire</label>
+                                </div>
+                                <div class="element-checkbox">
+                                    <input type="checkbox" id="elementEarth" name="elements[]" value="Earth">
+                                    <label for="elementEarth">🌍 Earth</label>
+                                </div>
+                                <div class="element-checkbox">
+                                    <input type="checkbox" id="elementAir" name="elements[]" value="Air">
+                                    <label for="elementAir">💨 Air</label>
+                                </div>
+                                <div class="element-checkbox">
+                                    <input type="checkbox" id="elementVoid" name="elements[]" value="Void">
+                                    <label for="elementVoid">🌌 Void</label>
+                                </div>
+                            </div>
+                        </fieldset>
                     </div>
                 </div>
 

@@ -173,6 +173,27 @@ function buildSmartDeck(availableCards, availableSites, preferences = {}) {
     
     console.log('Building deck with preferences:', preferences);
     
+    // Select avatar based on preferences
+    let selectedAvatar = null;
+    const availableAvatars = availableCards.filter(card => card.type === 'Avatar');
+    
+    if (avatarName) {
+        // Find specific avatar by name
+        selectedAvatar = availableAvatars.find(avatar => avatar.name === avatarName);
+    }
+    
+    if (!selectedAvatar && preferredElements.length > 0) {
+        // Find avatar that matches preferred elements
+        selectedAvatar = availableAvatars.find(avatar => 
+            avatar.elements && avatar.elements.some(element => preferredElements.includes(element))
+        );
+    }
+    
+    if (!selectedAvatar && availableAvatars.length > 0) {
+        // Fallback to first available avatar
+        selectedAvatar = availableAvatars[0];
+    }
+    
     // Filter spells by preferences (exclude sites and avatars from spellbook)
     let candidateCards = availableCards.filter(card => {
         // Exclude sites and avatars from spellbook
@@ -200,6 +221,7 @@ function buildSmartDeck(availableCards, availableSites, preferences = {}) {
     return {
         spells: spells,
         sites: sites,
+        avatar: selectedAvatar,
         totalCards: spells.length + sites.length
     };
 }
@@ -455,6 +477,7 @@ class RealSorceryDeckBuilder {
         return {
             spells: deckResult.spells,
             sites: deckResult.sites,
+            avatar: deckResult.avatar,
             stats: stats,
             cardCount: this.cards.length,
             sitesCount: this.sites.length,
@@ -463,11 +486,19 @@ class RealSorceryDeckBuilder {
     }
     
     /**
-     * Get available avatars
+     * Get available avatars, optionally filtered by elements
      */
-    async getAvatars() {
+    async getAvatars(elements = []) {
         await this.loadCardData();
-        return this.avatars;
+        
+        if (elements.length === 0) {
+            return this.avatars;
+        }
+        
+        // Filter avatars by elements
+        return this.avatars.filter(avatar => 
+            avatar.elements && avatar.elements.some(element => elements.includes(element))
+        );
     }
     
     /**

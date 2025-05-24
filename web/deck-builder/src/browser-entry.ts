@@ -46,6 +46,7 @@ export class BrowserDeckBuilder {
    * Build a deck with the specified options
    */
   async buildDeck(options: {
+    preferredElements?: Element[];
     preferredElement?: Element;
     archetype?: string;
     avatar?: string;
@@ -62,7 +63,12 @@ export class BrowserDeckBuilder {
     const { uniqueCards, avatars, sites, minions, artifacts, auras, magics, keywords, elements } = cardData;
 
     // Select avatar using existing function
-    const avatarResult = selectAvatar(avatars, elements, keywords, uniqueCards, options.preferredElement);
+    // Use the first preferred element if multiple are provided, or use the single preferredElement
+    const preferredElement = options.preferredElements && options.preferredElements.length > 0 
+      ? options.preferredElements[0] as Element
+      : options.preferredElement;
+      
+    const avatarResult = selectAvatar(avatars, elements, keywords, uniqueCards, preferredElement);
     const selectedAvatar = avatarResult.selectedAvatar;
 
     // Build deck using existing deck builder
@@ -74,7 +80,8 @@ export class BrowserDeckBuilder {
       sites,
       uniqueCards,
       avatar: selectedAvatar,
-      preferredElement: options.preferredElement,
+      preferredElement: preferredElement,
+      preferredElements: options.preferredElements,
       maxCards: 50
     });
 
@@ -102,10 +109,20 @@ export class BrowserDeckBuilder {
 
   /**
    * Get available avatars
+   * @param elements Optional array of preferred elements to filter avatars by
    */
-  async getAvatars(): Promise<Card[]> {
+  async getAvatars(elements?: Element[]): Promise<Card[]> {
     await this.initialize();
-    return this.cards.filter(card => card.type === 'Avatar');
+    let avatars = this.cards.filter(card => card.type === CardType.Avatar);
+    
+    // Filter by preferred elements if specified
+    if (elements && elements.length > 0) {
+      avatars = avatars.filter(avatar => 
+        avatar.elements.some(element => elements.includes(element))
+      );
+    }
+    
+    return avatars;
   }
 
   /**

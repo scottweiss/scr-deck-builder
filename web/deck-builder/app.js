@@ -10,7 +10,7 @@
         loading: document.getElementById('loading'),
         form: document.getElementById('deckBuilderForm'),
         avatarSelect: document.getElementById('avatar'),
-        elementSelect: document.getElementById('element'),
+        elementCheckboxes: document.querySelectorAll('input[name="elements[]"]'),
         archetypeSelect: document.getElementById('archetype'),
         buildButton: document.getElementById('buildButton'),
         error: document.getElementById('error'),
@@ -85,7 +85,19 @@
     // Populate avatars dropdown
     async function populateAvatars() {
         try {
-            const avatars = await deckBuilder.getAvatars();
+            // Get currently selected elements
+            const selectedElements = [];
+            elements.elementCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selectedElements.push(checkbox.value);
+                }
+            });
+            
+            // Get avatars filtered by selected elements if any
+            const avatars = await deckBuilder.getAvatars(
+                selectedElements.length > 0 ? selectedElements : undefined
+            );
+            
             elements.avatarSelect.innerHTML = '<option value="">Select an Avatar</option>';
             
             avatars.forEach(avatar => {
@@ -137,8 +149,17 @@
             hideError();
 
             const formData = new FormData(elements.form);
+            
+            // Get all selected elements from checkboxes
+            const selectedElements = [];
+            elements.elementCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selectedElements.push(checkbox.value);
+                }
+            });
+            
             const preferences = {
-                preferredElements: formData.get('element') ? [formData.get('element')] : [],
+                preferredElements: selectedElements,
                 preferredArchetype: formData.get('archetype') || 'Midrange',
                 avatarName: formData.get('avatar') || null
             };
@@ -150,6 +171,7 @@
             currentDeck = {
                 spells: result.spells,
                 sites: result.sites,
+                avatar: result.avatar,
                 stats: result.stats,
                 summary: {
                     totalCards: result.stats.totalCards,
@@ -215,7 +237,7 @@
         displayValidationResults(result.validation);
         
         // Display avatar (none for now since we don't have avatar selection working)
-        displayAvatarInfo(null);
+        displayAvatarInfo(result.avatar);
         
         // Display sites with actual site cards
         displaySites(result.sitesList);
@@ -429,11 +451,23 @@
         }
     }
 
+    // Set up element checkbox events
+    function setupElementCheckboxes() {
+        elements.elementCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                populateAvatars(); // Update avatars based on selected elements
+            });
+        });
+    }
+    
     // Event listeners
     elements.form.addEventListener('submit', handleBuildDeck);
     elements.exportJson.addEventListener('click', exportAsJson);
     elements.exportText.addEventListener('click', exportAsText);
     elements.copyDeckList.addEventListener('click', copyDeckList);
+    
+    // Setup element checkbox events
+    setupElementCheckboxes();
 
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', () => {

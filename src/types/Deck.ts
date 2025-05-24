@@ -29,6 +29,7 @@ export interface DeckBuildOptions {
   avatar?: Card;
   allocation?: CardAllocation;
   preferredElement?: Element;
+  preferredElements?: Element[];
   preferredArchetype?: string;
   maxCards?: number;
   enforceRules?: boolean;

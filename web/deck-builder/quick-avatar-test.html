@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Avatar Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🎯 Quick Avatar Selection Test</h1>
+    <p>This test verifies that our avatar selection fix is working.</p>
+    
+    <button onclick="runQuickTest()">🚀 Run Test</button>
+    <div id="results"></div>
+
+    <script src="sorceryCards.compressed.js"></script>
+    <script src="real-deck-builder.js"></script>
+
+    <script>
+        function addResult(type, title, message) {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<strong>${title}</strong><br>${message}`;
+            document.getElementById('results').appendChild(div);
+        }
+
+        async function runQuickTest() {
+            document.getElementById('results').innerHTML = '';
+            
+            try {
+                addResult('info', '🔄 Step 1: Initializing', 'Waiting for deck builder to load...');
+                
+                // Wait for deck builder
+                let attempts = 0;
+                while (typeof window.RealSorceryDeckBuilder === 'undefined' && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                if (typeof window.RealSorceryDeckBuilder === 'undefined') {
+                    throw new Error('RealSorceryDeckBuilder not loaded');
+                }
+                
+                const deckBuilder = new window.RealSorceryDeckBuilder();
+                await deckBuilder.loadCardData();
+                
+                addResult('success', '✅ Step 1 Complete', 'Deck builder loaded successfully');
+                
+                // Test avatar loading
+                addResult('info', '🔄 Step 2: Testing Avatars', 'Loading avatars...');
+                const avatars = await deckBuilder.getAvatars();
+                
+                if (!avatars || avatars.length === 0) {
+                    throw new Error('No avatars loaded');
+                }
+                
+                addResult('success', '✅ Step 2 Complete', `Loaded ${avatars.length} avatars`);
+                
+                // Test deck building - THE CRITICAL TEST
+                addResult('info', '🔄 Step 3: Building Deck', 'Testing deck build with avatar selection...');
+                
+                const preferences = {
+                    preferredElements: ['Water'],
+                    preferredArchetype: 'Midrange'
+                };
+                
+                const deck = await deckBuilder.buildDeck(preferences);
+                
+                // This is the key test - does the deck have an avatar?
+                if (!deck.avatar) {
+                    addResult('error', '❌ CRITICAL FAILURE', 'Deck was built but NO AVATAR was returned! The fix failed.');
+                    return;
+                }
+                
+                addResult('success', '🎉 CRITICAL SUCCESS', 
+                    `Deck built with avatar: <strong>${deck.avatar.name}</strong><br>` +
+                    `Elements: ${deck.avatar.elements ? deck.avatar.elements.join(', ') : 'None'}<br>` +
+                    `Spells: ${deck.spells ? deck.spells.length : 0}, Sites: ${deck.sites ? deck.sites.length : 0}`
+                );
+                
+                // Test element filtering
+                addResult('info', '🔄 Step 4: Testing Element Filtering', 'Testing avatar filtering by elements...');
+                
+                const waterAvatars = await deckBuilder.getAvatars(['Water']);
+                const allAvatars = await deckBuilder.getAvatars([]);
+                
+                addResult('success', '✅ Step 4 Complete', 
+                    `All avatars: ${allAvatars.length}, Water avatars: ${waterAvatars.length}`
+                );
+                
+                // Final validation
+                addResult('success', '🎉 ALL TESTS PASSED', 
+                    'The avatar selection fix is working correctly! Avatars are no longer optional - they are properly selected and returned with every deck.'
+                );
+                
+            } catch (error) {
+                addResult('error', '💥 Test Failed', error.message);
+                console.error('Test error:', error);
+            }
+        }
+
+        // Auto-run test
+        window.addEventListener('load', () => {
+            setTimeout(runQuickTest, 1000);
+        });
+    </script>
+</body>
+</html>

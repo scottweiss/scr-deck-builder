@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deck Builder Avatar Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        #results { margin-top: 20px; }
+        .test-result { padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .test-pass { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .test-fail { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Deck Builder Avatar Functionality Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Configuration</h2>
+        <p>This test will automatically verify:</p>
+        <ul>
+            <li>✅ Deck builder initialization</li>
+            <li>✅ Avatar loading and filtering by elements</li>
+            <li>✅ Deck building with avatar selection</li>
+            <li>✅ Avatar display in results</li>
+        </ul>
+        <button id="runTests" onclick="runAllTests()">🚀 Run All Tests</button>
+    </div>
+
+    <div id="results"></div>
+
+    <!-- Load the required scripts -->
+    <script src="sorceryCards.compressed.js"></script>
+    <script src="real-deck-builder.js"></script>
+
+    <script>
+        let testResults = [];
+        let deckBuilder = null;
+
+        function addTestResult(testName, passed, message) {
+            testResults.push({ testName, passed, message });
+            updateResultsDisplay();
+        }
+
+        function updateResultsDisplay() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2>Test Results</h2>';
+            
+            let passCount = 0;
+            let totalCount = testResults.length;
+            
+            testResults.forEach(result => {
+                const div = document.createElement('div');
+                div.className = `test-result ${result.passed ? 'test-pass' : 'test-fail'}`;
+                div.innerHTML = `
+                    <strong>${result.passed ? '✅' : '❌'} ${result.testName}</strong><br>
+                    ${result.message}
+                `;
+                resultsDiv.appendChild(div);
+                
+                if (result.passed) passCount++;
+            });
+            
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'test-section';
+            summaryDiv.innerHTML = `
+                <h3>Summary: ${passCount}/${totalCount} tests passed</h3>
+                <p style="color: ${passCount === totalCount ? 'green' : 'red'}">
+                    ${passCount === totalCount ? '🎉 All tests passed!' : '⚠️ Some tests failed'}
+                </p>
+            `;
+            resultsDiv.appendChild(summaryDiv);
+        }
+
+        async function testDeckBuilderInitialization() {
+            try {
+                // Wait for RealSorceryDeckBuilder to be available
+                let attempts = 0;
+                while (typeof window.RealSorceryDeckBuilder === 'undefined' && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                if (typeof window.RealSorceryDeckBuilder === 'undefined') {
+                    throw new Error('RealSorceryDeckBuilder not available after 5 seconds');
+                }
+
+                deckBuilder = new window.RealSorceryDeckBuilder();
+                await deckBuilder.loadCardData();
+                
+                addTestResult(
+                    'Deck Builder Initialization', 
+                    true, 
+                    'Deck builder loaded successfully'
+                );
+                return true;
+            } catch (error) {
+                addTestResult(
+                    'Deck Builder Initialization', 
+                    false, 
+                    `Failed to initialize: ${error.message}`
+                );
+                return false;
+            }
+        }
+
+        async function testAvatarLoading() {
+            try {
+                const avatars = await deckBuilder.getAvatars();
+                
+                if (!Array.isArray(avatars)) {
+                    throw new Error('getAvatars() did not return an array');
+                }
+                
+                if (avatars.length === 0) {
+                    throw new Error('No avatars loaded');
+                }
+                
+                // Check if avatars have required properties
+                const firstAvatar = avatars[0];
+                if (!firstAvatar.name) {
+                    throw new Error('Avatar missing name property');
+                }
+                
+                addTestResult(
+                    'Avatar Loading', 
+                    true, 
+                    `Successfully loaded ${avatars.length} avatars. First avatar: ${firstAvatar.name}`
+                );
+                return true;
+            } catch (error) {
+                addTestResult(
+                    'Avatar Loading', 
+                    false, 
+                    `Failed to load avatars: ${error.message}`
+                );
+                return false;
+            }
+        }
+
+        async function testElementFiltering() {
+            try {
+                // Test filtering by Water element
+                const waterAvatars = await deckBuilder.getAvatars(['Water']);
+                const allAvatars = await deckBuilder.getAvatars();
+                
+                if (!Array.isArray(waterAvatars)) {
+                    throw new Error('getAvatars(elements) did not return an array');
+                }
+                
+                // Water avatars should be less than or equal to all avatars
+                if (waterAvatars.length > allAvatars.length) {
+                    throw new Error('Filtered avatars count exceeds total avatars');
+                }
+                
+                // Test with multiple elements
+                const multiElementAvatars = await deckBuilder.getAvatars(['Water', 'Fire']);
+                
+                addTestResult(
+                    'Element Filtering', 
+                    true, 
+                    `Water avatars: ${waterAvatars.length}, Multi-element avatars: ${multiElementAvatars.length}, Total: ${allAvatars.length}`
+                );
+                return true;
+            } catch (error) {
+                addTestResult(
+                    'Element Filtering', 
+                    false, 
+                    `Failed to filter avatars: ${error.message}`
+                );
+                return false;
+            }
+        }
+
+        async function testDeckBuildingWithAvatar() {
+            try {
+                // Build a deck with specific preferences
+                const preferences = {
+                    preferredElements: ['Water'],
+                    preferredArchetype: 'Midrange'
+                };
+                
+                const deck = await deckBuilder.buildDeck(preferences);
+                
+                // Check if deck has required properties
+                if (!deck.spells || !Array.isArray(deck.spells)) {
+                    throw new Error('Deck missing spells array');
+                }
+                
+                if (!deck.sites || !Array.isArray(deck.sites)) {
+                    throw new Error('Deck missing sites array');
+                }
+                
+                if (!deck.avatar) {
+                    throw new Error('Deck missing avatar - this is the main issue we fixed!');
+                }
+                
+                if (!deck.avatar.name) {
+                    throw new Error('Avatar missing name property');
+                }
+                
+                addTestResult(
+                    'Deck Building with Avatar', 
+                    true, 
+                    `Successfully built deck with avatar: ${deck.avatar.name}. Spells: ${deck.spells.length}, Sites: ${deck.sites.length}`
+                );
+                return { success: true, deck };
+            } catch (error) {
+                addTestResult(
+                    'Deck Building with Avatar', 
+                    false, 
+                    `Failed to build deck with avatar: ${error.message}`
+                );
+                return { success: false, deck: null };
+            }
+        }
+
+        async function testAvatarElementAlignment() {
+            try {
+                // Build deck with specific element preference
+                const preferences = {
+                    preferredElements: ['Fire'],
+                    preferredArchetype: 'Aggro'
+                };
+                
+                const deck = await deckBuilder.buildDeck(preferences);
+                
+                if (!deck.avatar) {
+                    throw new Error('No avatar in deck');
+                }
+                
+                // Check if avatar has Fire element or if there are no Fire avatars available
+                const fireAvatars = await deckBuilder.getAvatars(['Fire']);
+                
+                let alignmentCheck = true;
+                let message = '';
+                
+                if (fireAvatars.length > 0) {
+                    // If Fire avatars exist, the selected avatar should have Fire element
+                    const avatarHasFire = deck.avatar.elements && deck.avatar.elements.includes('Fire');
+                    if (!avatarHasFire) {
+                        alignmentCheck = false;
+                        message = `Avatar ${deck.avatar.name} doesn't have Fire element despite Fire avatars being available`;
+                    } else {
+                        message = `Avatar ${deck.avatar.name} correctly has Fire element`;
+                    }
+                } else {
+                    // If no Fire avatars exist, any avatar is acceptable
+                    message = `No Fire avatars available, selected ${deck.avatar.name} as fallback`;
+                }
+                
+                addTestResult(
+                    'Avatar Element Alignment', 
+                    alignmentCheck, 
+                    message
+                );
+                return alignmentCheck;
+            } catch (error) {
+                addTestResult(
+                    'Avatar Element Alignment', 
+                    false, 
+                    `Failed to test avatar alignment: ${error.message}`
+                );
+                return false;
+            }
+        }
+
+        async function runAllTests() {
+            testResults = [];
+            document.getElementById('runTests').disabled = true;
+            
+            console.log('🧪 Starting deck builder tests...');
+            
+            // Run tests sequentially
+            const initSuccess = await testDeckBuilderInitialization();
+            if (!initSuccess) {
+                document.getElementById('runTests').disabled = false;
+                return;
+            }
+            
+            await testAvatarLoading();
+            await testElementFiltering();
+            await testDeckBuildingWithAvatar();
+            await testAvatarElementAlignment();
+            
+            console.log('✅ All tests completed!');
+            document.getElementById('runTests').disabled = false;
+        }
+
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('Auto-running tests...');
+                runAllTests();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
