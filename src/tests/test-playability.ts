@@ -6,7 +6,7 @@
  * rather than adhering strictly to ideal mana curves.
  */
 
-import * as deckBuilder from '../core/deck/deckBuilder';
+import * as deckBuilder from '../core/deck/builder/deckBuilder';
 import * as deckPlayability from '../analyses/playability/deckPlayability';
 import * as sorceryCards from '../data/processed/sorceryCards';
 import { Card, CardType } from '../types/Card';

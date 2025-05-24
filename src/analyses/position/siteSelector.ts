@@ -1,9 +1,11 @@
 /**
  * Module for selecting sites for the deck with enhanced rule compliance
+ * and proper elemental distribution
  */
 
 import { Card, Element } from '../../types/Card';
-import { filterOutRubble } from '../../utils/utils';
+import { filterOutRubble, getCardElementalAffinity } from '../../utils/utils';
+import { analyzeElementalRequirements } from './elementRequirementAnalyzer';
 
 interface SiteSelectionOptions {
     preferAggressive?: boolean;
@@ -12,25 +14,35 @@ interface SiteSelectionOptions {
 }
 
 /**
- * Identifies if a site is a water site based on water threshold icon
- * @param site - The site card
- * @returns True if it's a water site
+ * Group sites by their elemental affinities
+ * @param sites - The sites to group
+ * @returns Map of element to sites with that element
  */
-function isWaterSite(site: Card): boolean {
-    const text = (site.text || "").toLowerCase();
-    const elements = site.elements || [];
+function groupSitesByElement(sites: Card[]): Record<string, Card[]> {
+    const elementalSites: Record<string, Card[]> = {
+        Water: [],
+        Fire: [],
+        Earth: [],
+        Air: [],
+        Void: []
+    };
     
-    // Look for water element or water-related keywords
-    return elements.includes(Element.Water) || 
-           text.includes("water") || 
-           text.includes("ocean") || 
-           text.includes("sea") || 
-           text.includes("river") || 
-           text.includes("lake");
+    // Group sites by their elements
+    for (const site of sites) {
+        const elements = site.elements || [];
+        for (const element of elements) {
+            if (!elementalSites[element]) {
+                elementalSites[element] = [];
+            }
+            elementalSites[element].push(site);
+        }
+    }
+    
+    return elementalSites;
 }
 
 /**
- * Select sites for the deck with proper water/land balance
+ * Select sites for the deck with proper elemental distribution
  * @param sites - Available sites
  * @param dominantElement - The dominant element in the deck
  * @param minRequired - Minimum number of sites required (default: 30)
@@ -45,62 +57,73 @@ export function selectSites(
 ): Card[] {
     // Exclude all sites whose name includes 'Rubble'
     sites = filterOutRubble(sites);
-
+    
+    // Group sites by elemental affinity
+    const elementalSites = groupSitesByElement(sites);
+    
+    // Log detailed elemental distribution
+    console.log(`Available sites by element: ${elementalSites.Water.length} Water, ${elementalSites.Fire.length} Fire, ${elementalSites.Earth.length} Earth, ${elementalSites.Air.length} Air, ${elementalSites.Void.length} Void`);
+    
+    // Determine target ratios for each element, with dominant element getting the most
+    const elementRatios: Record<string, number> = {
+        Water: 0.2,
+        Fire: 0.2,
+        Earth: 0.2,
+        Air: 0.2,
+        Void: 0.0  // Void sites are rare and not usually necessary
+    };
+    
+    // Adjust ratios based on dominant element
+    const typedDominantElement = dominantElement as Element;
+    elementRatios[typedDominantElement] = 0.4;
+    
+    // Ensure the ratios sum to 1
+    const totalRatio = Object.values(elementRatios).reduce((sum, ratio) => sum + ratio, 0);
+    Object.keys(elementRatios).forEach(element => {
+        elementRatios[element] /= totalRatio;
+    });
+    
     const selectedSites: Card[] = [];
+    const scoredSitesByElement: Record<string, {site: Card, score: number}[]> = {};
     
-    // Separate water and land sites
-    const waterSites = sites.filter(isWaterSite);
-    const landSites = sites.filter(site => !isWaterSite(site));
-    
-    console.log(`Available sites: ${waterSites.length} water, ${landSites.length} land`);
-    
-    // Calculate optimal balance based on dominant element
-    let waterRatio = 0.3; // Default 30% water sites
-    if (dominantElement.toLowerCase() === "water") {
-        waterRatio = 0.6; // Water-focused decks need more water sites
-    } else if (dominantElement.toLowerCase() === "fire" || dominantElement.toLowerCase() === "earth") {
-        waterRatio = 0.2; // Land-focused elements prefer fewer water sites
-    }
-    
-    const targetWaterSites = Math.round(minRequired * waterRatio);
-    const targetLandSites = minRequired - targetWaterSites;
-    
-    console.log(`Target site distribution: ${targetWaterSites} water, ${targetLandSites} land`);
-    
-    // Sort sites by score for selection
-    const scoredWaterSites = waterSites
-        .map(site => ({ site, score: calculateSiteScore(site, dominantElement) }))
-        .sort((a, b) => b.score - a.score);
-    
-    const scoredLandSites = landSites
-        .map(site => ({ site, score: calculateSiteScore(site, dominantElement) }))
-        .sort((a, b) => b.score - a.score);
-    
-    // Select water sites
-    const actualWaterSites = Math.min(targetWaterSites, scoredWaterSites.length);
-    for (let i = 0; i < actualWaterSites; i++) {
-        selectedSites.push(scoredWaterSites[i].site);
-    }
-    
-    // Select land sites
-    const actualLandSites = Math.min(targetLandSites, scoredLandSites.length);
-    for (let i = 0; i < actualLandSites; i++) {
-        selectedSites.push(scoredLandSites[i].site);
-    }
-    
-    // If we don't have enough sites, fill remaining slots with best available
-    const remaining = minRequired - selectedSites.length;
-    if (remaining > 0) {
-        const remainingSites = sites.filter(site => !selectedSites.includes(site))
+    // Score sites for each element
+    Object.keys(elementalSites).forEach(element => {
+        scoredSitesByElement[element] = elementalSites[element]
             .map(site => ({ site, score: calculateSiteScore(site, dominantElement) }))
             .sort((a, b) => b.score - a.score);
+    });
+    
+    // First, add a base amount of each element
+    Object.keys(elementRatios).forEach(element => {
+        const targetCount = Math.round(minRequired * elementRatios[element]);
+        const availableSites = scoredSitesByElement[element] || [];
+        const sitesToAdd = Math.min(targetCount, availableSites.length);
         
-        for (let i = 0; i < Math.min(remaining, remainingSites.length); i++) {
-            selectedSites.push(remainingSites[i].site);
+        for (let i = 0; i < sitesToAdd; i++) {
+            if (availableSites[i] && !selectedSites.includes(availableSites[i].site)) {
+                selectedSites.push(availableSites[i].site);
+            }
+        }
+    });
+    
+    // If we haven't met the minimum required sites, add more based on score
+    if (selectedSites.length < minRequired) {
+        const remaining = minRequired - selectedSites.length;
+        const allScoredSites = sites
+            .filter(site => !selectedSites.includes(site))
+            .map(site => ({ site, score: calculateSiteScore(site, dominantElement) }))
+            .sort((a, b) => b.score - a.score);
+            
+        for (let i = 0; i < Math.min(remaining, allScoredSites.length); i++) {
+            selectedSites.push(allScoredSites[i].site);
         }
     }
     
+    // Log detailed elemental distribution of selected sites
+    const selectedElementalSites = groupSitesByElement(selectedSites);
+    console.log(`Selected sites by element: ${selectedElementalSites.Water.length} Water, ${selectedElementalSites.Fire.length} Fire, ${selectedElementalSites.Earth.length} Earth, ${selectedElementalSites.Air.length} Air, ${selectedElementalSites.Void.length} Void`);
     console.log(`Selected ${selectedSites.length} sites total`);
+    
     return selectedSites;
 }
 

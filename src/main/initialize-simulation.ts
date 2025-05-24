@@ -1,5 +1,5 @@
 import { GameStateManager, GameEvent } from '../core/simulation/gameState';
-import { buildSpellbook, buildCompleteDeck } from '../core/deck/deckBuilder';
+import { buildSpellbook, buildCompleteDeck } from '../core/deck/builder/deckBuilder';
 import { SimulationTestFramework } from '../core/simulation/testFramework';
 import { Card } from '../types/Card';
 import { PlayerDeck } from '../types/Deck';

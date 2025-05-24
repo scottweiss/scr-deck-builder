@@ -1,4 +1,4 @@
-import { Card } from '../../types/Card';
+import { Card } from '../../../types/Card';
 
 /**
  * Interface for mana curve adjustments

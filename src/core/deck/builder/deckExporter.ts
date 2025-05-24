@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { Card } from '../../types/Card';
-import { Deck } from '../../types/Deck';
+import { Card } from '../../../types/Card';
+import { Deck } from '../../../types/Deck';
 
 interface ExportData {
     avatar: {

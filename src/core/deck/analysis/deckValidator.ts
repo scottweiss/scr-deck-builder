@@ -1,6 +1,6 @@
-import { Card, CardRarity } from '../../types/Card';
-import { DeckValidationResult } from '../../types/Deck';
-import { getMaxCopiesForRarity } from './deckOptimizer';
+import { Card, CardRarity } from '../../../types/Card';
+import { DeckValidationResult } from '../../../types/Deck';
+import { getMaxCopiesForRarity } from '../optimization/deckOptimizer';
 
 /**
  * Validates a complete deck according to official Sorcery: Contested Realm rules

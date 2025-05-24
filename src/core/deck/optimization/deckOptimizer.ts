@@ -1,17 +1,28 @@
-import { Card } from '../../types/Card';
-import { calculateSynergy } from '../../analyses/synergy/synergyCalculator';
-import { evaluateRegionalStrategy } from '../cards/cardAnalysis';
-import { analyzeElementalRequirements } from '../../analyses/position/elementRequirementAnalyzer';
+import { Card } from '../../../types/Card';
+import { calculateSynergy } from '../../../analyses/synergy/synergyCalculator';
+import { identifyCardMechanics, canIncludeWithAvatar, evaluateRegionalStrategy } from '../../cards/cardAnalysis';
+import { analyzeElementalRequirements, calculateElementalDeficitContribution } from '../../../analyses/position/elementRequirementAnalyzer';
 
-// Import our new modular functions
-import { CopiesInDeck } from './rarityManager';
+// Import modular functions
+import { 
+    getMaxCopiesForRarity, 
+    addCardWithCopies, 
+    enforceRarityLimits,
+    CopiesInDeck 
+} from '../allocation/rarityManager';
+
 import {
     getIdealManaCurve,
     calculateCurrentCurve,
     getCriticalManaCosts,
     calculateManaCurveAdjustments,
-    getPriorityCosts
-} from './manaCurveAnalyzer';
+    getPriorityCosts,
+    ManaCurveAdjustments,
+    IdealManaCurve,
+    ManaCostDistribution,
+    CriticalManaCosts
+} from '../analysis/manaCurveAnalyzer';
+
 import {
     findCandidatesOfCost,
     sortCardsByStrategicValue,
@@ -19,7 +30,11 @@ import {
     addCardsRespectingRarity,
     removeCardsStrategically
 } from './cardSelector';
-import { logDeckPlayabilityAnalysis } from './deckAnalyzer';
+
+import { logDeckPlayabilityAnalysis } from '../analysis/deckAnalyzer';
+
+// Re-export functions for backward compatibility
+export { getMaxCopiesForRarity, addCardWithCopies, enforceRarityLimits };
 
 /**
  * Optimize a deck based on various strategic factors
@@ -37,14 +52,16 @@ export function optimizeDeck(
     artifacts: Card[],
     auras: Card[],
     magics: Card[],
-    preferredArchetype?: string
+    preferredArchetype?: string,
+    sites: Card[] = [] // Add optional sites parameter
 ): Card[] {
     // Get synergy calculator and card combo system
     const synergyCalculator = require('../../analyses/synergy/synergyCalculator');
     const cardCombos = require('../cards/cardCombos');
     
+    // ENHANCEMENT: Analyze elemental requirements first
     console.log("Analyzing elemental requirements and thresholds...");
-    const elementalAnalysis = analyzeElementalRequirements(selectedSpells, []); // Pass empty sites array since not available in this context
+    const elementalAnalysis = analyzeElementalRequirements(selectedSpells, sites); // Pass provided sites for elemental affinity
     const hasElementDeficiencies = Object.keys(elementalAnalysis.elementDeficiencies || {}).length > 0;
     
     if (hasElementDeficiencies) {
@@ -86,24 +103,24 @@ export function optimizeDeck(
     // Use the preferred archetype if specified, otherwise use the detected one
     const primaryArchetype = preferredArchetype || (topArchetypes.length > 0 ? topArchetypes[0] : null);
     
-    // Get ideal mana curve based on archetype
+    // Get ideal mana curve based on archetype using modular function
     const idealCurve = getIdealManaCurve(primaryArchetype);
     
     if (primaryArchetype) {
         console.log(`Optimizing for ${primaryArchetype} archetype`);
     }
 
-    // Calculate current mana curve and required adjustments
+    // Calculate current mana curve and required adjustments using modular functions
     const currentCurve = calculateCurrentCurve(selectedSpells);
     const criticalManaCosts = getCriticalManaCosts();
     const adjustments = calculateManaCurveAdjustments(currentCurve, criticalManaCosts);
     
     console.log("Analyzing deck playability by mana cost...");
-
+    
     // Start with current spells and make adjustments
     let optimizedSpells = [...selectedSpells];
 
-    // Remove cards from severely overcrowded costs
+    // Remove cards from severely overcrowded costs using modular function
     for (const [cost, adjustment] of Object.entries(adjustments)) {
         if (adjustment < 0) {
             optimizedSpells = removeCardsStrategically(
@@ -118,7 +135,7 @@ export function optimizeDeck(
     // Prepare candidates for addition
     const allCandidates = [...minions, ...artifacts, ...auras, ...magics];
     
-    // Get priority order for adding cards
+    // Get priority order for adding cards using modular function
     const priorityCosts = getPriorityCosts(adjustments);
     
     console.log("Adding cards in priority order:", priorityCosts.map(c => c[0]).join(", "));
@@ -127,7 +144,7 @@ export function optimizeDeck(
     for (const [cost, adjustment] of priorityCosts) {
         const adjustedCost = Math.min(parseInt(cost), 7);
         
-        // Find candidates of this cost
+        // Find candidates of this cost using modular function
         let candidates = findCandidatesOfCost(
             allCandidates,
             adjustedCost,
@@ -135,20 +152,21 @@ export function optimizeDeck(
             adjustment
         );
 
-        // Sort candidates by strategic value
-        candidates = sortCardsByStrategicValue(candidates, optimizedSpells);
+        // Sort candidates by strategic value using modular function
+        candidates = sortCardsByStrategicValue(candidates, optimizedSpells, sites);
 
-        // Add the best candidates while respecting rarity limits
+        // Add the best candidates while respecting rarity limits using modular function
         optimizedSpells = addCardsRespectingRarity(candidates, optimizedSpells, adjustment);
     }
 
-    // Apply regional strategy prioritization
+    // Apply regional strategy prioritization using modular function
     const strategy = evaluateRegionalStrategy(selectedSpells);
     if (strategy !== "mixed") {
         const strategySortedCandidates = sortCardsByRegionalStrategy(
             allCandidates,
             optimizedSpells,
-            strategy
+            strategy,
+            sites
         );
         
         console.log(`Applying ${strategy} regional strategy prioritization`);
@@ -158,7 +176,7 @@ export function optimizeDeck(
     // Ensure we don't exceed 50 cards
     const finalDeck = optimizedSpells.slice(0, 50);
     
-    // Log final analysis
+    // Log final analysis using modular function
     logDeckPlayabilityAnalysis(finalDeck);
     
     return finalDeck;

@@ -67,6 +67,7 @@ async function buildDeckInternal(): Promise<void> {
             auras,
             magics,
             uniqueCards,
+            sites: selectedSites, // Pass selected sites to calculate proper elemental affinity
             avatar: selectedAvatar,
             preferredArchetype: options.preferredArchetype
         });

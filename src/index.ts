@@ -11,8 +11,8 @@ const sorceryCards = require('./data/processed/sorceryCards');
 
 const cardAnalysis = require('./core/cards/cardAnalysis');
 const synergyCalculator = require('./analyses/synergy/synergyCalculator');
-const deckBuilder = require('./core/deck/deckBuilder');
-const deckValidator = require('./core/deck/deckValidator');
+const deckBuilder = require('./core/deck/builder/deckBuilder');
+const deckValidator = require('./core/deck/analysis/deckValidator');
 const elementAnalyzer = require('./analyses/position/elementRequirementAnalyzer');
 
 // Export the commonly used modules

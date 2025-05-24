@@ -1,21 +1,21 @@
-import { Card, CardAllocation, Element } from '../../types/Card';
-import { DeckBuildOptions, Deck, DeckMetadata } from '../../types/Deck';
-import * as synergyCalculator from '../../analyses/synergy/synergyCalculator';
-import * as deckOptimizer from './deckOptimizer';
-import * as elementAnalyzer from '../../analyses/position/elementRequirementAnalyzer';
-import * as deckPlayability from '../../analyses/playability/deckPlayability';
-import { calculateCardAllocation } from './cardAllocation';
-import { analyzeCardCombos } from './comboDetection';
-import { isUtilityArtifact, sortArtifactsWithUtilityPriority } from './utilityArtifactPrioritizer';
+import { Card, CardAllocation, Element } from '../../../types/Card';
+import { DeckBuildOptions, Deck, DeckMetadata } from '../../../types/Deck';
+import * as synergyCalculator from '../../../analyses/synergy/synergyCalculator';
+import * as deckOptimizer from '../optimization/deckOptimizer';
+import * as elementAnalyzer from '../../../analyses/position/elementRequirementAnalyzer';
+import * as deckPlayability from '../../../analyses/playability/deckPlayability';
+import { calculateCardAllocation } from '../allocation/cardAllocation';
+import { analyzeCardCombos } from '../analysis/comboDetection';
+import { isUtilityArtifact, sortArtifactsWithUtilityPriority } from '../allocation/utilityArtifactPrioritizer';
 import { completeDeckWithSynergyCards, addElementalFixingCards } from './deckCompletion';
 import { isComboCard, sortMinions, sortAuras, sortMagics } from './cardSorting';
 import { selectMinions, selectAuras, selectMagics } from './cardSelection';
-import { Combo } from '../cards/cardCombos';
+import { Combo } from '../../cards/cardCombos';
 
 // Re-export functions for backward compatibility
-export { calculateCardAllocation } from './cardAllocation';
-export { analyzeCardCombos } from './comboDetection';
-export { isUtilityArtifact, sortArtifactsWithUtilityPriority } from './utilityArtifactPrioritizer';
+export { calculateCardAllocation } from '../allocation/cardAllocation';
+export { analyzeCardCombos } from '../analysis/comboDetection';
+export { isUtilityArtifact, sortArtifactsWithUtilityPriority } from '../allocation/utilityArtifactPrioritizer';
 export { completeDeckWithSynergyCards, addElementalFixingCards } from './deckCompletion';
 export { isComboCard, sortMinions, sortAuras, sortMagics } from './cardSorting';
 export { selectMinions, selectAuras, selectMagics } from './cardSelection';
@@ -52,7 +52,8 @@ export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
     magics,
     uniqueCards,
     avatar,
-    allocation = {} as CardAllocation
+    allocation = {} as CardAllocation,
+    sites = [] // Extract sites, default to empty array if not provided
   } = options;
 
   // Set default allocations if not provided
@@ -162,7 +163,7 @@ export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
   selectedSpells = magicResult.updatedDeck;
 
   // ENHANCEMENT: Analyze elemental requirements and add fixing cards if needed
-  const elementalAnalysis = (elementAnalyzer as any).analyzeElementalRequirements(selectedSpells, []); // Pass empty sites array since not available in this context
+  const elementalAnalysis = (elementAnalyzer as any).analyzeElementalRequirements(selectedSpells, sites); // Pass actual sites to calculate elemental affinity
   const hasElementDeficiencies = Object.keys(elementalAnalysis.elementDeficiencies || {}).length > 0;
 
   if (hasElementDeficiencies) {
@@ -204,7 +205,7 @@ export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
 
   // Optimize the deck
   console.log("Running deck optimization...");
-  selectedSpells = (deckOptimizer as any).optimizeDeck(selectedSpells, minions, artifacts, auras, magics, options.preferredArchetype);
+  selectedSpells = (deckOptimizer as any).optimizeDeck(selectedSpells, minions, artifacts, auras, magics, options.preferredArchetype, sites);
 
   // Calculate final synergy
   const totalSynergy = selectedSpells.reduce((sum: number, card: Card) => 
@@ -232,8 +233,8 @@ export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
 export function buildCompleteDeck(options: DeckBuildOptions): Deck {
   const spellbookResult = buildSpellbook(options);
   
-  // TODO: Implement site selection logic
-  const sites: Card[] = [];
+  // Use provided sites or default to empty array
+  const sites: Card[] = options.sites || [];
   
   const metadata: DeckMetadata = {
     name: `Generated Deck`,

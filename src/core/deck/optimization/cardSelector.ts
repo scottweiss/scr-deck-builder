@@ -1,10 +1,10 @@
-import { Card } from '../../types/Card';
-import { calculateSynergy } from '../../analyses/synergy/synergyCalculator';
-import { identifyCardMechanics, canIncludeWithAvatar, evaluateRegionalStrategy } from '../cards/cardAnalysis';
-import { analyzeElementalRequirements, calculateElementalDeficitContribution } from '../../analyses/position/elementRequirementAnalyzer';
-import { getMaxCopiesForRarity } from './rarityManager';
-import { debugElementalThresholds } from '../simulation/metaTester';
-import { getCardThreshold } from '../../utils/utils'; // Added import
+import { Card } from '../../../types/Card';
+import { calculateSynergy } from '../../../analyses/synergy/synergyCalculator';
+import { identifyCardMechanics, canIncludeWithAvatar, evaluateRegionalStrategy } from '../../cards/cardAnalysis';
+import { analyzeElementalRequirements, calculateElementalDeficitContribution } from '../../../analyses/position/elementRequirementAnalyzer';
+import { getMaxCopiesForRarity } from './deckOptimizer';
+import { debugElementalThresholds } from '../../simulation/metaTester';
+import { getCardThreshold } from '../../../utils/utils'; // Added import
 
 /**
  * Find candidate cards of a specific mana cost
@@ -68,7 +68,7 @@ export function findCandidatesOfCost(
  * @param currentDeck Current deck composition
  * @returns Sorted cards (best first)
  */
-export function sortCardsByStrategicValue(candidates: Card[], currentDeck: Card[]): Card[] {
+export function sortCardsByStrategicValue(candidates: Card[], currentDeck: Card[], sites: Card[] = []): Card[] {
     // Debugging elemental thresholds before analysis
     if (currentDeck && currentDeck.length > 0) {
         console.log("Debugging elemental thresholds for currentDeck in sortCardsByStrategicValue (using getCardThreshold):");
@@ -88,7 +88,7 @@ export function sortCardsByStrategicValue(candidates: Card[], currentDeck: Card[
         const bPowerValue = (b.power || 0) / Math.max(b.mana_cost || 1, 1);
         
         // Consider elemental deficiency contribution
-        const elementalAnalysis = analyzeElementalRequirements(currentDeck, []); // Pass empty sites array since not available in this context
+        const elementalAnalysis = analyzeElementalRequirements(currentDeck, sites); // Pass provided sites for proper elemental affinity
         const aElementalScore = calculateElementalDeficitContribution(a, elementalAnalysis) * 2; // Higher weight
         const bElementalScore = calculateElementalDeficitContribution(b, elementalAnalysis) * 2;
         
@@ -124,12 +124,14 @@ export function sortCardsByStrategicValue(candidates: Card[], currentDeck: Card[
  * @param candidates Available cards
  * @param currentDeck Current deck composition
  * @param strategy Regional strategy to prioritize
+ * @param sites Optional sites to use for elemental analysis
  * @returns Sorted cards
  */
 export function sortCardsByRegionalStrategy(
     candidates: Card[],
     currentDeck: Card[],
-    strategy: string
+    strategy: string,
+    sites: Card[] = []
 ): Card[] {
     if (strategy === "mixed") {
         return candidates;

@@ -1,5 +1,5 @@
-import { Card } from '../../types/Card';
-import { Combo } from '../cards/cardCombos';
+import { Card } from '../../../types/Card';
+import { Combo } from '../../cards/cardCombos';
 
 /**
  * High-value utility artifacts that should be prioritized

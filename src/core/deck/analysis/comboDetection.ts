@@ -1,5 +1,5 @@
-import { Card } from '../../types/Card';
-import { Combo, identifyCardCombos } from '../cards/cardCombos';
+import { Card } from '../../../types/Card';
+import { Combo, identifyCardCombos } from '../../cards/cardCombos';
 
 export interface ComboAnalysisResult {
     availableCombos: Combo[];

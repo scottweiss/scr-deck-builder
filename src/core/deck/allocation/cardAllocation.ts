@@ -1,5 +1,5 @@
-import { CardAllocation } from '../../types/Card';
-import { Combo } from '../cards/cardCombos';
+import { CardAllocation } from '../../../types/Card';
+import { Combo } from '../../cards/cardCombos';
 
 export interface AllocationResult {
     allocation: CardAllocation;

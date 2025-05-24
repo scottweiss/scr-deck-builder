@@ -1,5 +1,5 @@
-import { Card } from '../../types/Card';
-import { canIncludeWithAvatar } from '../cards/cardAnalysis';
+import { Card } from '../../../types/Card';
+import { canIncludeWithAvatar } from '../../cards/cardAnalysis';
 
 /**
  * Interface for tracking card copies in deck
