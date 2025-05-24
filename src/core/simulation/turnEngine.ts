@@ -202,7 +202,8 @@ export class TurnEngine {
         type: 'site_play',
         activePlayer: action.playerId,
         description: `${action.playerId} plays ${site.name} at (${position.x}, ${position.y})`,
-        targetPosition: position
+        targetPosition: position,
+        resolved: false
       });
 
       this.turnHistory.push(action);
@@ -249,7 +250,8 @@ export class TurnEngine {
       description: `${caster.card.name} casts ${spell.name}`,
       sourceUnit: casterId,
       targetPosition: target?.position,
-      targetUnit: target?.unitId
+      targetUnit: target?.unitId,
+      resolved: false
     });
 
     this.turnHistory.push(action);
@@ -277,7 +279,8 @@ export class TurnEngine {
         activePlayer: action.playerId,
         description: `${unit.card.name} moves to (${finalPosition.x}, ${finalPosition.y})`,
         sourceUnit: unitId,
-        targetPosition: finalPosition
+        targetPosition: finalPosition,
+        resolved: false
       });
     }
 

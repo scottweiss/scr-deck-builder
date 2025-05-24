@@ -1,3 +1,8 @@
+/**
+ * Spell effect system for Sorcery: Contested Realm match simulation
+ * Handles parsing and execution of spell effects
+ */
+
 import { GameState, Card, Unit, Position, GameEvent, Player } from './gameState';
 
 export interface SpellEffect {
@@ -9,21 +14,8 @@ export interface SpellEffect {
 
 export interface TargetSpecification {
     type: 'unit' | 'player' | 'position' | 'card' | 'auto';
-    count        switch (effect.type) {
-            case 'damage':
-                return this.executeDamageEffect(gameState, effect, resolvedTargets, events, casterId);
-            case 'heal':
-                return this.executeHealEffect(gameState, effect, resolvedTargets, events, casterId);
-            case 'draw':
-                return this.executeDrawEffect(gameState, effect, resolvedTargets, events, casterId);
-            case 'summon':
-                return this.executeSummonEffect(gameState, effect, resolvedTargets, events, casterId);
-            case 'modify':
-                return this.executeModifyEffect(gameState, effect, resolvedTargets, events);
-            case 'move':
-                return this.executeMoveEffect(gameState, effect, resolvedTargets, events);
-            case 'destroy':
-                return this.executeDestroyEffect(gameState, effect, resolvedTargets, events);estrictions: TargetRestriction[];
+    count: number;
+    restrictions: TargetRestriction[];
     optional: boolean;
 }
 
@@ -472,11 +464,11 @@ export class SpellEffectSystem {
             case 'summon':
                 return this.executeSummonEffect(gameState, effect, resolvedTargets, casterId, events);
             case 'modify':
-                return this.executeModifyEffect(gameState, effect, resolvedTargets, events);
+                return this.executeModifyEffect(gameState, effect, resolvedTargets, casterId, events);
             case 'move':
-                return this.executeMoveEffect(gameState, effect, resolvedTargets, events);
+                return this.executeMoveEffect(gameState, effect, resolvedTargets, casterId, events);
             case 'destroy':
-                return this.executeDestroyEffect(gameState, effect, resolvedTargets, events);
+                return this.executeDestroyEffect(gameState, effect, resolvedTargets, casterId, events);
             default:
                 return {
                     success: false,
@@ -502,31 +494,26 @@ export class SpellEffectSystem {
                 if (unit) {
                     unit.damage = (unit.damage || 0) + amount;
                     
-                    events.push({
-                        id: `event_${Date.now()}_${Math.random()}`,
-                        type: 'spell_damage',
-                        activePlayer: casterId as 'player1' | 'player2',
-                        description: `Spell dealt ${amount} damage to ${target.id}`,
-                        targetUnit: target.id,
-                        damage: amount,
-                        resolved: true,
-                        timestamp: Date.now(),
-                        data: {
-                            targetId: target.id,
+                    events.push(this.createGameEvent(
+                        'spell_damage',
+                        casterId as 'player1' | 'player2',
+                        `Spell dealt ${amount} damage to ${target.id}`,
+                        {
+                            targetUnit: target.id,
                             damage: amount
                         }
-                    });
+                    ));
                     
                     // Check if unit is destroyed
-                    if ((unit.damage || 0) >= (unit.life || 0)) {
+                    const unitLife = unit.card.life || unit.life || 0;
+                    if (unit.damage >= unitLife) {
                         this.destroyUnit(gameState, target.id);
                         events.push(this.createGameEvent(
                             'unit_destroyed',
                             casterId as 'player1' | 'player2',
                             `Unit ${target.id} was destroyed by spell damage`,
                             {
-                                targetUnit: target.id,
-                                data: { unitId: target.id, cause: 'spell' }
+                                targetUnit: target.id
                             }
                         ));
                     }
@@ -541,10 +528,7 @@ export class SpellEffectSystem {
                         casterId as 'player1' | 'player2',
                         `Player ${target.id} took ${amount} damage`,
                         {
-                            damage: amount,
-                            data: {
-                                playerId: target.id
-                            }
+                            damage: amount
                         }
                     ));
                 }
@@ -567,36 +551,27 @@ export class SpellEffectSystem {
             if (target.type === 'unit') {
                 const unit = gameState.units.get(target.id);
                 if (unit) {
-                    unit.damage = Math.max(0, (unit.damage || 0) - amount);
+                    unit.damage = Math.max(0, unit.damage - amount);
                     
                     events.push(this.createGameEvent(
                         'unit_healed',
                         casterId as 'player1' | 'player2',
                         `Unit ${target.id} was healed for ${amount}`,
                         {
-                            targetUnit: target.id,
-                            data: {
-                                unitId: target.id,
-                                amount: amount
-                            }
+                            targetUnit: target.id
                         }
                     ));
                 }
             } else if (target.type === 'player') {
                 const player = gameState.players[target.id as 'player1' | 'player2'];
                 if (player) {
-                    player.life += amount;
+                    player.life = Math.min(player.maxLife, player.life + amount);
                     
                     events.push(this.createGameEvent(
                         'player_healed',
                         casterId as 'player1' | 'player2',
                         `Player ${target.id} was healed for ${amount}`,
-                        {
-                            data: {
-                                playerId: target.id,
-                                amount: amount
-                            }
-                        }
+                        {}
                     ));
                 }
             }
@@ -641,12 +616,7 @@ export class SpellEffectSystem {
                     'card_drawn',
                     casterId as 'player1' | 'player2',
                     `Player ${casterId} drew ${drawnCard.name}`,
-                    {
-                        data: {
-                            playerId: casterId,
-                            cardName: drawnCard.name
-                        }
-                    }
+                    {}
                 ));
             }
         }
@@ -726,19 +696,14 @@ export class SpellEffectSystem {
                 };
                 
                 gameState.units.set(unitId, token);
-                gameState.grid[target.position.x][target.position.y].units.push(token);
+                gameState.grid[target.position.y][target.position.x].units.push(token);
                 
                 events.push(this.createGameEvent(
                     'unit_summoned',
                     casterId as 'player1' | 'player2',
                     `Token ${tokenName} summoned at (${target.position.x}, ${target.position.y})`,
                     {
-                        targetPosition: target.position,
-                        data: {
-                            unitId: unitId,
-                            position: target.position,
-                            summoner: casterId
-                        }
+                        targetPosition: target.position
                     }
                 ));
             }
@@ -751,6 +716,7 @@ export class SpellEffectSystem {
         gameState: GameState, 
         effect: SpellEffect, 
         targets: SpellTarget[], 
+        casterId: string,
         events: GameEvent[]
     ): SpellExecutionResult {
         const { powerBonus, lifeBonus, duration } = effect.parameters;
@@ -785,13 +751,7 @@ export class SpellEffectSystem {
                         casterId as 'player1' | 'player2',
                         `Unit ${target.id} modified: ${powerBonus > 0 ? '+' : ''}${powerBonus} power, ${lifeBonus > 0 ? '+' : ''}${lifeBonus} life`,
                         {
-                            targetUnit: target.id,
-                            data: {
-                                unitId: target.id,
-                                powerBonus,
-                                lifeBonus,
-                                duration
-                            }
+                            targetUnit: target.id
                         }
                     ));
                 }
@@ -805,20 +765,21 @@ export class SpellEffectSystem {
         gameState: GameState, 
         effect: SpellEffect, 
         targets: SpellTarget[], 
+        casterId: string,
         events: GameEvent[]
     ): SpellExecutionResult {
         // Simplified move effect - would need more sophisticated targeting
         for (const target of targets) {
             if (target.type === 'unit') {
-                // Implementation would depend on how destination is specified
-                events.push({
-                    type: 'unit_moved',
-                    data: {
-                        unitId: target.id,
-                        newPosition: target.position
-                    },
-                    timestamp: Date.now()
-                });
+                // For now, just log the move event
+                events.push(this.createGameEvent(
+                    'unit_moved',
+                    casterId as 'player1' | 'player2',
+                    `Unit ${target.id} was moved`,
+                    {
+                        targetUnit: target.id
+                    }
+                ));
             }
         }
         
@@ -829,16 +790,20 @@ export class SpellEffectSystem {
         gameState: GameState, 
         effect: SpellEffect, 
         targets: SpellTarget[], 
+        casterId: string,
         events: GameEvent[]
     ): SpellExecutionResult {
         for (const target of targets) {
             if (target.type === 'unit') {
                 this.destroyUnit(gameState, target.id);
-                events.push({
-                    type: 'unit_destroyed',
-                    data: { unitId: target.id, cause: 'spell' },
-                    timestamp: Date.now()
-                });
+                events.push(this.createGameEvent(
+                    'unit_destroyed',
+                    casterId as 'player1' | 'player2',
+                    `Unit ${target.id} was destroyed by spell`,
+                    {
+                        targetUnit: target.id
+                    }
+                ));
             }
         }
         
@@ -867,7 +832,7 @@ export class SpellEffectSystem {
         if (!unit) return;
         
         // Clear from grid
-        const gridSquare = gameState.grid[unit.position.x][unit.position.y];
+        const gridSquare = gameState.grid[unit.position.y][unit.position.x];
         const unitIndex = gridSquare.units.findIndex(u => u.id === unitId);
         if (unitIndex >= 0) {
             gridSquare.units.splice(unitIndex, 1);

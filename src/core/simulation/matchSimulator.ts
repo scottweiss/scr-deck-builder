@@ -4,10 +4,17 @@ import { TurnEngine } from './turnEngine';
 import { AIEngine, AIStrategy, AI_STRATEGIES } from './aiEngine';
 import { CombatSystem } from './combatSystem';
 import { SpellEffectSystem } from './spellEffectSystem';
+import { CardType } from '../../types/Card';
+
+export interface PlayerDeck {
+    avatar: Card;
+    spells: Card[];
+    sites: Card[];
+}
 
 export interface SimulationConfig {
-    player1Deck: Card[];
-    player2Deck: Card[];
+    player1Deck: PlayerDeck;
+    player2Deck: PlayerDeck;
     player1Strategy: AIStrategy;
     player2Strategy: AIStrategy;
     maxTurns: number;
@@ -17,7 +24,7 @@ export interface SimulationConfig {
 }
 
 export interface SimulationResult {
-    winner: string | null; // Player ID or null for tie
+    winner: 'player1' | 'player2' | null; // Player ID or null for tie
     reason: 'life' | 'timeout' | 'deck' | 'concede';
     turns: number;
     finalGameState: GameState;
@@ -29,7 +36,7 @@ export interface SimulationResult {
 export interface GameLogEntry {
     turn: number;
     phase: string;
-    playerId: string;
+    playerId: 'player1' | 'player2';
     action: string;
     details: any;
     timestamp: number;
@@ -40,18 +47,18 @@ export interface GameStatistics {
     spellsCast: number;
     unitsPlayed: number;
     combatResolutions: number;
-    damageDealt: { [playerId: string]: number };
-    cardsDrawn: { [playerId: string]: number };
-    manaSpent: { [playerId: string]: number };
+    damageDealt: { player1: number; player2: number };
+    cardsDrawn: { player1: number; player2: number };
+    manaSpent: { player1: number; player2: number };
     averageDecisionTime: number;
 }
 
 export class MatchSimulator {
     private gameStateManager: GameStateManager;
     private turnEngine: TurnEngine;
-    private combatSystem: CombatSystem;
+    private combatSystem: CombatSystem | null;
     private spellSystem: SpellEffectSystem;
-    private aiEngines: { [playerId: string]: AIEngine };
+    private aiEngines: { player1?: AIEngine; player2?: AIEngine };
     private gameLog: GameLogEntry[];
     private statistics: GameStatistics;
     private startTime: number;
@@ -59,12 +66,12 @@ export class MatchSimulator {
     constructor() {
         this.gameStateManager = new GameStateManager();
         this.turnEngine = new TurnEngine(this.gameStateManager);
-        this.combatSystem = new CombatSystem();
         this.spellSystem = new SpellEffectSystem();
         this.aiEngines = {};
         this.gameLog = [];
         this.statistics = this.initializeStatistics();
         this.startTime = 0;
+        this.combatSystem = null; // Will be initialized when we have a gameState
     }
 
     /**
@@ -82,26 +89,26 @@ export class MatchSimulator {
             // Set up AI engines
             this.setupAIEngines(gameState, config);
             
-            this.log(0, 'setup', 'system', 'Game initialized', {
-                player1: gameState.currentPlayerId,
-                player2: Object.keys(gameState.players).find(id => id !== gameState.currentPlayerId)
+            this.log(0, 'setup', 'player1', 'Game initialized', {
+                player1: 'player1',
+                player2: 'player2'
             });
 
             // Main game loop
             let turns = 0;
-            let winner: string | null = null;
+            let winner: 'player1' | 'player2' | null = null;
             let reason: SimulationResult['reason'] = 'timeout';
 
             while (turns < config.maxTurns && !winner) {
                 turns++;
                 
                 if (config.enableLogging) {
-                    console.log(`--- Turn ${turns} (Player: ${gameState.currentPlayerId}) ---`);
+                    console.log(`--- Turn ${turns} (Player: ${gameState.phase.activePlayer}) ---`);
                 }
 
                 try {
                     // Execute turn
-                    const turnResult = await this.executeTurn(gameState, config);
+                    await this.executeTurn(gameState, config);
                     
                     // Check win conditions
                     const winCheck = this.checkWinConditions(gameState);
@@ -145,8 +152,12 @@ export class MatchSimulator {
      * Executes a complete turn for the current player
      */
     private async executeTurn(gameState: GameState, config: SimulationConfig): Promise<void> {
-        const playerId = gameState.currentPlayerId;
+        const playerId = gameState.phase.activePlayer;
         const aiEngine = this.aiEngines[playerId];
+
+        if (!aiEngine) {
+            throw new Error(`No AI engine found for player ${playerId}`);
+        }
 
         // Start phase
         this.turnEngine.startTurn(gameState);
@@ -156,7 +167,7 @@ export class MatchSimulator {
         let actionsThisTurn = 0;
         const maxActionsPerTurn = 20; // Prevent infinite loops
 
-        while (gameState.phase === 'main' && actionsThisTurn < maxActionsPerTurn) {
+        while (gameState.phase.type === 'main' && actionsThisTurn < maxActionsPerTurn) {
             const decisionStart = Date.now();
             const decision = await aiEngine.makeDecision(gameState, playerId);
             const decisionTime = Date.now() - decisionStart;
@@ -203,7 +214,7 @@ export class MatchSimulator {
      */
     private async executeAIDecision(
         gameState: GameState, 
-        playerId: string, 
+        playerId: 'player1' | 'player2', 
         decision: any
     ): Promise<{ success: boolean; error?: string }> {
         try {
@@ -231,14 +242,14 @@ export class MatchSimulator {
         }
     }
 
-    private executePlayCard(gameState: GameState, playerId: string, decision: any): { success: boolean; error?: string } {
-        if (!this.turnEngine.canPlayCard(gameState, playerId, decision.cardId)) {
-            return { success: false, error: 'Cannot play card' };
-        }
-
+    private executePlayCard(gameState: GameState, playerId: 'player1' | 'player2', decision: any): { success: boolean; error?: string } {
         const card = this.findCardInHand(gameState, playerId, decision.cardId);
         if (!card) {
             return { success: false, error: 'Card not found in hand' };
+        }
+
+        if (!this.turnEngine.canPlayCard(gameState, playerId, card.name)) {
+            return { success: false, error: 'Cannot play card' };
         }
 
         // Deduct mana
@@ -247,39 +258,47 @@ export class MatchSimulator {
         this.statistics.manaSpent[playerId] = (this.statistics.manaSpent[playerId] || 0) + (card.cost || 0);
 
         // Remove from hand
-        const handIndex = player.hand.findIndex(c => c.id === decision.cardId);
-        if (handIndex >= 0) {
-            player.hand.splice(handIndex, 1);
+        const handSpells = player.hand.spells;
+        const handSites = player.hand.sites;
+        let cardRemoved = false;
+
+        const spellIndex = handSpells.findIndex((c: Card) => c.name === card.name);
+        if (spellIndex >= 0) {
+            handSpells.splice(spellIndex, 1);
+            cardRemoved = true;
+        } else {
+            const siteIndex = handSites.findIndex((c: Card) => c.name === card.name);
+            if (siteIndex >= 0) {
+                handSites.splice(siteIndex, 1);
+                cardRemoved = true;
+            }
+        }
+
+        if (!cardRemoved) {
+            return { success: false, error: 'Could not remove card from hand' };
         }
 
         // Execute card effect based on type
-        switch (card.type.toLowerCase()) {
-            case 'unit':
-            case 'minion':
-                this.playUnit(gameState, card, playerId, decision.targetPosition);
-                this.statistics.unitsPlayed++;
-                break;
-                
-            case 'spell':
-                this.playSpell(gameState, card, playerId, decision.targets || []);
-                this.statistics.spellsCast++;
-                break;
-                
-            case 'site':
-                this.playSite(gameState, card, playerId, decision.targetPosition);
-                break;
+        if (card.type === CardType.Minion) {
+            this.playUnit(gameState, card, playerId, decision.targetPosition);
+            this.statistics.unitsPlayed++;
+        } else if (card.type === CardType.Magic) {
+            this.playSpell(gameState, card, playerId, decision.targets || []);
+            this.statistics.spellsCast++;
+        } else if (card.type === CardType.Site) {
+            this.playSite(gameState, card, playerId, decision.targetPosition);
         }
 
         return { success: true };
     }
 
-    private executeMoveUnit(gameState: GameState, playerId: string, decision: any): { success: boolean; error?: string } {
+    private executeMoveUnit(gameState: GameState, playerId: 'player1' | 'player2', decision: any): { success: boolean; error?: string } {
         if (!this.turnEngine.canMoveUnit(gameState, decision.unitId)) {
             return { success: false, error: 'Cannot move unit' };
         }
 
-        const unit = gameState.units[decision.unitId];
-        if (!unit || unit.ownerId !== playerId) {
+        const unit = gameState.units.get(decision.unitId);
+        if (!unit || unit.owner !== playerId) {
             return { success: false, error: 'Invalid unit' };
         }
 
@@ -288,11 +307,14 @@ export class MatchSimulator {
         }
 
         // Clear old position
-        gameState.grid[unit.position.x][unit.position.y].unit = null;
+        const oldPos = unit.position;
+        const oldSquare = gameState.grid[oldPos.x][oldPos.y];
+        oldSquare.units = oldSquare.units.filter(u => u.id !== decision.unitId);
         
         // Set new position
         unit.position = decision.targetPosition;
-        gameState.grid[decision.targetPosition.x][decision.targetPosition.y].unit = decision.unitId;
+        const newSquare = gameState.grid[decision.targetPosition.x][decision.targetPosition.y];
+        newSquare.units.push(unit);
         
         // Mark as used
         unit.canAct = false;
@@ -300,137 +322,126 @@ export class MatchSimulator {
         return { success: true };
     }
 
-    private executeAttack(gameState: GameState, playerId: string, decision: any): { success: boolean; error?: string } {
-        if (!this.combatSystem.canInitiateCombat(gameState, decision.unitId, decision.targetUnitId)) {
-            return { success: false, error: 'Cannot initiate combat' };
+    private executeAttack(gameState: GameState, playerId: 'player1' | 'player2', decision: any): { success: boolean; error?: string } {
+        if (!this.combatSystem) {
+            return { success: false, error: 'Combat system not initialized' };
         }
 
-        const combatResult = this.combatSystem.resolveCombat(gameState, decision.unitId, decision.targetUnitId);
+        const attacker = gameState.units.get(decision.unitId);
+        if (!attacker) {
+            return { success: false, error: 'Attacker unit not found' };
+        }
+
+        // Find a target if not specified
+        let targetId = decision.targetUnitId;
+        if (!targetId) {
+            const validTargets = this.combatSystem.getValidTargets(decision.unitId);
+            if (validTargets.length === 0) {
+                return { success: false, error: 'No valid targets for attack' };
+            }
+            targetId = validTargets[0].id;
+        }
+
+        const combatResult = this.combatSystem.initiateCombat(decision.unitId, targetId);
         
         // Update statistics
         this.statistics.combatResolutions++;
-        this.statistics.damageDealt[playerId] = (this.statistics.damageDealt[playerId] || 0) + combatResult.defenderDamage;
+        if (combatResult.success) {
+            this.statistics.damageDealt[playerId] = (this.statistics.damageDealt[playerId] || 0) + combatResult.damage.defender;
+        }
         
         // Mark attacker as used
-        const attacker = gameState.units[decision.unitId];
         if (attacker) {
-            attacker.canAct = false;
+            attacker.isTapped = true;
         }
 
-        return { success: true };
+        return { success: combatResult.success };
     }
 
-    private executeActivateAbility(gameState: GameState, playerId: string, decision: any): { success: boolean; error?: string } {
+    private executeActivateAbility(gameState: GameState, playerId: 'player1' | 'player2', decision: any): { success: boolean; error?: string } {
         // Simplified ability activation - would need more sophisticated implementation
         return { success: true };
     }
 
-    private playUnit(gameState: GameState, card: Card, playerId: string, position: any): void {
-        const unitId = `unit_${card.id}_${Date.now()}`;
+    private playUnit(gameState: GameState, card: Card, playerId: 'player1' | 'player2', position: any): void {
+        const unitId = `unit_${card.name}_${Date.now()}`;
         const unit = {
             id: unitId,
-            cardId: card.id,
-            name: card.name,
-            ownerId: playerId,
+            card: card,
+            owner: playerId,
             position: position,
-            power: card.power || 0,
-            life: card.life || 0,
+            region: 'surface' as const,
+            isTapped: false,
             damage: 0,
-            canAct: false, // Summoning sickness
-            abilities: card.abilities || [],
-            elements: card.elements || [],
+            summoning_sickness: true,
             artifacts: [],
-            modifiers: [],
-            isAvatar: false
+            modifiers: []
         };
 
-        gameState.units[unitId] = unit;
-        gameState.grid[position.x][position.y].unit = unitId;
+        gameState.units.set(unitId, unit);
+        gameState.grid[position.x][position.y].units.push(unit);
     }
 
-    private playSpell(gameState: GameState, card: Card, playerId: string, targets: any[]): void {
+    private playSpell(gameState: GameState, card: Card, playerId: 'player1' | 'player2', targets: any[]): void {
         // Execute spell effects
         this.spellSystem.executeSpell(gameState, card, playerId, targets);
         
-        // Move to graveyard
+        // Move to graveyard/cemetery
         const player = gameState.players[playerId];
-        player.graveyard.push(card);
+        player.cemetery.push(card);
     }
 
-    private playSite(gameState: GameState, card: Card, playerId: string, position: any): void {
-        gameState.grid[position.x][position.y].site = {
-            id: card.id,
-            name: card.name,
-            ownerId: playerId,
-            abilities: card.abilities || [],
-            elements: card.elements || []
-        };
+    private playSite(gameState: GameState, card: Card, playerId: 'player1' | 'player2', position: any): void {
+        gameState.grid[position.x][position.y].site = card;
     }
 
     private initializeGame(config: SimulationConfig): GameState {
-        // Create players
-        const player1Id = 'player1';
-        const player2Id = 'player2';
-
-        const players = {
-            [player1Id]: this.createPlayer(player1Id, config.player1Deck),
-            [player2Id]: this.createPlayer(player2Id, config.player2Deck)
-        };
-
-        return this.gameStateManager.initializeGame(players, player1Id);
-    }
-
-    private createPlayer(id: string, deck: Card[]): Player {
-        // Shuffle deck
-        const shuffledDeck = [...deck].sort(() => Math.random() - 0.5);
+        const gameState = this.gameStateManager.initializeGame(config.player1Deck, config.player2Deck);
         
-        // Draw opening hand
-        const hand = shuffledDeck.splice(0, 7);
-
-        return {
-            id,
-            life: 25,
-            mana: 0,
-            elementalAffinities: { air: 0, earth: 0, fire: 0, water: 0 },
-            hand,
-            deck: shuffledDeck,
-            graveyard: [],
-            avatarPosition: { x: id === 'player1' ? 0 : 4, y: 1 }
-        };
+        // Initialize combat system now that we have gameState
+        this.combatSystem = new CombatSystem(gameState);
+        
+        return gameState;
     }
 
     private setupAIEngines(gameState: GameState, config: SimulationConfig): void {
-        this.aiEngines = {};
-        
-        for (const playerId of Object.keys(gameState.players)) {
-            const strategy = playerId === 'player1' ? config.player1Strategy : config.player2Strategy;
-            this.aiEngines[playerId] = new AIEngine(strategy, this.turnEngine);
-        }
+        this.aiEngines = {
+            player1: new AIEngine(config.player1Strategy, this.turnEngine),
+            player2: new AIEngine(config.player2Strategy, this.turnEngine)
+        };
     }
 
-    private checkWinConditions(gameState: GameState): { winner: string | null; reason: SimulationResult['reason'] } {
+    private checkWinConditions(gameState: GameState): { winner: 'player1' | 'player2' | null; reason: SimulationResult['reason'] } {
         // Check life totals
-        for (const [playerId, player] of Object.entries(gameState.players)) {
-            if (player.life <= 0) {
-                const winner = Object.keys(gameState.players).find(id => id !== playerId) || null;
-                return { winner, reason: 'life' };
-            }
+        if (gameState.players.player1.life <= 0) {
+            return { winner: 'player2', reason: 'life' };
+        }
+        if (gameState.players.player2.life <= 0) {
+            return { winner: 'player1', reason: 'life' };
         }
 
         // Check if player has no cards left
-        for (const [playerId, player] of Object.entries(gameState.players)) {
-            if (player.deck.length === 0 && player.hand.length === 0) {
-                const winner = Object.keys(gameState.players).find(id => id !== playerId) || null;
-                return { winner, reason: 'deck' };
-            }
+        const player1HandSize = gameState.players.player1.hand.spells.length + gameState.players.player1.hand.sites.length;
+        const player2HandSize = gameState.players.player2.hand.spells.length + gameState.players.player2.hand.sites.length;
+
+        if (gameState.players.player1.decks.spellbook.length === 0 && 
+            gameState.players.player1.decks.atlas.length === 0 && 
+            player1HandSize === 0) {
+            return { winner: 'player2', reason: 'deck' };
+        }
+        if (gameState.players.player2.decks.spellbook.length === 0 && 
+            gameState.players.player2.decks.atlas.length === 0 && 
+            player2HandSize === 0) {
+            return { winner: 'player1', reason: 'deck' };
         }
 
         return { winner: null, reason: 'timeout' };
     }
 
-    private findCardInHand(gameState: GameState, playerId: string, cardId: string): Card | null {
+    private findCardInHand(gameState: GameState, playerId: 'player1' | 'player2', cardId: string): Card | null {
         const player = gameState.players[playerId];
-        return player.hand.find(c => c.id === cardId) || null;
+        const allCards = [...player.hand.spells, ...player.hand.sites];
+        return allCards.find((c: Card) => c.name === cardId) || null;
     }
 
     private initializeStatistics(): GameStatistics {
@@ -439,9 +450,9 @@ export class MatchSimulator {
             spellsCast: 0,
             unitsPlayed: 0,
             combatResolutions: 0,
-            damageDealt: {},
-            cardsDrawn: {},
-            manaSpent: {},
+            damageDealt: { player1: 0, player2: 0 },
+            cardsDrawn: { player1: 0, player2: 0 },
+            manaSpent: { player1: 0, player2: 0 },
             averageDecisionTime: 0
         };
     }
@@ -449,10 +460,10 @@ export class MatchSimulator {
     private updateDecisionTime(time: number): void {
         const current = this.statistics.averageDecisionTime;
         const total = this.statistics.totalActions;
-        this.statistics.averageDecisionTime = (current * total + time) / (total + 1);
+        this.statistics.averageDecisionTime = total === 0 ? time : (current * total + time) / (total + 1);
     }
 
-    private log(turn: number, phase: string, playerId: string, action: string, details: any): void {
+    private log(turn: number, phase: string, playerId: 'player1' | 'player2', action: string, details: any): void {
         this.gameLog.push({
             turn,
             phase,
