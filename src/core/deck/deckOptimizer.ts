@@ -170,8 +170,8 @@ export function optimizeDeck(
     
     // Analyze the current deck for combos and archetypes
     const deckAnalysis = synergyCalculator.getDeckAnalysis(selectedSpells);
-    const combos = deckAnalysis.combos;
-    const archetypes = deckAnalysis.archetypes;
+    const combos = deckAnalysis?.combos || [];
+    const archetypes = deckAnalysis?.archetypes || [];
     
     // Determine the primary elements and archetypes with enhanced weighting
     const elementFrequency: Record<string, number> = {};
@@ -338,9 +338,9 @@ export function optimizeDeck(
                     .sort((a, b) => {
                         // Preserve key combo pieces regardless of other factors
                         const aIsCombo = combos.some((combo: any) => 
-                            combo.pieces.some((piece: any) => piece.card.baseName === a.card.baseName));
+                            combo.cards.some((cardName: string) => cardName.toLowerCase() === a.card.baseName.toLowerCase()));
                         const bIsCombo = combos.some((combo: any) => 
-                            combo.pieces.some((piece: any) => piece.card.baseName === b.card.baseName));
+                            combo.cards.some((cardName: string) => cardName.toLowerCase() === b.card.baseName.toLowerCase()));
                         
                         if (aIsCombo && !bIsCombo) return 1; // Keep combo pieces
                         if (!aIsCombo && bIsCombo) return -1;

@@ -10,6 +10,7 @@ const PROCESSED_DATA_DIR = path.join(__dirname);
 
 // Input CSV files
 export const CSV_FILES = [
+    path.join(RAW_DATA_DIR, 'AlphaProductsAndPrices.csv'),
     path.join(RAW_DATA_DIR, 'BetaProductsAndPrices.csv'),
     path.join(RAW_DATA_DIR, 'ArthurianLegendsProductsAndPrices.csv')
 ];

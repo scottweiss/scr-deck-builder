@@ -99,6 +99,15 @@ export function identifyCardCombos(cards: Card[]): Combo[] {
     checkPositionStrategyCombo(cardNames, combos);
     checkMutationChainCombo(cardNames, combos);
     
+    // New utility-focused combo detection
+    checkManaThresholdAcceleratorCombo(cardNames, combos);
+    checkSpellCostReductionEngineCombo(cardNames, combos);
+    checkMagicProtectionPackageCombo(cardNames, combos);
+    checkSpellTriggeredValueEngineCombo(cardNames, combos);
+    checkLowCostArtifactUtilityCombo(cardNames, combos);
+    checkElementalCoreEngineCombo(cardNames, combos);
+    checkUtilityArtifactSynergyCombo(cardNames, combos);
+    
     return combos;
 }
 
@@ -1365,6 +1374,250 @@ function checkMultiElementSynergyCombo(cardNames: Map<string, Card>, combos: Com
             synergy: multiElementCards.length * 16,
             description: "Leverages multiple elemental sources for flexibility",
             strategy: "Build multi-color decks with strong fixing and splash options"
+        });
+    }
+}
+
+/**
+ * Mana/Threshold Accelerator Combo
+ * Detects cards that provide both mana and threshold acceleration
+ */
+function checkManaThresholdAcceleratorCombo(cardNames: Map<string, Card>, combos: Combo[]): void {
+    const acceleratorCards: string[] = [];
+    
+    cardNames.forEach((card, name) => {
+        const text = (card.text || '').toLowerCase();
+        const cardName = (card.name || name).toLowerCase();
+        
+        // Look for elemental cores and similar cards
+        if (cardName.includes('core') ||
+            cardName.includes('amethyst core') ||
+            cardName.includes('onyx core') ||
+            cardName.includes('ruby core') ||
+            cardName.includes('aquamarine core') ||
+            text.includes('threshold') ||
+            text.includes('mana') ||
+            (text.includes('(1)') && (text.includes('air') || text.includes('earth') || text.includes('fire') || text.includes('water'))) ||
+            text.includes('elemental') ||
+            text.includes('ley line') ||
+            text.includes('wellspring')) {
+            acceleratorCards.push(card.name || name);
+        }
+    });
+    
+    if (acceleratorCards.length >= 2) {
+        combos.push({
+            name: "Mana/Threshold Acceleration Engine",
+            cards: acceleratorCards,
+            synergy: acceleratorCards.length * 14,
+            description: "Provides both mana fixing and threshold acceleration for consistent plays",
+            strategy: "Include to enable multi-element strategies and expensive threats"
+        });
+    }
+}
+
+/**
+ * Spell Cost Reduction Engine Combo
+ * Detects advanced spell cost reduction synergies
+ */
+function checkSpellCostReductionEngineCombo(cardNames: Map<string, Card>, combos: Combo[]): void {
+    const costReductionCards: string[] = [];
+    
+    cardNames.forEach((card, name) => {
+        const text = (card.text || '').toLowerCase();
+        const cardName = (card.name || name).toLowerCase();
+        
+        if (cardName.includes('philosopher\'s stone') ||
+            cardName.includes('stone') ||
+            text.includes('spells cost') ||
+            text.includes('cost (1) less') ||
+            text.includes('reduce') ||
+            text.includes('discount') ||
+            text.includes('cheaper') ||
+            text.includes('per element') ||
+            (text.includes('cost') && (text.includes('less') || text.includes('reduction')))) {
+            costReductionCards.push(card.name || name);
+        }
+    });
+    
+    if (costReductionCards.length >= 2) {
+        combos.push({
+            name: "Spell Cost Reduction Engine",
+            cards: costReductionCards,
+            synergy: costReductionCards.length * 13,
+            description: "Reduces spell costs for efficient resource usage and powerful turns",
+            strategy: "Build around expensive spells and high-impact effects"
+        });
+    }
+}
+
+/**
+ * Magic Protection Package Combo
+ * Detects magic immunity and protection effects
+ */
+function checkMagicProtectionPackageCombo(cardNames: Map<string, Card>, combos: Combo[]): void {
+    const protectionCards: string[] = [];
+    
+    cardNames.forEach((card, name) => {
+        const text = (card.text || '').toLowerCase();
+        const cardName = (card.name || name).toLowerCase();
+        
+        if (cardName.includes('amulet of niniane') ||
+            cardName.includes('niniane') ||
+            cardName.includes('amulet') ||
+            text.includes('magic immunity') ||
+            text.includes('immune to magic') ||
+            text.includes('protection') ||
+            text.includes('ward') ||
+            text.includes('resist') ||
+            text.includes('deflect') ||
+            text.includes('counter') ||
+            text.includes('spell immunity')) {
+            protectionCards.push(card.name || name);
+        }
+    });
+    
+    if (protectionCards.length >= 1) {
+        combos.push({
+            name: "Magic Protection Package",
+            cards: protectionCards,
+            synergy: protectionCards.length * 12,
+            description: "Provides protection against magical threats and spell-based removal",
+            strategy: "Counter spell-heavy opponents and protect key threats"
+        });
+    }
+}
+
+/**
+ * Spell-Triggered Value Engine Combo
+ * Detects cards that trigger on spell casting for value
+ */
+function checkSpellTriggeredValueEngineCombo(cardNames: Map<string, Card>, combos: Combo[]): void {
+    const triggerCards: string[] = [];
+    
+    cardNames.forEach((card, name) => {
+        const text = (card.text || '').toLowerCase();
+        const cardName = (card.name || name).toLowerCase();
+        
+        if (cardName.includes('ring of morrigan') ||
+            cardName.includes('morrigan') ||
+            cardName.includes('ring') ||
+            text.includes('when bearer casts') ||
+            text.includes('when you cast') ||
+            text.includes('spell trigger') ||
+            text.includes('triggered by') ||
+            text.includes('whenever') ||
+            text.includes('each time') ||
+            (text.includes('cast') && (text.includes('gain') || text.includes('deal') || text.includes('draw')))) {
+            triggerCards.push(card.name || name);
+        }
+    });
+    
+    if (triggerCards.length >= 1) {
+        combos.push({
+            name: "Spell-Triggered Value Engine",
+            cards: triggerCards,
+            synergy: triggerCards.length * 11,
+            description: "Generates value whenever spells are cast",
+            strategy: "Build around spell-heavy strategies for consistent value"
+        });
+    }
+}
+
+/**
+ * Low-Cost Artifact Utility Combo
+ * Detects utility artifacts that provide ongoing value
+ */
+function checkLowCostArtifactUtilityCombo(cardNames: Map<string, Card>, combos: Combo[]): void {
+    const utilityArtifacts: string[] = [];
+    
+    cardNames.forEach((card, name) => {
+        const text = (card.text || '').toLowerCase();
+        const type = (card.type || '').toLowerCase();
+        const cost = card.mana_cost || 0;
+        
+        if (type.includes('artifact') && cost <= 2) {
+            utilityArtifacts.push(card.name || name);
+        } else if (text.includes('artifact') ||
+                   text.includes('equipment') ||
+                   text.includes('relic') ||
+                   text.includes('device')) {
+            utilityArtifacts.push(card.name || name);
+        }
+    });
+    
+    if (utilityArtifacts.length >= 3) {
+        combos.push({
+            name: "Low-Cost Artifact Utility",
+            cards: utilityArtifacts,
+            synergy: utilityArtifacts.length * 9,
+            description: "Efficient artifacts that provide ongoing utility and value",
+            strategy: "Build artifact-dense decks with consistent utility effects"
+        });
+    }
+}
+
+/**
+ * Elemental Core Engine Combo
+ * Specifically detects elemental cores and their synergies
+ */
+function checkElementalCoreEngineCombo(cardNames: Map<string, Card>, combos: Combo[]): void {
+    const coreCards: string[] = [];
+    
+    cardNames.forEach((card, name) => {
+        const cardName = (card.name || name).toLowerCase();
+        
+        if (cardName.includes('amethyst core') ||
+            cardName.includes('onyx core') ||
+            cardName.includes('ruby core') ||
+            cardName.includes('aquamarine core') ||
+            cardName.includes('elemental core')) {
+            coreCards.push(card.name || name);
+        }
+    });
+    
+    if (coreCards.length >= 2) {
+        combos.push({
+            name: "Elemental Core Engine",
+            cards: coreCards,
+            synergy: coreCards.length * 15,
+            description: "Elemental cores provide both threshold and mana for incredible efficiency",
+            strategy: "Use cores as the foundation for multi-element strategies"
+        });
+    }
+}
+
+/**
+ * Utility Artifact Synergy Combo
+ * Detects high-value utility artifacts working together
+ */
+function checkUtilityArtifactSynergyCombo(cardNames: Map<string, Card>, combos: Combo[]): void {
+    const utilityNames = [
+        'ring of morrigan',
+        'amulet of niniane', 
+        'philosopher\'s stone',
+        'amethyst core',
+        'onyx core',
+        'ruby core',
+        'aquamarine core'
+    ];
+    
+    const foundUtilities: string[] = [];
+    
+    utilityNames.forEach(utilityName => {
+        if (cardNames.has(utilityName.toLowerCase())) {
+            const card = cardNames.get(utilityName.toLowerCase());
+            foundUtilities.push(card?.name || utilityName);
+        }
+    });
+    
+    if (foundUtilities.length >= 2) {
+        combos.push({
+            name: "High-Value Utility Synergy",
+            cards: foundUtilities,
+            synergy: foundUtilities.length * 18,
+            description: "Premium utility artifacts that provide exceptional value and synergy",
+            strategy: "Prioritize these utility pieces as deck foundation"
         });
     }
 }

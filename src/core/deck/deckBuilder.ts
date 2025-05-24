@@ -50,18 +50,40 @@ export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
     magics: 15,   // ~30%
   };
   
-  const cardAllocation: CardAllocation = {
+  let selectedSpells: Card[] = [];
+  const copiesInDeck: Record<string, number> = {};
+  
+  // ENHANCEMENT: Identify potential card combos in the pool FIRST
+  const availableCombos: Combo[] = cardCombos.identifyCardCombos([...minions, ...artifacts, ...auras, ...magics]);
+  
+  console.log(`Identified ${availableCombos.length} potential card combos in the card pool`);
+  
+  // ENHANCEMENT: Adjust allocations based on detected combos
+  const hasUtilityCombo = availableCombos.some((combo: Combo) => 
+    combo.name.includes('Utility') || 
+    combo.name.includes('Cost Reduction') || 
+    combo.name.includes('Core') ||
+    combo.name.includes('Threshold') ||
+    combo.name.includes('Artifact')
+  );
+  
+  // Start with default or provided allocations
+  let finalAllocation = {
     minions: allocation.minions ?? defaultAllocation.minions,
     artifacts: allocation.artifacts ?? defaultAllocation.artifacts,
     auras: allocation.auras ?? defaultAllocation.auras,
     magics: allocation.magics ?? defaultAllocation.magics,
   };
   
-  let selectedSpells: Card[] = [];
-  const copiesInDeck: Record<string, number> = {};
+  // Increase artifact allocation for combo decks with utility focus
+  if (hasUtilityCombo && availableCombos.length >= 3) {
+    console.log("🔧 Detected utility combo archetype - adjusting allocation to favor artifacts");
+    finalAllocation.artifacts = Math.min(15, finalAllocation.artifacts + 5); // Increase by 5, cap at 15
+    finalAllocation.minions = Math.max(20, finalAllocation.minions - 3); // Reduce minions slightly
+    finalAllocation.magics = Math.max(12, finalAllocation.magics - 2); // Reduce magics slightly
+  }
   
-  // ENHANCEMENT: Identify potential card combos in the pool
-  const availableCombos: Combo[] = cardCombos.identifyCardCombos([...minions, ...artifacts, ...auras, ...magics]);
+  const cardAllocation: CardAllocation = finalAllocation;
   
   console.log(`Identified ${availableCombos.length} potential card combos in the card pool`);
   
@@ -112,17 +134,44 @@ export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
     addedMinionCount += (selectedSpells.length - before);
   }
 
-  // Add artifacts
+  // Add artifacts with utility prioritization
   console.log(`Selecting ${cardAllocation.artifacts} artifacts...`);
+  
+  // Define high-value utility artifacts
+  const utilityArtifactNames = [
+    'ring of morrigan',
+    'amulet of niniane', 
+    'philosopher\'s stone',
+    'amethyst core',
+    'onyx core',
+    'ruby core',
+    'aquamarine core'
+  ];
+  
+  const isUtilityArtifact = (card: Card): boolean => {
+    const baseName = card.baseName?.toLowerCase() || '';
+    return utilityArtifactNames.some(name => baseName.includes(name));
+  };
+  
   let addedArtifactCount = 0;
   const sortedArtifacts = [...artifacts]
     .filter((card: Card) => !selectedSpells.some((s: Card) => s.baseName === card.baseName))
     .sort((a: Card, b: Card) => {
-      // Prioritize combo pieces
+      // HIGHEST PRIORITY: Utility artifacts in combo decks
+      if (hasUtilityCombo) {
+        const aIsUtility = isUtilityArtifact(a);
+        const bIsUtility = isUtilityArtifact(b);
+        if (aIsUtility !== bIsUtility) {
+          return bIsUtility ? 1 : -1; // Utility artifacts first
+        }
+      }
+      
+      // SECOND PRIORITY: General combo pieces
       if (isComboCard(a) !== isComboCard(b)) {
         return isComboCard(b) ? 1 : -1;
       }
       
+      // THIRD PRIORITY: Synergy score
       return (synergyCalculator as any).calculateSynergy(b, selectedSpells) - 
              (synergyCalculator as any).calculateSynergy(a, selectedSpells);
     });
