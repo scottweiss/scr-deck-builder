@@ -4,7 +4,6 @@
     "module": "esnext",
     "lib": ["es2018", "dom"],
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

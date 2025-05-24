@@ -54,7 +54,7 @@ class BrowserCardLoader {
             }
         }
 
-        const cards = this.cardCache;
+        const cards = this.cardCache || [];
         
         // Categorize cards
         const avatars = cards.filter(card => card.type === 'Avatar');

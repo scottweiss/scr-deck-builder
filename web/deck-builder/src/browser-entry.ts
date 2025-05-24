@@ -4,17 +4,17 @@
  */
 
 // Import existing deck building functionality
-import { processCardData } from '../../src/main/cardProcessor';
-import { selectAvatar } from '../../src/main/avatarSelector';
-import { Card, Element } from '../../src/types/Card';
-import { Deck } from '../../src/types/Deck';
+import { processCardData } from '@/main/cardProcessor';
+import { selectAvatar } from '@/main/avatarSelector';
+import { Card, Element, CardType, CardRarity } from '@/types/Card';
+import { Deck } from '@/types/Deck';
 
 // Import deck building core
-import * as deckBuilder from '../../../src/core/deck/builder/deckBuilder';
-import * as synergyCalculator from '../../src/analyses/synergy/synergyCalculator';
+import * as deckBuilder from '@/core/deck/builder/deckBuilder';
+import * as synergyCalculator from '@/analyses/synergy/synergyCalculator';
 
 // Browser-compatible data loading
-import { getAllCards } from '../../src/data/processed/sorceryCards';
+import { getAllCards } from '@/data/processed/sorceryCards';
 
 /**
  * Browser-compatible deck building interface
@@ -66,30 +66,36 @@ export class BrowserDeckBuilder {
     const selectedAvatar = avatarResult.selectedAvatar;
 
     // Build deck using existing deck builder
-    const deckResult = await deckBuilder.buildDeck({
+    const deckResult = deckBuilder.buildCompleteDeck({
+      minions,
+      artifacts,
+      auras,
+      magics,
+      sites,
+      uniqueCards,
       avatar: selectedAvatar,
-      cards: uniqueCards,
-      sites: sites,
-      minions: minions,
-      artifacts: artifacts,
-      auras: auras,
-      magics: magics,
       preferredElement: options.preferredElement,
-      archetype: options.archetype
+      maxCards: 50
     });
 
     // Calculate synergy using existing calculator
-    const synergyData = synergyCalculator.calculateDeckSynergy(deckResult.deck, selectedAvatar);
+    const totalSynergy = deckResult.spellbook.reduce((total, card) => {
+      return total + synergyCalculator.calculateSynergy(card, deckResult.spellbook);
+    }, 0);
 
     return {
-      deck: deckResult.deck,
-      avatar: selectedAvatar,
-      stats: deckResult.stats,
+      deck: deckResult.spellbook,
+      avatar: selectedAvatar!,
+      stats: {
+        totalCards: deckResult.spellbook.length,
+        averageCost: deckResult.spellbook.reduce((sum, card) => sum + (card.mana_cost || 0), 0) / deckResult.spellbook.length,
+        totalSynergy: totalSynergy
+      },
       analysis: {
-        synergy: synergyData,
-        manaCurve: this.calculateManaCurve(deckResult.deck),
-        elementDistribution: this.calculateElementDistribution(deckResult.deck),
-        typeDistribution: this.calculateTypeDistribution(deckResult.deck)
+        synergy: totalSynergy,
+        manaCurve: this.calculateManaCurve(deckResult.spellbook),
+        elementDistribution: this.calculateElementDistribution(deckResult.spellbook),
+        typeDistribution: this.calculateTypeDistribution(deckResult.spellbook)
       }
     };
   }
@@ -173,12 +179,38 @@ export class BrowserDeckBuilder {
     return [
       {
         name: "Sample Avatar",
-        type: "Avatar",
+        type: CardType.Avatar,
         elements: [Element.Water],
         mana_cost: 0,
         text: "Sample avatar for testing",
         power: 25,
-        rarity: "Unique"
+        rarity: CardRarity.Unique,
+        // Required properties from Card interface
+        baseName: "Sample Avatar",
+        cost: 0,
+        productId: "sample-01",
+        cleanName: "sample-avatar",
+        imageUrl: "",
+        categoryId: "avatar",
+        groupId: "sample",
+        url: "",
+        modifiedOn: new Date().toISOString(),
+        imageCount: "1",
+        extRarity: "Unique",
+        extDescription: "Sample avatar for testing",
+        extCost: "0",
+        extThreshold: "",
+        extElement: "Water",
+        extTypeLine: "Avatar",
+        extCardCategory: "Avatar",
+        extCardType: "Avatar",
+        subTypeName: "",
+        extPowerRating: "25",
+        extCardSubtype: "",
+        extFlavorText: "A sample avatar created for testing purposes",
+        extDefensePower: "0",
+        extLife: "0",
+        setName: "Beta"
       },
       // Add more sample cards as needed
     ];
