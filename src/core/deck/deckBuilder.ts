@@ -4,8 +4,21 @@ import * as synergyCalculator from '../../analyses/synergy/synergyCalculator';
 import * as deckOptimizer from './deckOptimizer';
 import * as elementAnalyzer from '../../analyses/position/elementRequirementAnalyzer';
 import * as deckPlayability from '../../analyses/playability/deckPlayability';
-import * as cardCombos from '../cards/cardCombos';
+import { calculateCardAllocation } from './cardAllocation';
+import { analyzeCardCombos } from './comboDetection';
+import { isUtilityArtifact, sortArtifactsWithUtilityPriority } from './utilityArtifactPrioritizer';
+import { completeDeckWithSynergyCards, addElementalFixingCards } from './deckCompletion';
+import { isComboCard, sortMinions, sortAuras, sortMagics } from './cardSorting';
+import { selectMinions, selectAuras, selectMagics } from './cardSelection';
 import { Combo } from '../cards/cardCombos';
+
+// Re-export functions for backward compatibility
+export { calculateCardAllocation } from './cardAllocation';
+export { analyzeCardCombos } from './comboDetection';
+export { isUtilityArtifact, sortArtifactsWithUtilityPriority } from './utilityArtifactPrioritizer';
+export { completeDeckWithSynergyCards, addElementalFixingCards } from './deckCompletion';
+export { isComboCard, sortMinions, sortAuras, sortMagics } from './cardSorting';
+export { selectMinions, selectAuras, selectMagics } from './cardSelection';
 
 interface SpellbookResult {
   spells: Card[];
@@ -53,129 +66,56 @@ export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
   let selectedSpells: Card[] = [];
   const copiesInDeck: Record<string, number> = {};
   
-  // ENHANCEMENT: Identify potential card combos in the pool FIRST
-  const availableCombos: Combo[] = cardCombos.identifyCardCombos([...minions, ...artifacts, ...auras, ...magics]);
-  
-  console.log(`Identified ${availableCombos.length} potential card combos in the card pool`);
-  
-  // ENHANCEMENT: Adjust allocations based on detected combos
-  const hasUtilityCombo = availableCombos.some((combo: Combo) => 
-    combo.name.includes('Utility') || 
-    combo.name.includes('Cost Reduction') || 
-    combo.name.includes('Core') ||
-    combo.name.includes('Threshold') ||
-    combo.name.includes('Artifact')
-  );
-  
-  // Start with default or provided allocations
+  // Start with default or provided allocations  
   let finalAllocation = {
     minions: allocation.minions ?? defaultAllocation.minions,
     artifacts: allocation.artifacts ?? defaultAllocation.artifacts,
     auras: allocation.auras ?? defaultAllocation.auras,
     magics: allocation.magics ?? defaultAllocation.magics,
   };
-  
-  // Increase artifact allocation for combo decks with utility focus
-  if (hasUtilityCombo && availableCombos.length >= 3) {
-    console.log("🔧 Detected utility combo archetype - adjusting allocation to favor artifacts");
-    finalAllocation.artifacts = Math.min(15, finalAllocation.artifacts + 5); // Increase by 5, cap at 15
-    finalAllocation.minions = Math.max(20, finalAllocation.minions - 3); // Reduce minions slightly
-    finalAllocation.magics = Math.max(12, finalAllocation.magics - 2); // Reduce magics slightly
-  }
-  
-  const cardAllocation: CardAllocation = finalAllocation;
-  
-  console.log(`Identified ${availableCombos.length} potential card combos in the card pool`);
-  
-  // If we have promising combos, prioritize them
-  const comboPieces = new Set<string>();
-  if (availableCombos.length > 0) {
-    // Sort combos by synergy score
-    availableCombos.sort((a: Combo, b: Combo) => b.synergy - a.synergy);
-    
-    // Log the top 3 combos
-    console.log("Top card combos identified:");
-    availableCombos.slice(0, 3).forEach((combo: Combo) => {
-      console.log(`- ${combo.name}: ${combo.description}`);
-      
-      // Add combo pieces to our priority set
-      // Assuming combo.cards contains the names of the cards in the combo
-      combo.cards.forEach((cardName: string) => {
-        comboPieces.add(cardName);
-      });
-    });
-  }
 
-  // Helper function to prioritize combo pieces
-  const isComboCard = (card: Card): boolean => comboPieces.has(card.baseName);
+  // Identify available combos in the card pool and adjust allocations
+  const comboAnalysis = analyzeCardCombos(minions, artifacts, auras, magics, uniqueCards);
+  const { availableCombos, comboPieces, hasUtilityCombo } = comboAnalysis;
+  
+  // Calculate card allocation based on combo analysis
+  const allocationResult = calculateCardAllocation(availableCombos, finalAllocation);
+  const cardAllocation: CardAllocation = allocationResult.allocation;
+  
+  if (allocationResult.adjustmentReason) {
+    console.log(allocationResult.adjustmentReason);
+  }
 
   // Add minions
-  console.log(`Selecting ${cardAllocation.minions} minions...`);
-  let addedMinionCount = 0;
-  const sortedMinions = [...minions]
-    .filter((card: Card) => !selectedSpells.some((s: Card) => s.baseName === card.baseName))
-    .sort((a: Card, b: Card) => {
-      // Prioritize combo pieces
-      if (isComboCard(a) !== isComboCard(b)) {
-        return isComboCard(b) ? 1 : -1;
-      }
-      
-      // Then by synergy
-      return (synergyCalculator as any).calculateSynergy(b, selectedSpells) - 
-             (synergyCalculator as any).calculateSynergy(a, selectedSpells);
-    });
+  const sortedMinions = sortMinions(
+    minions, 
+    selectedSpells, 
+    comboPieces, 
+    (synergyCalculator as any).calculateSynergy
+  );
 
-  for (const minion of sortedMinions) {
-    const remaining = cardAllocation.minions - addedMinionCount;
-    if (remaining <= 0) break;
-
-    const before = selectedSpells.length;
-    selectedSpells = (deckOptimizer as any).addCardWithCopies(minion, selectedSpells, remaining, copiesInDeck, avatar);
-    addedMinionCount += (selectedSpells.length - before);
-  }
+  const minionResult = selectMinions(
+    sortedMinions,
+    selectedSpells,
+    cardAllocation.minions,
+    copiesInDeck,
+    (deckOptimizer as any).addCardWithCopies,
+    avatar
+  );
+  selectedSpells = minionResult.updatedDeck;
 
   // Add artifacts with utility prioritization
   console.log(`Selecting ${cardAllocation.artifacts} artifacts...`);
   
-  // Define high-value utility artifacts
-  const utilityArtifactNames = [
-    'ring of morrigan',
-    'amulet of niniane', 
-    'philosopher\'s stone',
-    'amethyst core',
-    'onyx core',
-    'ruby core',
-    'aquamarine core'
-  ];
-  
-  const isUtilityArtifact = (card: Card): boolean => {
-    const baseName = card.baseName?.toLowerCase() || '';
-    return utilityArtifactNames.some(name => baseName.includes(name));
-  };
-  
-  let addedArtifactCount = 0;
-  const sortedArtifacts = [...artifacts]
-    .filter((card: Card) => !selectedSpells.some((s: Card) => s.baseName === card.baseName))
-    .sort((a: Card, b: Card) => {
-      // HIGHEST PRIORITY: Utility artifacts in combo decks
-      if (hasUtilityCombo) {
-        const aIsUtility = isUtilityArtifact(a);
-        const bIsUtility = isUtilityArtifact(b);
-        if (aIsUtility !== bIsUtility) {
-          return bIsUtility ? 1 : -1; // Utility artifacts first
-        }
-      }
-      
-      // SECOND PRIORITY: General combo pieces
-      if (isComboCard(a) !== isComboCard(b)) {
-        return isComboCard(b) ? 1 : -1;
-      }
-      
-      // THIRD PRIORITY: Synergy score
-      return (synergyCalculator as any).calculateSynergy(b, selectedSpells) - 
-             (synergyCalculator as any).calculateSynergy(a, selectedSpells);
-    });
+  const sortedArtifacts = sortArtifactsWithUtilityPriority(
+    artifacts, 
+    selectedSpells, 
+    hasUtilityCombo,
+    comboPieces,
+    (synergyCalculator as any).calculateSynergy
+  );
 
+  let addedArtifactCount = 0;
   for (const artifact of sortedArtifacts) {
     const remaining = cardAllocation.artifacts - addedArtifactCount;
     if (remaining <= 0) break;
@@ -186,104 +126,81 @@ export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
   }
 
   // Add auras
-  console.log(`Selecting ${cardAllocation.auras} auras...`);
-  let addedAuraCount = 0;
-  const sortedAuras = [...auras]
-    .filter((card: Card) => !selectedSpells.some((s: Card) => s.baseName === card.baseName))
-    .sort((a: Card, b: Card) => {
-      // Prioritize combo pieces
-      if (isComboCard(a) !== isComboCard(b)) {
-        return isComboCard(b) ? 1 : -1;
-      }
-      
-      return (synergyCalculator as any).calculateSynergy(b, selectedSpells) - 
-             (synergyCalculator as any).calculateSynergy(a, selectedSpells);
-    });
+  const sortedAuras = sortAuras(
+    auras, 
+    selectedSpells, 
+    comboPieces, 
+    (synergyCalculator as any).calculateSynergy
+  );
 
-  for (const aura of sortedAuras) {
-    const remaining = cardAllocation.auras - addedAuraCount;
-    if (remaining <= 0) break;
-
-    const before = selectedSpells.length;
-    selectedSpells = (deckOptimizer as any).addCardWithCopies(aura, selectedSpells, remaining, copiesInDeck, avatar);
-    addedAuraCount += (selectedSpells.length - before);
-  }
+  const auraResult = selectAuras(
+    sortedAuras,
+    selectedSpells,
+    cardAllocation.auras,
+    copiesInDeck,
+    (deckOptimizer as any).addCardWithCopies,
+    avatar
+  );
+  selectedSpells = auraResult.updatedDeck;
 
   // Add magic spells
-  console.log(`Selecting ${cardAllocation.magics} magic spells...`);
-  let addedMagicCount = 0;
-  const sortedMagics = [...magics]
-    .filter((card: Card) => !selectedSpells.some((s: Card) => s.baseName === card.baseName))
-    .sort((a: Card, b: Card) => {
-      // Prioritize combo pieces
-      if (isComboCard(a) !== isComboCard(b)) {
-        return isComboCard(b) ? 1 : -1;
-      }
-      
-      return (synergyCalculator as any).calculateSynergy(b, selectedSpells) - 
-             (synergyCalculator as any).calculateSynergy(a, selectedSpells);
-    });
+  const sortedMagics = sortMagics(
+    magics, 
+    selectedSpells, 
+    comboPieces, 
+    (synergyCalculator as any).calculateSynergy
+  );
 
-  for (const magic of sortedMagics) {
-    const remaining = cardAllocation.magics - addedMagicCount;
-    if (remaining <= 0) break;
+  const magicResult = selectMagics(
+    sortedMagics,
+    selectedSpells,
+    cardAllocation.magics,
+    copiesInDeck,
+    (deckOptimizer as any).addCardWithCopies,
+    avatar
+  );
+  selectedSpells = magicResult.updatedDeck;
 
-    const before = selectedSpells.length;
-    selectedSpells = (deckOptimizer as any).addCardWithCopies(magic, selectedSpells, remaining, copiesInDeck, avatar);
-    addedMagicCount += (selectedSpells.length - before);
-  }
-
-  // ENHANCEMENT: Analyze elemental requirements before filling the remaining slots
+  // ENHANCEMENT: Analyze elemental requirements and add fixing cards if needed
   const elementalAnalysis = (elementAnalyzer as any).analyzeElementalRequirements(selectedSpells);
   const hasElementDeficiencies = Object.keys(elementalAnalysis.elementDeficiencies || {}).length > 0;
 
   if (hasElementDeficiencies) {
-      // Find cards that could address this elemental deficiency
-      const allAvailableCards = [...minions, ...artifacts, ...auras, ...magics]
-        .filter((card: Card) => !selectedSpells.some((s: Card) => s.baseName === card.baseName));
-        
-      const recommendations = (elementAnalyzer as any).getElementalRecommendations(
-        allAvailableCards, elementalAnalysis
-      );
+    // Find cards that could address this elemental deficiency
+    const allAvailableCards = [...minions, ...artifacts, ...auras, ...magics]
+      .filter((card: Card) => !selectedSpells.some((s: Card) => s.baseName === card.baseName));
       
-      // Add recommended cards to address elemental deficiencies (up to 5 per element)
-      let addedCount = 0;
-      for (const card of recommendations) {
-        if (addedCount >= 5 || selectedSpells.length >= 60) break;
-        
-        const elementContribution = (elementAnalyzer as any).calculateElementalDeficitContribution(card, elementalAnalysis);
-        if (elementContribution > 0) {
-          selectedSpells.push(card);
-          copiesInDeck[card.baseName] = (copiesInDeck[card.baseName] || 0) + 1;
-          addedCount++;
-        }
-      }
-    }
-  
+    const recommendations = (elementAnalyzer as any).getElementalRecommendations(
+      allAvailableCards, elementalAnalysis
+    );
+    
+    // Add recommended cards using the modular function
+    const elementalResult = addElementalFixingCards(
+      selectedSpells, 
+      recommendations, 
+      elementalAnalysis,
+      copiesInDeck,
+      (elementAnalyzer as any).calculateElementalDeficitContribution
+    );
+    
+    selectedSpells = elementalResult.updatedDeck;
+    Object.assign(copiesInDeck, elementalResult.updatedCopies);
+  }
 
   // ENHANCEMENT: Fill remaining slots with high-synergy cards
   const targetDeckSize = 55; // Target deck size
-  const remainingSlots = Math.max(0, targetDeckSize - selectedSpells.length);
+  const allAvailableCards = [...minions, ...artifacts, ...auras, ...magics];
   
-  if (remainingSlots > 0) {
-    console.log(`Filling ${remainingSlots} remaining slots with high-synergy cards...`);
-    
-    // Get all available cards not yet in deck
-    const availableCards = [...minions, ...artifacts, ...auras, ...magics]
-      .filter((card: Card) => !selectedSpells.some((s: Card) => s.baseName === card.baseName));
-    
-    // Sort by synergy with current deck
-    const sortedAvailable = availableCards.sort((a: Card, b: Card) => 
-      (synergyCalculator as any).calculateSynergy(b, selectedSpells) - 
-      (synergyCalculator as any).calculateSynergy(a, selectedSpells)
-    );
-    
-    for (let i = 0; i < Math.min(remainingSlots, sortedAvailable.length); i++) {
-      const card = sortedAvailable[i];
-      selectedSpells.push(card);
-      copiesInDeck[card.baseName] = (copiesInDeck[card.baseName] || 0) + 1;
-    }
-  }
+  const completionResult = completeDeckWithSynergyCards({
+    selectedSpells,
+    allAvailableCards,
+    targetDeckSize,
+    copiesInDeck,
+    calculateSynergy: (synergyCalculator as any).calculateSynergy
+  });
+  
+  selectedSpells = completionResult.completedDeck;
+  Object.assign(copiesInDeck, completionResult.copiesInDeck);
 
   // Optimize the deck
   console.log("Running deck optimization...");
