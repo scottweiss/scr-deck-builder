@@ -1,16 +1,6 @@
 import { Card } from './gameState';
-import { BatchResult } from './matchSimulator';
 import { getMetaDecks } from './testDeckUtils';
-
-/**
- * Interface for deck optimization results
- */
-export interface DeckOptimizationResult {
-    originalDeck: Card[];
-    optimizedDeck: Card[];
-    improvements: string[];
-    winRateImprovement: number;
-}
+import { DeckOptimizationResult } from './deckTestTypes';
 
 /**
  * Make a random substitution in a deck

@@ -1,32 +1,13 @@
 import { Card } from './gameState';
-import { SimulationConfig, BatchResult } from './matchSimulator';
+import { SimulationConfig } from './matchSimulator';
 import { AI_STRATEGIES } from './aiEngine';
 import { calculateFavorability } from './deckAnalyzer';
 import { identifyMatchupFactors } from './deckAnalyzer';
 import { convertToPlayerDeck } from './testDeckUtils';
-
-/**
- * Interface for matchup analysis result
- */
-export interface MatchupAnalysis {
-    deck1: string;
-    deck2: string;
-    deck1WinRate: number;
-    favorability: 'heavily_favored' | 'favored' | 'even' | 'unfavored' | 'heavily_unfavored';
-    keyFactors: string[];
-}
-
-/**
- * Interface for matchup result
- */
-export interface MatchupResult {
-    opponentName: string;
-    winRate: number;
-    favorability: 'heavily_favored' | 'favored' | 'even' | 'unfavorable' | 'heavily_unfavored';
-    keyFactors: string[];
-    turns: number;
-    gamesPlayed: number;
-}
+import {
+    MatchupAnalysis,
+    MatchupResult
+} from './deckTestTypes';
 
 /**
  * Run matchup analysis between two decks

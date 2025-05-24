@@ -1,20 +1,11 @@
 import { Card } from './gameState';
-import { DeckTestResult } from './metaTester'; 
-import { ConsistencyReport } from './consistencyAnalyzer';
-import { analyzeDeckComposition, DeckComposition } from './deckAnalyzer';
-
-/**
- * Interface for comprehensive performance report
- */
-export interface PerformanceReport {
-    deckName: string;
-    metaPerformance: DeckTestResult;
-    consistency: ConsistencyReport;
-    strategyPerformance: { [strategy: string]: number };
-    composition: DeckComposition;
-    overallRating: number;
-    timestamp: number;
-}
+import {
+    PerformanceReport,
+    DeckTestResult,
+    ConsistencyReport,
+    DeckComposition
+} from './deckTestTypes';
+import { analyzeDeckComposition } from './deckAnalyzer';
 
 /**
  * Generate a comprehensive performance report for a deck

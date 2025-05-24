@@ -12,45 +12,11 @@ import {
     generateRecommendations, 
     classifyPerformance 
 } from './deckAnalyzer';
-
-/**
- * Interface for deck test result
- */
-export interface DeckTestResult {
-    deckName: string;
-    winRate: number;
-    averageTurns: number;
-    performance: 'excellent' | 'good' | 'average' | 'poor';
-    strengths: string[];
-    weaknesses: string[];
-    recommendations: string[];
-}
-
-/**
- * Interface for meta analysis result
- */
-export interface MetaAnalysisResult {
-    deckName: string;
-    results: MatchupResult[];
-    winRate: number;
-    matchups: {
-        favorable: number;
-        even: number;
-        unfavorable: number;
-    };
-}
-
-/**
- * Interface for matchup result
- */
-export interface MatchupResult {
-    opponentName: string;
-    winRate: number;
-    favorability: 'heavily_favored' | 'favored' | 'even' | 'unfavorable' | 'heavily_unfavored';
-    keyFactors: string[];
-    turns: number;
-    gamesPlayed: number;
-}
+import {
+    DeckTestResult,
+    MetaAnalysisResult,
+    MatchupResult
+} from './deckTestTypes';
 
 /**
  * Test a deck against the meta

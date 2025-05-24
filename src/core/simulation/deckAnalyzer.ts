@@ -1,19 +1,20 @@
 import { Card } from './gameState';
 import { BatchResult } from './matchSimulator';
+import { Element } from '../../types/Card';
 
 /**
  * Analyze deck composition
  */
-export function analyzeDeckComposition(deck: Card[]): DeckComposition {
+export function analyzeDeckComposition(deck: Card[]) {
     const units = deck.filter(c => c.type.toLowerCase() === 'unit' || c.type.toLowerCase() === 'minion');
     const spells = deck.filter(c => c.type.toLowerCase() === 'spell' || c.type.toLowerCase() === 'magic');
     const sites = deck.filter(c => c.type.toLowerCase() === 'site');
 
     const elements = {
-        air: deck.filter(c => c.elements?.includes('Air')).length,
-        earth: deck.filter(c => c.elements?.includes('Earth')).length,
-        fire: deck.filter(c => c.elements?.includes('Fire')).length,
-        water: deck.filter(c => c.elements?.includes('Water')).length
+        air: deck.filter(c => c.elements?.includes(Element.Air)).length,
+        earth: deck.filter(c => c.elements?.includes(Element.Earth)).length,
+        fire: deck.filter(c => c.elements?.includes(Element.Fire)).length,
+        water: deck.filter(c => c.elements?.includes(Element.Water)).length
     };
 
     const manaCurve = Array(10).fill(0);
@@ -174,14 +175,4 @@ export function calculateFavorability(winRate: number): 'heavily_favored' | 'fav
     if (winRate >= 0.45) return 'even';
     if (winRate >= 0.35) return 'unfavored';
     return 'heavily_unfavored';
-}
-
-// Interface definitions
-export interface DeckComposition {
-    units: number;
-    spells: number;
-    sites: number;
-    elements: { air: number; earth: number; fire: number; water: number };
-    manaCurve: number[];
-    averageCost: number;
 }

@@ -1,14 +1,5 @@
 import { BatchResult } from './matchSimulator';
-
-/**
- * Interface for consistency analysis report
- */
-export interface ConsistencyReport {
-    winRateVariance: number;
-    turnVariance: number;
-    consistencyScore: number;
-    recommendations: string[];
-}
+import { ConsistencyReport } from './deckTestTypes';
 
 /**
  * Analyze result consistency
