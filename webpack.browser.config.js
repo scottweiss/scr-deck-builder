@@ -3,10 +3,10 @@ const webpack = require('webpack');
 
 module.exports = {
   mode: 'production',
-  entry: './src/browser/unified-deck-builder.ts',
+  entry: './src/browser/browser-entry.ts',
   
   output: {
-    path: path.resolve(__dirname, '../web/deck-builder/dist'),
+    path: path.resolve(__dirname, 'dist'),
     filename: 'sorcery-deck-builder.js',
     library: 'SorceryDeckBuilder',
     libraryTarget: 'umd',

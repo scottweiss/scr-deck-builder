@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorcery: Unified Deck Builder Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        h1 {
+            color: #FFD700;
+            border-bottom: 2px solid #8d7459;
+            padding-bottom: 10px;
+        }
+        .container {
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        button {
+            background-color: #b17a2d;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #c68d3f;
+        }
+        select, input {
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        .card {
+            background: linear-gradient(145deg, #333, #222);
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .card-name {
+            color: #FFD700;
+            font-weight: bold;
+        }
+        .card-type {
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+        .result-box {
+            background-color: #333;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .element {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .water { background-color: #3498db; }
+        .fire { background-color: #e74c3c; }
+        .earth { background-color: #2ecc71; }
+        .air { background-color: #ecf0f1; }
+        .void { background-color: #9b59b6; }
+        .success { color: #2ecc71; }
+        .error { color: #e74c3c; }
+        .hidden { display: none; }
+        #loading {
+            text-align: center;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sorcery: Unified Deck Builder Demo</h1>
+    <p>This simple demo demonstrates the unified TypeScript-powered deck building system</p>
+    
+    <div class="container">
+        <h2>Quick Deck Builder</h2>
+        <div>
+            <label for="element">Preferred Element:</label>
+            <select id="element">
+                <option value="Water">Water</option>
+                <option value="Fire" selected>Fire</option>
+                <option value="Earth">Earth</option>
+                <option value="Air">Air</option>
+                <option value="Void">Void</option>
+            </select>
+            
+            <label for="archetype">Preferred Archetype:</label>
+            <select id="archetype">
+                <option value="">No Preference</option>
+                <option value="Aggro">Aggro</option>
+                <option value="Control">Control</option>
+                <option value="Midrange">Midrange</option>
+                <option value="Combo">Combo</option>
+            </select>
+            
+            <label for="deck-size">Deck Size:</label>
+            <input type="number" id="deck-size" min="30" max="60" value="50">
+        </div>
+        <div style="margin-top: 15px;">
+            <button id="build-btn">Build Deck</button>
+            <button id="search-btn">Search Cards</button>
+        </div>
+    </div>
+    
+    <div id="loading" class="hidden">
+        <p>Building deck, please wait...</p>
+    </div>
+    
+    <div id="results" class="hidden">
+        <div class="container">
+            <h2>Deck Overview</h2>
+            <div id="overview">
+                <!-- Overview will be filled here -->
+            </div>
+        </div>
+        
+        <div class="container">
+            <h2>Avatar</h2>
+            <div id="avatar">
+                <!-- Avatar will be filled here -->
+            </div>
+        </div>
+        
+        <div class="container">
+            <h2>Sample Spells (5)</h2>
+            <div id="spells">
+                <!-- Sample spells will be filled here -->
+            </div>
+        </div>
+        
+        <div class="container">
+            <h2>Sample Sites (5)</h2>
+            <div id="sites">
+                <!-- Sample sites will be filled here -->
+            </div>
+        </div>
+        
+        <div class="container">
+            <h2>Raw JSON</h2>
+            <div id="raw" class="result-box">
+                <!-- Raw JSON will be filled here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- First load the bundled unified deck builder -->
+    <script src="../../dist/sorcery-deck-builder.js"></script>
+    <!-- Then load our simplified API -->
+    <script src="unified-api.js"></script>
+    <script>
+        // DOM Elements
+        const elementSelect = document.getElementById('element');
+        const archetypeSelect = document.getElementById('archetype');
+        const deckSizeInput = document.getElementById('deck-size');
+        const buildBtn = document.getElementById('build-btn');
+        const searchBtn = document.getElementById('search-btn');
+        const loadingDiv = document.getElementById('loading');
+        const resultsDiv = document.getElementById('results');
+        const overviewDiv = document.getElementById('overview');
+        const avatarDiv = document.getElementById('avatar');
+        const spellsDiv = document.getElementById('spells');
+        const sitesDiv = document.getElementById('sites');
+        const rawDiv = document.getElementById('raw');
+        
+        // Build a deck when button is clicked
+        buildBtn.addEventListener('click', async () => {
+            try {
+                // Show loading
+                loadingDiv.classList.remove('hidden');
+                resultsDiv.classList.add('hidden');
+                
+                // Get options
+                const options = {
+                    preferredElement: elementSelect.value,
+                    preferredArchetype: archetypeSelect.value || undefined,
+                    maxCards: parseInt(deckSizeInput.value)
+                };
+                
+                // Build deck using our unified API
+                const result = await SorceryUnifiedDeckBuilder.buildDeck(options);
+                
+                // Display results
+                displayResults(result);
+                
+                // Hide loading, show results
+                loadingDiv.classList.add('hidden');
+                resultsDiv.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error building deck:', error);
+                loadingDiv.classList.add('hidden');
+                alert('Error building deck: ' + error.message);
+            }
+        });
+        
+        // Search for cards
+        searchBtn.addEventListener('click', async () => {
+            const query = prompt('Enter search term:');
+            if (query) {
+                loadingDiv.classList.remove('hidden');
+                
+                try {
+                    const cards = await SorceryUnifiedDeckBuilder.searchCards(query);
+                    alert(`Found ${cards.length} cards matching "${query}"`);
+                    console.log('Search results:', cards);
+                } catch (error) {
+                    console.error('Error searching cards:', error);
+                    alert('Error searching cards: ' + error.message);
+                } finally {
+                    loadingDiv.classList.add('hidden');
+                }
+            }
+        });
+        
+        // Display results in the UI
+        function displayResults(result) {
+            // Overview
+            overviewDiv.innerHTML = `
+                <p><strong>Total Cards:</strong> ${result.stats.totalCards}</p>
+                <p><strong>Synergy Score:</strong> ${result.synergy.toFixed(2)}</p>
+                <p><strong>Average Mana Cost:</strong> ${result.stats.averageManaCost.toFixed(2)}</p>
+                <p><strong>Element Distribution:</strong> ${formatElementDistribution(result.stats.elementDistribution)}</p>
+            `;
+            
+            // Avatar
+            avatarDiv.innerHTML = result.avatar ? createCardHTML(result.avatar) : '<p class="error">No avatar selected</p>';
+            
+            // Sample spells (5)
+            spellsDiv.innerHTML = '';
+            result.spells.slice(0, 5).forEach(spell => {
+                spellsDiv.innerHTML += createCardHTML(spell);
+            });
+            
+            // Sample sites (5)
+            sitesDiv.innerHTML = '';
+            result.sites.slice(0, 5).forEach(site => {
+                sitesDiv.innerHTML += createCardHTML(site);
+            });
+            
+            // Raw JSON
+            rawDiv.textContent = JSON.stringify(result, null, 2);
+        }
+        
+        // Helper to create card HTML
+        function createCardHTML(card) {
+            return `
+                <div class="card">
+                    <div class="card-name">${card.name || 'Unnamed Card'} ${card.mana_cost ? `(${card.mana_cost})` : ''}</div>
+                    <div class="card-type">${card.type || 'Unknown Type'}</div>
+                    ${card.elements ? `<div class="card-elements">${formatElements(card.elements)}</div>` : ''}
+                    ${card.text ? `<div class="card-text">${card.text}</div>` : ''}
+                </div>
+            `;
+        }
+        
+        // Helper to format elements as colored dots
+        function formatElements(elements) {
+            if (!elements || !elements.length) return '';
+            
+            return elements.map(element => {
+                const elementClass = element.toLowerCase();
+                return `<span class="element ${elementClass}" title="${element}"></span>`;
+            }).join('');
+        }
+        
+        // Helper to format element distribution
+        function formatElementDistribution(distribution) {
+            if (!distribution) return 'None';
+            
+            return Object.entries(distribution)
+                .map(([element, count]) => `${element}: ${count}`)
+                .join(', ');
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', async () => {
+            try {
+                // Pre-initialize the deck builder in the background
+                await SorceryUnifiedDeckBuilder.initialize();
+                console.log('Unified deck builder initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize deck builder:', error);
+            }
+        });
+    </script>
+</body>
+</html>
