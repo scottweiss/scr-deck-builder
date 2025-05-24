@@ -1,6 +1,7 @@
-import { MatchSimulator, SimulationBatch, SimulationConfig, BatchResult } from './matchSimulator';
+import { MatchSimulator, SimulationBatch, SimulationConfig, BatchResult, PlayerDeck } from './matchSimulator';
 import { AI_STRATEGIES } from './aiEngine';
 import { Card } from './gameState';
+import { Element, CardType } from '../../types/Card';
 
 export interface DeckTestResult {
     deckName: string;
@@ -30,6 +31,154 @@ export class DeckTestSuite {
     }
 
     /**
+     * Converts a Card array to PlayerDeck format
+     */
+    private convertToPlayerDeck(cards: Card[]): PlayerDeck {
+        // Separate cards by type
+        const avatar = cards.find(c => c.type === CardType.Avatar) || this.createMockAvatar();
+        const spells = cards.filter(c => c.type === CardType.Minion || c.type === CardType.Magic || 
+                                        c.type === CardType.Artifact || c.type === CardType.Aura);
+        const sites = cards.filter(c => c.type === CardType.Site);
+        
+        // Ensure minimum deck requirements
+        while (spells.length < 50) {
+            spells.push(this.createMockSpell());
+        }
+        while (sites.length < 30) {
+            sites.push(this.createMockSite());
+        }
+        
+        return { avatar, spells, sites };
+    }
+
+    /**
+     * Creates a mock avatar for testing
+     */
+    private createMockAvatar(): Card {
+        return {
+            productId: 'mock_avatar',
+            name: 'Test Avatar',
+            cleanName: 'test_avatar',
+            imageUrl: '',
+            categoryId: '',
+            groupId: '',
+            url: '',
+            modifiedOn: '',
+            imageCount: '',
+            extRarity: 'Unique',
+            extDescription: '',
+            extCost: '0',
+            extThreshold: '',
+            extElement: 'Fire',
+            extTypeLine: 'Avatar',
+            extCardCategory: 'Avatar',
+            extCardType: 'Avatar',
+            subTypeName: '',
+            extPowerRating: '0',
+            extCardSubtype: '',
+            extFlavorText: '',
+            extDefensePower: '',
+            extLife: '20',
+            setName: 'Test',
+            type: CardType.Avatar,
+            mana_cost: 0,
+            text: 'Test avatar',
+            elements: [Element.Fire],
+            power: 0,
+            life: 20,
+            rarity: 'Unique' as any,
+            baseName: 'Test Avatar',
+            cost: 0,
+            threshold: '',
+            subtype: ''
+        };
+    }
+
+    /**
+     * Creates a mock spell for testing
+     */
+    private createMockSpell(): Card {
+        return {
+            productId: 'mock_spell',
+            name: 'Test Spell',
+            cleanName: 'test_spell',
+            imageUrl: '',
+            categoryId: '',
+            groupId: '',
+            url: '',
+            modifiedOn: '',
+            imageCount: '',
+            extRarity: 'Common',
+            extDescription: '',
+            extCost: '1',
+            extThreshold: '',
+            extElement: 'Fire',
+            extTypeLine: 'Magic',
+            extCardCategory: 'Magic',
+            extCardType: 'Magic',
+            subTypeName: '',
+            extPowerRating: '0',
+            extCardSubtype: '',
+            extFlavorText: '',
+            extDefensePower: '',
+            extLife: '',
+            setName: 'Test',
+            type: CardType.Magic,
+            mana_cost: 1,
+            text: 'Test spell',
+            elements: [Element.Fire],
+            power: 0,
+            rarity: 'Common' as any,
+            baseName: 'Test Spell',
+            cost: 1,
+            threshold: '',
+            subtype: ''
+        };
+    }
+
+    /**
+     * Creates a mock site for testing
+     */
+    private createMockSite(): Card {
+        return {
+            productId: 'mock_site',
+            name: 'Test Site',
+            cleanName: 'test_site',
+            imageUrl: '',
+            categoryId: '',
+            groupId: '',
+            url: '',
+            modifiedOn: '',
+            imageCount: '',
+            extRarity: 'Common',
+            extDescription: '',
+            extCost: '0',
+            extThreshold: '',
+            extElement: 'Fire',
+            extTypeLine: 'Site',
+            extCardCategory: 'Site',
+            extCardType: 'Site',
+            subTypeName: '',
+            extPowerRating: '0',
+            extCardSubtype: '',
+            extFlavorText: '',
+            extDefensePower: '',
+            extLife: '',
+            setName: 'Test',
+            type: CardType.Site,
+            mana_cost: 0,
+            text: 'Test site',
+            elements: [Element.Fire],
+            power: 0,
+            rarity: 'Common' as any,
+            baseName: 'Test Site',
+            cost: 0,
+            threshold: '',
+            subtype: ''
+        };
+    }
+
+    /**
      * Tests a deck against a variety of meta decks
      */
     public async testDeckAgainstMeta(
@@ -43,8 +192,8 @@ export class DeckTestSuite {
 
         for (const metaDeck of metaDecks) {
             const config: SimulationConfig = {
-                player1Deck: testDeck,
-                player2Deck: metaDeck.cards,
+                player1Deck: this.convertToPlayerDeck(testDeck),
+                player2Deck: this.convertToPlayerDeck(metaDeck.cards),
                 player1Strategy: AI_STRATEGIES.MIDRANGE,
                 player2Strategy: AI_STRATEGIES.MIDRANGE,
                 maxTurns: 50,
@@ -68,8 +217,8 @@ export class DeckTestSuite {
         iterations: number = 200
     ): Promise<MatchupAnalysis> {
         const config: SimulationConfig = {
-            player1Deck: deck1.cards,
-            player2Deck: deck2.cards,
+            player1Deck: this.convertToPlayerDeck(deck1.cards),
+            player2Deck: this.convertToPlayerDeck(deck2.cards),
             player1Strategy: AI_STRATEGIES.MIDRANGE,
             player2Strategy: AI_STRATEGIES.MIDRANGE,
             maxTurns: 50,
@@ -100,8 +249,8 @@ export class DeckTestSuite {
 
         for (const [strategyName, strategy] of Object.entries(AI_STRATEGIES)) {
             const config: SimulationConfig = {
-                player1Deck: deck,
-                player2Deck: opponentDeck,
+                player1Deck: this.convertToPlayerDeck(deck),
+                player2Deck: this.convertToPlayerDeck(opponentDeck),
                 player1Strategy: strategy,
                 player2Strategy: AI_STRATEGIES.MIDRANGE,
                 maxTurns: 50,
@@ -127,8 +276,8 @@ export class DeckTestSuite {
         const baselineDeck = this.createBaselineDeck();
         
         const config: SimulationConfig = {
-            player1Deck: deck,
-            player2Deck: baselineDeck,
+            player1Deck: this.convertToPlayerDeck(deck),
+            player2Deck: this.convertToPlayerDeck(baselineDeck),
             player1Strategy: AI_STRATEGIES.MIDRANGE,
             player2Strategy: AI_STRATEGIES.MIDRANGE,
             maxTurns: 50,
@@ -178,9 +327,8 @@ export class DeckTestSuite {
         return {
             originalDeck: baseDeck,
             optimizedDeck: bestDeck,
-            improvement: bestWinRate - initialResult.winRate,
-            finalWinRate: bestWinRate,
-            changes: this.identifyChanges(baseDeck, bestDeck)
+            improvements: this.identifyImprovements(baseDeck, bestDeck),
+            winRateImprovement: bestWinRate - initialResult.winRate
         };
     }
 
@@ -402,17 +550,42 @@ export class DeckTestSuite {
 
     private createBaselineDeck(): Card[] {
         // Create a balanced baseline deck for testing
-        // This would be replaced with actual card data
         return Array(40).fill(null).map((_, i) => ({
-            id: `baseline_${i}`,
+            productId: `baseline_${i}`,
             name: `Baseline Card ${i}`,
-            type: i % 3 === 0 ? 'Unit' : i % 3 === 1 ? 'Spell' : 'Site',
-            cost: Math.floor(i / 8) + 1,
-            power: i % 3 === 0 ? Math.floor(i / 10) + 1 : undefined,
+            cleanName: `baseline_card_${i}`,
+            imageUrl: '',
+            categoryId: '',
+            groupId: '',
+            url: '',
+            modifiedOn: '',
+            imageCount: '',
+            extRarity: 'Common',
+            extDescription: '',
+            extCost: (Math.floor(i / 8) + 1).toString(),
+            extThreshold: '',
+            extElement: 'Air',
+            extTypeLine: i % 3 === 0 ? 'Minion' : i % 3 === 1 ? 'Magic' : 'Site',
+            extCardCategory: i % 3 === 0 ? 'Minion' : i % 3 === 1 ? 'Magic' : 'Site',
+            extCardType: i % 3 === 0 ? 'Minion' : i % 3 === 1 ? 'Magic' : 'Site',
+            subTypeName: '',
+            extPowerRating: i % 3 === 0 ? (Math.floor(i / 10) + 1).toString() : '0',
+            extCardSubtype: '',
+            extFlavorText: '',
+            extDefensePower: '',
+            extLife: i % 3 === 0 ? (Math.floor(i / 10) + 1).toString() : '',
+            setName: 'Test',
+            type: i % 3 === 0 ? CardType.Minion : i % 3 === 1 ? CardType.Magic : CardType.Site,
+            mana_cost: Math.floor(i / 8) + 1,
+            text: 'Baseline test card',
+            elements: [Element.Air],
+            power: i % 3 === 0 ? Math.floor(i / 10) + 1 : 0,
             life: i % 3 === 0 ? Math.floor(i / 10) + 1 : undefined,
-            elements: ['air'],
-            rarity: 'Common',
-            text: 'Baseline test card'
+            rarity: 'Common' as any,
+            baseName: `Baseline Card ${i}`,
+            cost: Math.floor(i / 8) + 1,
+            threshold: '',
+            subtype: ''
         }));
     }
 
@@ -430,17 +603,47 @@ export class DeckTestSuite {
     private createTestDeck(element: string, archetype: string): Card[] {
         // Create test decks for different archetypes
         const baseCost = archetype === 'aggro' ? 2 : archetype === 'control' ? 5 : 3;
+        const elementEnum = element === 'fire' ? Element.Fire : 
+                          element === 'water' ? Element.Water :
+                          element === 'earth' ? Element.Earth :
+                          element === 'air' ? Element.Air : Element.Air;
         
         return Array(40).fill(null).map((_, i) => ({
-            id: `${element}_${archetype}_${i}`,
+            productId: `${element}_${archetype}_${i}`,
             name: `${element} ${archetype} Card ${i}`,
-            type: i % 3 === 0 ? 'Unit' : i % 3 === 1 ? 'Spell' : 'Site',
-            cost: baseCost + Math.floor(i / 10),
-            power: i % 3 === 0 ? baseCost + Math.floor(i / 15) : undefined,
+            cleanName: `${element}_${archetype}_card_${i}`,
+            imageUrl: '',
+            categoryId: '',
+            groupId: '',
+            url: '',
+            modifiedOn: '',
+            imageCount: '',
+            extRarity: 'Common',
+            extDescription: '',
+            extCost: (baseCost + Math.floor(i / 10)).toString(),
+            extThreshold: '',
+            extElement: element,
+            extTypeLine: i % 3 === 0 ? 'Minion' : i % 3 === 1 ? 'Magic' : 'Site',
+            extCardCategory: i % 3 === 0 ? 'Minion' : i % 3 === 1 ? 'Magic' : 'Site',
+            extCardType: i % 3 === 0 ? 'Minion' : i % 3 === 1 ? 'Magic' : 'Site',
+            subTypeName: '',
+            extPowerRating: i % 3 === 0 ? (baseCost + Math.floor(i / 15)).toString() : '0',
+            extCardSubtype: '',
+            extFlavorText: '',
+            extDefensePower: '',
+            extLife: i % 3 === 0 ? (baseCost + Math.floor(i / 15)).toString() : '',
+            setName: 'Test',
+            type: i % 3 === 0 ? CardType.Minion : i % 3 === 1 ? CardType.Magic : CardType.Site,
+            mana_cost: baseCost + Math.floor(i / 10),
+            text: `${archetype} ${element} card`,
+            elements: [elementEnum],
+            power: i % 3 === 0 ? baseCost + Math.floor(i / 15) : 0,
             life: i % 3 === 0 ? baseCost + Math.floor(i / 15) : undefined,
-            elements: [element],
-            rarity: 'Common',
-            text: `${archetype} ${element} card`
+            rarity: 'Common' as any,
+            baseName: `${element} ${archetype} Card ${i}`,
+            cost: baseCost + Math.floor(i / 10),
+            threshold: '',
+            subtype: ''
         }));
     }
 
@@ -453,16 +656,16 @@ export class DeckTestSuite {
         return newDeck;
     }
 
-    private identifyChanges(originalDeck: Card[], optimizedDeck: Card[]): string[] {
-        const changes: string[] = [];
+    private identifyImprovements(originalDeck: Card[], optimizedDeck: Card[]): string[] {
+        const improvements: string[] = [];
         
         for (let i = 0; i < originalDeck.length; i++) {
-            if (originalDeck[i].id !== optimizedDeck[i].id) {
-                changes.push(`Replaced ${originalDeck[i].name} with ${optimizedDeck[i].name}`);
+            if (originalDeck[i].productId !== optimizedDeck[i].productId) {
+                improvements.push(`Replaced ${originalDeck[i].name} with ${optimizedDeck[i].name}`);
             }
         }
         
-        return changes;
+        return improvements;
     }
 
     private analyzeDeckComposition(deck: Card[]): DeckComposition {
@@ -471,10 +674,10 @@ export class DeckTestSuite {
         const sites = deck.filter(c => c.type.toLowerCase() === 'site');
 
         const elements = {
-            air: deck.filter(c => c.elements?.includes('air')).length,
-            earth: deck.filter(c => c.elements?.includes('earth')).length,
-            fire: deck.filter(c => c.elements?.includes('fire')).length,
-            water: deck.filter(c => c.elements?.includes('water')).length
+            air: deck.filter(c => c.elements?.includes(Element.Air)).length,
+            earth: deck.filter(c => c.elements?.includes(Element.Earth)).length,
+            fire: deck.filter(c => c.elements?.includes(Element.Fire)).length,
+            water: deck.filter(c => c.elements?.includes(Element.Water)).length
         };
 
         const manaCurve = Array(10).fill(0);
@@ -515,9 +718,28 @@ export interface ConsistencyReport {
 export interface DeckOptimizationResult {
     originalDeck: Card[];
     optimizedDeck: Card[];
-    improvement: number;
-    finalWinRate: number;
-    changes: string[];
+    improvements: string[];
+    winRateImprovement: number;
+}
+
+export interface MetaAnalysisResult {
+    deckName: string;
+    results: MatchupResult[];
+    winRate: number;
+    matchups: {
+        favorable: number;
+        even: number;
+        unfavorable: number;
+    };
+}
+
+export interface MatchupResult {
+    opponentName: string;
+    winRate: number;
+    favorability: 'heavily_favored' | 'favored' | 'even' | 'unfavorable' | 'heavily_unfavored';
+    keyFactors: string[];
+    turns: number;
+    gamesPlayed: number;
 }
 
 export interface PerformanceReport {
