@@ -1,6 +1,6 @@
-import { Card } from './gameState';
-import { BatchResult } from './matchSimulator';
-import { Element } from '../../types/Card';
+import { Card } from '../core/gameState';
+import { BatchResult } from '../core/matchSimulator';
+import { Element } from '../../../types/Card';
 
 /**
  * Analyze deck composition

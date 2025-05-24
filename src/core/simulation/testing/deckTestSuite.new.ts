@@ -1,6 +1,6 @@
-import { MatchSimulator, SimulationBatch } from './matchSimulator';
-import { Card } from './gameState';
-import { Element, CardType } from '../../types/Card';
+import { MatchSimulator, SimulationBatch } from '../core/matchSimulator';
+import { Card } from '../core/gameState';
+import { Element, CardType } from '../../../types/Card';
 
 // Import modular components
 import {
@@ -12,20 +12,20 @@ import {
 import {
     testDeckAgainstMeta,
     testDeckConsistency
-} from './metaTester';
+} from '../analysis/metaTester';
 
 import {
     analyzeMatchup,
     testDeckStrategies
-} from './matchupAnalyzer';
+} from '../analysis/matchupAnalyzer';
 
 import {
     optimizeDeck
-} from './deckOptimizer';
+} from '../analysis/deckOptimizer';
 
 import {
     generatePerformanceReport
-} from './performanceReporter';
+} from '../analysis/performanceReporter';
 
 import {
     DeckTestResult,
@@ -36,7 +36,7 @@ import {
     MatchupResult,
     PerformanceReport,
     DeckComposition
-} from './deckTestTypes';
+} from '../types/deckTestTypes';
 
 /**
  * Main class for deck testing functionality

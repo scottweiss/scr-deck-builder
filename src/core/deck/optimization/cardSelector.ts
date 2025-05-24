@@ -4,7 +4,7 @@ import { calculateSynergy } from '../../../analyses/synergy/synergyCalculator';
 import { identifyCardMechanics, canIncludeWithAvatar, evaluateRegionalStrategy } from '../../cards/cardAnalysis';
 import { analyzeElementalRequirements, calculateElementalDeficitContribution } from '../../../analyses/position/elementRequirementAnalyzer';
 import { getMaxCopiesForRarity } from './deckOptimizer';
-import { debugElementalThresholds } from '../../simulation/metaTester';
+import { debugElementalThresholds } from '../../simulation/analysis/metaTester';
 import { getCardThreshold } from '../../../utils/utils'; // Added import
 
 /**

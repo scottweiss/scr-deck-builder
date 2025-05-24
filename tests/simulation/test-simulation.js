@@ -1,5 +1,5 @@
 // Simple test to verify the match simulation system works
-const { MatchSimulator } = require('./dist/core/simulation/matchSimulator');
+const { MatchSimulator } = require('./dist/core/simulation/core/matchSimulator');
 
 // Mock deck data for testing
 const mockAvatar = {

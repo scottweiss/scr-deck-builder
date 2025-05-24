@@ -1,13 +1,13 @@
-import { Card } from './gameState';
-import { SimulationConfig } from './matchSimulator';
-import { AI_STRATEGIES } from './aiEngine';
+import { Card } from '../core/gameState';
+import { SimulationConfig } from '../core/matchSimulator';
+import { AI_STRATEGIES } from '../core/aiEngine';
 import { calculateFavorability } from './deckAnalyzer';
 import { identifyMatchupFactors } from './deckAnalyzer';
-import { convertToPlayerDeck } from './testDeckUtils';
+import { convertToPlayerDeck } from '../testing/testDeckUtils';
 import {
     MatchupAnalysis,
     MatchupResult
-} from './deckTestTypes';
+} from '../types/deckTestTypes';
 
 /**
  * Run matchup analysis between two decks

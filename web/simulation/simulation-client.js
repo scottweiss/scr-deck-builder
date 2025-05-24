@@ -10,9 +10,9 @@ async function loadModules() {
         const modules = await Promise.all([
             import('../../dist/core/deck/deckBuilder.js'),
             import('../../dist/core/deck/deckValidator.js'), 
-            import('../../dist/core/simulation/simulationIntegration.js'),
-            import('../../dist/core/simulation/matchSimulator.js'),
-            import('../../dist/core/simulation/aiEngine.js'),
+            import('../../dist/core/simulation/integration/simulationIntegration.js'),
+            import('../../dist/core/simulation/core/matchSimulator.js'),
+            import('../../dist/core/simulation/core/aiEngine.js'),
             import('../../dist/utils/utils.js')
         ]);
         

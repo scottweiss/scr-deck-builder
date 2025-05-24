@@ -1,6 +1,6 @@
-import { Card } from './gameState';
-import { getMetaDecks } from './testDeckUtils';
-import { DeckOptimizationResult } from './deckTestTypes';
+import { Card } from '../core/gameState';
+import { getMetaDecks } from '../testing/testDeckUtils';
+import { DeckOptimizationResult } from '../types/deckTestTypes';
 
 /**
  * Make a random substitution in a deck

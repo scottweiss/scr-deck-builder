@@ -3,9 +3,9 @@
  * with the existing deck building system
  */
 
-import { Card } from '../../types';
-import { MatchSimulator, SimulationConfig as MatchSimulatorConfig, SimulationResult as MatchSimulatorResult, GameLogEntry } from './matchSimulator';
-import { AI_STRATEGIES, AIStrategy } from './aiEngine';
+import { Card } from '../../../types';
+import { MatchSimulator, SimulationConfig as MatchSimulatorConfig, SimulationResult as MatchSimulatorResult, GameLogEntry } from '../core/matchSimulator';
+import { AI_STRATEGIES, AIStrategy } from '../core/aiEngine';
 
 export interface DeckSimulationConfig {
   deck: Card[];

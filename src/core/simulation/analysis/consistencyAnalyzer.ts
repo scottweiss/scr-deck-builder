@@ -1,5 +1,5 @@
-import { BatchResult } from './matchSimulator';
-import { ConsistencyReport } from './deckTestTypes';
+import { BatchResult } from '../core/matchSimulator';
+import { ConsistencyReport } from '../types/deckTestTypes';
 
 /**
  * Analyze result consistency

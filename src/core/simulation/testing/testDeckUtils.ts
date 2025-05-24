@@ -1,6 +1,6 @@
-import { Card } from './gameState';
-import { Element, CardType } from '../../types/Card';
-import { PlayerDeck } from './matchSimulator';
+import { Card } from '../core/gameState';
+import { Element, CardType } from '../../../types/Card';
+import { PlayerDeck } from '../core/matchSimulator';
 
 /**
  * Converts a Card array to PlayerDeck format

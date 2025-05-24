@@ -1,10 +1,10 @@
-import { Card } from './gameState';
+import { Card } from '../core/gameState';
 import {
     PerformanceReport,
     DeckTestResult,
     ConsistencyReport,
     DeckComposition
-} from './deckTestTypes';
+} from '../types/deckTestTypes';
 import { analyzeDeckComposition } from './deckAnalyzer';
 
 /**

@@ -1,11 +1,11 @@
-import { GameStateManager, GameState, Player, GamePhase, Unit } from './gameState';
-import { TurnEngine } from './turnEngine';
-import { AIEngine, AI_STRATEGIES } from './aiEngine';
-import { CombatSystem } from './combatSystem';
-import { SpellEffectSystem } from './spellEffectSystem';
-import { MatchSimulator } from './matchSimulator';
-import { SimulationIntegration } from './simulationIntegration';
-import { Card, CardType } from '../../types';
+import { GameStateManager, GameState, Player, GamePhase, Unit } from '../core/gameState';
+import { TurnEngine } from '../core/turnEngine';
+import { AIEngine, AI_STRATEGIES } from '../core/aiEngine';
+import { CombatSystem } from '../core/combatSystem';
+import { SpellEffectSystem } from '../core/spellEffectSystem';
+import { MatchSimulator } from '../core/matchSimulator';
+import { SimulationIntegration } from '../integration/simulationIntegration';
+import { Card, CardType } from '../../../types';
 
 export interface TestResult {
   name: string;

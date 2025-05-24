@@ -1,11 +1,11 @@
-import { Card } from '../../types/Card';
-import { SYSTEM_MODE } from '../../config';
-import { calculateSynergy } from '../../analyses/synergy/synergyCalculator';
-import { identifyCardMechanics, canIncludeWithAvatar, evaluateRegionalStrategy } from '../cards/cardAnalysis';
-import { analyzeElementalRequirements, calculateElementalDeficitContribution } from '../../analyses/position/elementRequirementAnalyzer';
-import { getMaxCopiesForRarity } from './allocation/rarityManager';
-import { debugElementalThresholds } from '../simulation/analysis/metaTester';
-import { getCardThreshold } from '../../utils/utils'; // Added import
+import { Card } from '../../../../../src/types/Card';
+import { SYSTEM_MODE } from '../../../../../src/config';
+import { calculateSynergy } from '../../../../../src/analyses/synergy/synergyCalculator';
+import { identifyCardMechanics, canIncludeWithAvatar, evaluateRegionalStrategy } from '../../../../../src/core/cards/cardAnalysis';
+import { analyzeElementalRequirements, calculateElementalDeficitContribution } from '../../../../../src/analyses/position/elementRequirementAnalyzer';
+import { getMaxCopiesForRarity } from './deckOptimizer';
+import { debugElementalThresholds } from '../../../../../src/core/simulation/analysis/metaTester';
+import { getCardThreshold } from '../../../../../src/utils/utils'; // Added import
 
 /**
  * Find candidate cards of a specific mana cost
@@ -30,7 +30,9 @@ export function findCandidatesOfCost(
     // For critical early game mana costs with few options,
     // also consider cards that can provide card advantage or have flexibility
     if (candidates.length < adjustment && adjustedCost <= 2) {
-        console.log(`Few ${adjustedCost}-cost cards available (${candidates.length}), looking for flexible alternatives`);
+        if (SYSTEM_MODE.DEBUG) {
+            console.log(`Few ${adjustedCost}-cost cards available (${candidates.length}), looking for flexible alternatives`);
+        }
         
         // Look for cards with flexible mana costs, card draw, or cycling
         const flexibleCandidates = allCandidates
@@ -55,7 +57,9 @@ export function findCandidatesOfCost(
             });
             
         if (flexibleCandidates.length > 0) {
-            console.log(`Found ${flexibleCandidates.length} flexible alternative cards`);
+            if (SYSTEM_MODE.DEBUG) {
+                console.log(`Found ${flexibleCandidates.length} flexible alternative cards`);
+            }
             candidates = [...candidates, ...flexibleCandidates];
         }
     }

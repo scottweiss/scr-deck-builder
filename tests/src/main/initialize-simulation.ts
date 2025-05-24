@@ -1,8 +1,8 @@
-import { GameStateManager, GameEvent } from '../core/simulation/core/gameState';
-import { buildSpellbook, buildCompleteDeck } from '../core/deck/builder/deckBuilder';
-import { SimulationTestFramework } from '../core/simulation/testing/testFramework';
-import { Card } from '../types/Card';
-import { PlayerDeck } from '../types/Deck';
+import { GameStateManager, GameEvent } from '../../../src/core/simulation/core/gameState';
+import { buildSpellbook, buildCompleteDeck } from '../../../src/core/deck/builder/deckBuilder';
+import { SimulationTestFramework } from '../../../src/core/simulation/testing/testFramework';
+import { Card } from '../../../src/types/Card';
+import { PlayerDeck } from '../../../src/types/Deck';
 
 interface PlayerSetup {
     avatar: string;

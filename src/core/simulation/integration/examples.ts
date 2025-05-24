@@ -2,10 +2,10 @@
  * Usage examples and demonstration of the match simulation system
  */
 
-import { Card, Element, CardType } from '../../types/Card';
+import { Card, Element, CardType } from '../../../types/Card';
 import { SimulationIntegration, DeckSimulationConfig } from './simulationIntegration';
-import { AI_STRATEGIES } from './aiEngine';
-import { SimulationTestFramework } from './testFramework';
+import { AI_STRATEGIES } from '../core/aiEngine';
+import { SimulationTestFramework } from '../testing/testFramework';
 
 // Mock implementations for missing components
 class MockMatchSimulator {

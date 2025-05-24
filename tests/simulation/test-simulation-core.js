@@ -1,5 +1,5 @@
-const { GameStateManager } = require('./dist-test/core/simulation/gameState');
-const { MatchSimulator } = require('./dist-test/core/simulation/matchSimulator');
+const { GameStateManager } = require('./dist-test/core/simulation/core/gameState');
+const { MatchSimulator } = require('./dist-test/core/simulation/core/matchSimulator');
 
 // Mock deck data for testing
 const mockAvatar = {
