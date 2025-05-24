@@ -1,51 +1,35 @@
-
-# Sorcery: Contested Realm - Card Data Documentation
+# Sorcery Card Data Documentation
 
 ## Overview
-The card data system has been optimized for performance and maintainability. Instead of parsing CSV files at runtime,
-we now use pre-processed JavaScript data files that are optimized for speed and memory usage.
+This directory contains processed card data for Sorcery: Contested Realm.
 
-## Card Data Files
-- `sorceryCards.data.js` - Contains compressed card data (internal use only)
-- `sorceryCards.optimized.js` - Main API for accessing card data with lazy loading
+## Files Generated
+- `sorceryCards.data.js`: Compressed card data (${(dataSize / 1024 / 1024).toFixed(2)} MB)
+- `sorceryCards.optimized.js`: Lazy loading wrapper (${(optimizedSize / 1024).toFixed(2)} KB)
 
-## Features
-- **Lazy Loading**: Cards are loaded only when needed, reducing initial load time
-- **Compression**: Card data is stored in a compressed format for smaller file size
-- **Memoization**: Frequently accessed attributes are cached for better performance
-- **Pre-filtering**: Foils, boosters, and other non-playable products are already filtered out
+## Statistics
+- Total cards: ${stats.total} raw records processed
+- Beta cards: ${stats.beta}
+- Arthurian Legends cards: ${stats.arthurian}
+- Final card count: ${allCards.length}
+- Foil cards filtered: ${stats.foils}
+- Booster products filtered: ${stats.boosters}
 
 ## Usage
-```javascript
-// Import the card data API
+
+\`\`\`javascript
 const cardData = require('./sorceryCards.optimized');
 
-// Get all cards (lazy loaded the first time it's called)
+// Get all cards (lazy loaded)
 const allCards = cardData.getAllCards();
 
 // Get cards by set
 const betaCards = cardData.getBetaCards();
 const arthurianCards = cardData.getArthurianCards();
 
-// Get processed cards with all attributes calculated
-const processedCards = cardData.getProcessedCards(betaCards);
+// Get statistics without loading data
+const stats = cardData.getStats();
+console.log(`Total cards: ${stats.total}`);
+\`\`\`
 
-// Get card count
-console.log(`Total cards: ${cardData.getCardCount()}`);
-```
-
-## Statistics
-- Beta cards: 403
-- Arthurian Legends cards: 227
-- Total cards: 630
-- Foils filtered: 632
-- Boosters filtered: 7
-- Size reduction: 60.84%
-
-## Maintenance
-To update the card data, modify the `processCards.js` script and run it again.
-This will regenerate the data files with the latest information.
-
-```
-node processCards.js
-```
+Generated: ${new Date().toISOString()}

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorcery: Contested Realm - Deck Builder</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Sorcery: Contested Realm</h1>
+            <h2>AI-Powered Deck Builder</h2>
+            <p class="subtitle">Build optimized decks instantly - No server required!</p>
+        </header>
+
+        <main>
+            <div id="loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Loading card data...</p>
+            </div>
+
+            <form id="deckBuilderForm" class="deck-form">
+                <div class="form-section">
+                    <h3>🧙 Avatar & Element</h3>
+                    <div class="form-group">
+                        <label for="avatar">Avatar:</label>
+                        <select id="avatar" name="avatar">
+                            <option value="">Select an Avatar</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="element">Preferred Element:</label>
+                        <select id="element" name="element">
+                            <option value="">Auto-detect</option>
+                            <option value="Water">💧 Water</option>
+                            <option value="Fire">🔥 Fire</option>
+                            <option value="Earth">🌍 Earth</option>
+                            <option value="Air">💨 Air</option>
+                            <option value="Void">🌌 Void</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>⚔️ Strategy & Archetype</h3>
+                    <div class="form-group">
+                        <label for="archetype">Deck Archetype:</label>
+                        <select id="archetype" name="archetype">
+                            <option value="">Auto-select</option>
+                            <option value="Aggro">⚡ Aggro - Fast & Aggressive</option>
+                            <option value="Control">🛡️ Control - Defensive & Late Game</option>
+                            <option value="Midrange">⚖️ Midrange - Balanced Approach</option>
+                            <option value="Combo">🔗 Combo - Synergy Focus</option>
+                            <option value="Balanced">🎯 Balanced - Flexible</option>
+                            <option value="Minion-Heavy">👥 Minion-Heavy - Board Control</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <button type="submit" id="buildButton" class="build-button">
+                        🚀 Build Deck
+                    </button>
+                </div>
+            </form>
+
+            <div id="error" class="error hidden">
+                <h3>❌ Error</h3>
+                <p id="errorMessage"></p>
+            </div>
+
+            <div id="results" class="results hidden">
+                <div class="deck-summary">
+                    <h3>📋 Deck Summary</h3>
+                    <div id="deckSummary" class="summary-grid"></div>
+                </div>
+
+                <div class="deck-validation">
+                    <h3>✅ Validation</h3>
+                    <div id="validationResults"></div>
+                </div>
+
+                <div class="deck-list">
+                    <h3>🃏 Deck List</h3>
+                    <div class="deck-columns">
+                        <div class="avatar-sites">
+                            <h4>🧙 Avatar</h4>
+                            <div id="avatarInfo"></div>
+                            
+                            <h4>🗺️ Sites (30 cards)</h4>
+                            <div id="sitesList"></div>
+                        </div>
+                        
+                        <div class="spellbook">
+                            <h4>📚 Spellbook (50 cards)</h4>
+                            <div id="spellsList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="export-options">
+                    <h3>💾 Export</h3>
+                    <button id="exportJson" type="button" class="export-button">
+                        📄 Export as JSON
+                    </button>
+                    <button id="exportText" type="button" class="export-button">
+                        📝 Export as Text
+                    </button>
+                    <button id="copyDeckList" type="button" class="export-button">
+                        📋 Copy Deck List
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Powered by AI-driven synergy analysis and strategic optimization</p>
+            <p>No server required - Everything runs in your browser!</p>
+        </footer>
+    </div>
+
+    <!-- Compressed card data -->
+    <script src="sorceryCards.compressed.js"></script>
+    
+    <!-- JavaScript deck builder -->
+    <script src="real-deck-builder.js"></script>
+    
+    <!-- UI logic -->
+    <script src="app.js"></script>
+</body>
+</html>

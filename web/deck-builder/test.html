@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Test</title>
+</head>
+<body>
+    <h1>Browser Deck Builder Test</h1>
+    <div id="result"></div>
+    
+    <script src="browser-deck-builder.js"></script>
+    <script>
+        (async function() {
+            console.log('Starting test...');
+            
+            // Wait for deck builder to load
+            while (typeof window.SorceryDeckBuilder === 'undefined') {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            const deckBuilder = new window.SorceryDeckBuilder.BrowserDeckBuilder();
+            await deckBuilder.initialize();
+            
+            console.log('Deck builder initialized');
+            
+            const avatars = deckBuilder.getAvailableAvatars();
+            console.log('Available avatars:', avatars.map(a => a.name));
+            
+            const deck = await deckBuilder.buildDeck({
+                avatarName: 'Merlin',
+                preferredElement: 'Water',
+                preferredArchetype: 'Control'
+            });
+            
+            console.log('Built deck:', deck);
+            
+            document.getElementById('result').innerHTML = `
+                <h2>Test Results:</h2>
+                <p><strong>Avatar:</strong> ${deck.avatar.name}</p>
+                <p><strong>Sites:</strong> ${deck.sites.length} cards</p>
+                <p><strong>Spells:</strong> ${deck.spells.length} cards</p>
+                <p><strong>Deck List:</strong> ${deck.deckList.length} unique cards</p>
+                <p><strong>Is Valid:</strong> ${deck.validation.isValid ? 'Yes' : 'No'}</p>
+                <h3>Sample Spells:</h3>
+                <ul>
+                    ${deck.deckList.slice(0, 5).map(card => `<li>${card.name} ${card.count > 1 ? card.count + 'x' : ''}</li>`).join('')}
+                </ul>
+            `;
+        })();
+    </script>
+</body>
+</html>
