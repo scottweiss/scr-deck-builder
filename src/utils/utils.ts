@@ -89,37 +89,30 @@ export function extractKeywords(text: string): string[] {
     return matches || [];
 }
 
-export async function readCardData(dataSets?: string[]): Promise<RawCard[]> { // Made async, returns Promise<RawCard[]>
+export async function readCardData(dataSets?: string[]): Promise<Card[]> { // Fixed return type to Card[]
     // Require here to avoid circular dependency at module load
     const sorceryCards = require('../data/processed/sorceryCards');
     
-    let cards: RawCard[] = [];
+    let cards: Card[] = [];
     if (dataSets && Array.isArray(dataSets)) {
         if (dataSets.length < 2) {
-            // If specific set was requested, filter the cards
+            // If specific set was requested, get all cards and filter them
+            // This ensures consistent transformation
+            const allCards = await sorceryCards.getAllCards(); // Already returns transformed Card[]
             const setName = dataSets[0];
-            cards = await sorceryCards.getCardsBySet(setName);
+            cards = allCards.filter((card: Card) => card.setName === setName);
             console.log(`Using only ${setName} set cards: ${cards.length} cards`);
         } else {
-            cards = await sorceryCards.getAllCards();
+            cards = await sorceryCards.getAllCards(); // Already returns transformed Card[]
             console.log(`Using consolidated card data: ${cards.length} cards from ${dataSets.join(', ')}`);
         }
     } else {
-        cards = await sorceryCards.getAllCards();
+        cards = await sorceryCards.getAllCards(); // Already returns transformed Card[]
         console.log(`Using all consolidated card data: ${cards.length} cards`);
     }
     
-    // Add processed attributes to each card for easy access
-    return cards.map(card => ({
-        ...card,
-        type: getCardType(card),
-        mana_cost: getCardCost(card),
-        text: getCardDescription(card),
-        elements: getCardElements(card),
-        power: getCardPower(card),
-        rarity: getCardRarity(card),
-        baseName: getBaseCardName(card.name || '')
-    }));
+    // Cards are already properly transformed with all computed properties
+    return cards;
 }
 
 export function parseThreshold(thresholdStr: string): Record<string, number> {

@@ -117,7 +117,17 @@ export async function getCardsBySet(setName: CardSet): Promise<RawCard[]> {
  */
 export async function getAllCards(): Promise<Card[]> {
   const rawCards = await loadCards();
-  return rawCards.map(rawCard => utils.transformRawCardToCard(rawCard));
+  console.log(`DEBUG: About to transform ${rawCards.length} raw cards`);
+  console.log(`DEBUG: First raw card type: ${rawCards[0]?.extCardType}, element: ${rawCards[0]?.extElement}`);
+  console.log(`DEBUG: Utils transformRawCardToCard type: ${typeof utils.transformRawCardToCard}`);
+  
+  const transformed = rawCards.map(rawCard => {
+    const result = utils.transformRawCardToCard(rawCard);
+    return result;
+  });
+  
+  console.log(`DEBUG: First transformed card type: ${transformed[0]?.type}, elements: ${JSON.stringify(transformed[0]?.elements)}`);
+  return transformed;
 }
 
 /**

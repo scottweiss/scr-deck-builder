@@ -16,7 +16,7 @@ export const CSV_FILES = [
 
 // Output files
 export const OUTPUT_DATA_FILE = path.join(PROCESSED_DATA_DIR, 'sorceryCards.data.js');
-export const OUTPUT_OPTIMIZED_FILE = path.join(PROCESSED_DATA_DIR, 'sorceryCards.js');
+export const OUTPUT_OPTIMIZED_FILE = path.join(PROCESSED_DATA_DIR, 'sorceryCards.generated.js');
 export const OUTPUT_DOC_FILE = path.join(PROCESSED_DATA_DIR, 'CARD_DATA.md');
 
 // The order of keys is important for the compression

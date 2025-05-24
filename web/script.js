@@ -35,22 +35,29 @@ class DeckBuilderUI {
     }
 
     populateAvatarSelect(avatars) {
+        console.log('Populating avatars:', avatars);
+        
         // Clear existing options except the default
         while (this.avatarSelect.options.length > 1) {
             this.avatarSelect.remove(1);
         }
 
+        if (!avatars || avatars.length === 0) {
+            console.warn('No avatars received from API');
+            return;
+        }
+
         // Sort avatars by element to group them
         const sortedAvatars = [...avatars].sort((a, b) => {
-            const elemA = a.elements[0] || '';
-            const elemB = b.elements[0] || '';
+            const elemA = a.elements && a.elements[0] ? a.elements[0] : '';
+            const elemB = b.elements && b.elements[0] ? b.elements[0] : '';
             return elemA.localeCompare(elemB);
         });
 
         // Add avatar options grouped by element
         let currentElement = '';
         sortedAvatars.forEach(avatar => {
-            const element = avatar.elements[0] || 'Neutral';
+            const element = avatar.elements && avatar.elements[0] ? avatar.elements[0] : 'Neutral';
             
             // Add group separator if element changed
             if (element !== currentElement) {
@@ -63,9 +70,22 @@ class DeckBuilderUI {
             const option = document.createElement('option');
             option.value = avatar.name;
             option.dataset.element = element;
-            option.textContent = `${avatar.name} (${avatar.life} Life)`;
-            this.avatarSelect.lastChild.appendChild(option);
+            option.textContent = `${avatar.name} (${avatar.life || 20} Life)`;
+            
+            // Find the last optgroup (which should be the current element's group)
+            const lastOptgroup = Array.from(this.avatarSelect.children)
+                .filter(child => child.tagName === 'OPTGROUP')
+                .pop();
+                
+            if (lastOptgroup) {
+                lastOptgroup.appendChild(option);
+            } else {
+                // Fallback - add directly to select if no optgroup
+                this.avatarSelect.appendChild(option);
+            }
         });
+        
+        console.log('Avatar dropdown populated with', avatars.length, 'avatars');
     }
 
     syncAvatarWithElement() {

@@ -14,6 +14,106 @@ app.use(express.static(path.join(__dirname, 'web')));
 // Serve simulation specific static files if requested directly
 app.use('/simulation', express.static(path.join(__dirname, 'web', 'simulation')));
 
+// API endpoint to list all available avatars
+app.get('/api/list-avatars', async (req, res) => {
+    try {
+        // Import card data system from compiled JavaScript
+        const { getAllCards } = require('./dist/data/processed/sorceryCards');
+        
+        // Get all cards and filter for avatars
+        const allCards = await getAllCards();
+        console.log(`Total cards loaded: ${allCards.length}`);
+        
+        // Debug card types
+        const types = {};
+        allCards.forEach(card => {
+            const type = card.type || 'Unknown';
+            types[type] = (types[type] || 0) + 1;
+        });
+        console.log('Card types in database:', types);
+        
+        // Try different approaches to filter avatars
+        const avatarsByType = allCards.filter(card => card.type === 'Avatar');
+        const avatarsByExtType = allCards.filter(card => card.extCardType === 'Avatar');
+        const avatarsByNameMatch = allCards.filter(card => 
+            (card.name && card.name.toLowerCase().includes('avatar')) || 
+            (card.cleanName && card.cleanName.toLowerCase().includes('avatar'))
+        );
+        
+        console.log(`Avatars by type: ${avatarsByType.length}`);
+        console.log(`Avatars by extCardType: ${avatarsByExtType.length}`);
+        console.log(`Avatars by name match: ${avatarsByNameMatch.length}`);
+        
+        // Use the most effective approach
+        const avatars = avatarsByExtType.length > 0 ? avatarsByExtType : 
+                        avatarsByType.length > 0 ? avatarsByType : 
+                        avatarsByNameMatch;
+        
+        if (avatars.length > 0) {
+            console.log('First avatar details:', JSON.stringify(avatars[0], null, 2));
+            
+            // Log available fields for debugging
+            const fields = Object.keys(avatars[0]);
+            console.log('Available fields on avatar objects:', fields.join(', '));
+        }
+        
+        // Associate avatars with elements based on their name and description
+        const elementMapping = {
+            'Waveshaper': 'Water',
+            'Battlemage': 'Fire',
+            'Seer': 'Void',
+            'Deathspeaker': 'Void',
+            'Elementalist': 'Earth',
+            'Enchantress': 'Air',
+            'Sorcerer': 'Air',
+            'Sparkmage': 'Air',
+            'Geomancer': 'Earth',
+            'Flamecaller': 'Fire', 
+            'Pathfinder': 'Earth',
+            'Spellslinger': 'Fire',
+            'Archimago': 'Void',
+            'Druid': 'Earth',
+            'Templar': 'Air',
+            'Witch': 'Void'
+        };
+        
+        // Transform avatars into the format expected by the frontend
+        const processedAvatars = avatars.map(avatar => {
+            // Extract life value from text content if not specified directly
+            let life = avatar.extLife ? parseInt(avatar.extLife) : 0;
+            if (life === 0 && avatar.extDescription) {
+                const lifeMatch = avatar.extDescription.match(/(\d+) Life/i);
+                if (lifeMatch) {
+                    life = parseInt(lifeMatch[1]);
+                }
+            }
+            
+            // Determine element from extElement field or element mapping
+            const elements = [];
+            if (avatar.extElement) {
+                elements.push(avatar.extElement);
+            } else if (elementMapping[avatar.name]) {
+                elements.push(elementMapping[avatar.name]);
+            }
+            
+            return {
+                name: avatar.name || 'Unknown Avatar',
+                life: life || 20, // Default to 20 life if not specified
+                elements: elements,
+                text: avatar.extDescription || ''
+            };
+        });
+
+        console.log(`Processed ${processedAvatars.length} avatars for frontend`);
+        res.json(processedAvatars);
+    } catch (error) {
+        console.error('Failed to load avatars:', error);
+        res.status(500).json({
+            error: 'Failed to load avatar data'
+        });
+    }
+});
+
 // Route to serve the web interface
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'web', 'index.html'));
