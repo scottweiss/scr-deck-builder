@@ -42,21 +42,41 @@ header h1 {
 }
 
 #buildAndStartSimulation {
-    background-color: #007bff;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border: none;
     color: white;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
 }
 
 #buildAndStartSimulation:hover {
-    background-color: #0056b3;
+    background: linear-gradient(135deg, #0056b3, #004094);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 123, 255, 0.4);
 }
 
 #loadSampleSimulation {
-    background-color: #28a745;
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    border: none;
     color: white;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 6px rgba(40, 167, 69, 0.3);
 }
 
 #loadSampleSimulation:hover {
-    background-color: #1e7e34;
+    background: linear-gradient(135deg, #1e7e34, #155724);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
 }
 
 .setup-container {
@@ -264,10 +284,15 @@ header h1 {
 }
 
 .player-info {
+    background: #f8f9fa;
+    border-left: 4px solid #007bff;
+    padding: 10px 15px;
     margin: 10px 0;
-    padding: 10px;
-    background-color: #f8f9fa;
     border-radius: 4px;
+}
+
+.player-info:nth-child(even) {
+    border-left-color: #28a745;
 }
 
 #gameStateInfo {
@@ -289,13 +314,14 @@ header h1 {
 }
 
 .system-message {
-    color: #666;
+    font-size: 13px;
+    color: #6c757d;
     font-style: italic;
     margin: 5px 0;
-    padding: 5px;
-    background-color: #f8f9fa;
-    border-radius: 3px;
-    font-size: 14px;
+}
+
+.system-message::before {
+    content: "ℹ️ ";
 }
 
 footer {
@@ -312,6 +338,41 @@ footer a {
 
 footer a:hover {
     text-decoration: underline;
+}
+
+/* Batch simulation styles */
+.batch-stats {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.batch-stats p {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.batch-stats p strong {
+    color: #2c3e50;
+}
+
+/* Setup and controls descriptions */
+.setup-description, .controls-description {
+    font-size: 14px;
+    color: #6c757d;
+    line-height: 1.5;
+    margin: 10px 0;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 3px solid #007bff;
+}
+
+.controls-description {
+    border-left-color: #28a745;
+    margin-top: 15px;
 }
 
 @media (max-width: 768px) {

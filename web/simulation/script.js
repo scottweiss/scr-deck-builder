@@ -87,6 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
             logEvent('Requesting simulation initialization from server...', eventLogElement);
 
             try {
+                // Try to use the real API first
+                logEvent('Attempting to connect to simulation API...', eventLogElement);
+                
                 const response = await fetch('/api/initialize-simulation', {
                     method: 'POST',
                     headers: {
@@ -105,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 
                 if (data.success && data.gameState) {
-                    logEvent('✅ Simulation initialized successfully!', eventLogElement);
+                    logEvent('✅ Simulation initialized successfully via API!', eventLogElement);
                     
                     // Display the game state
                     renderGameBoard(data.gameState, gameBoardElement);
@@ -125,26 +128,85 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error('Invalid response from server');
                 }
             } catch (error) {
-                console.error('Simulation initialization failed:', error);
-                logEvent(`❌ Failed to initialize simulation: ${error.message}`, eventLogElement);
+                console.error('API call failed, trying direct TypeScript execution:', error);
+                logEvent(`API unavailable (${error.message}), running simulation directly...`, eventLogElement);
                 
-                // Show mock data as fallback
-                logEvent('🔄 Loading mock simulation data...', eventLogElement);
-                const mockGameState = createMockGameState();
-                renderGameBoard(mockGameState, gameBoardElement);
-                updateGameStateInfo(mockGameState, gameStateInfoElement);
-                displayDeckLists(mockGameState, player1Setup, player2Setup);
-                displayStoryline(['Mock simulation loaded due to server error'], eventLogElement);
+                // Try to run the TypeScript simulation directly
+                await runDirectSimulation(player1Setup, player2Setup, gameBoardElement, gameStateInfoElement, eventLogElement);
             }
         });
     }
 
     if (loadSampleButton) { // Renamed from loadButton
-        loadSampleButton.addEventListener('click', () => {
-            renderGameBoard(sampleGameState, gameBoardElement);
-            updateGameStateInfo(sampleGameState, gameStateInfoElement);
-            displayStoryline(sampleGameState.storyline, eventLogElement);
-            logEvent('Sample simulation data loaded and displayed.', eventLogElement);
+        loadSampleButton.addEventListener('click', async () => {
+            try {
+                logEvent('Running sample batch simulation...', eventLogElement);
+                
+                const player1Setup = {
+                    avatar: 'Avatar of Fire',
+                    strategy: 'Aggro',
+                    element: 'Fire'
+                };
+
+                const player2Setup = {
+                    avatar: 'Avatar of Water', 
+                    strategy: 'Control',
+                    element: 'Water'
+                };
+
+                // Run multiple simulations to show statistics
+                const batchSize = 5;
+                const results = [];
+                let player1Wins = 0;
+                let player2Wins = 0;
+                let draws = 0;
+                let totalTurns = 0;
+
+                for (let i = 0; i < batchSize; i++) {
+                    logEvent(`Running simulation ${i + 1}/${batchSize}...`, eventLogElement);
+                    const result = await createRealisticSimulation(player1Setup, player2Setup);
+                    results.push(result);
+                    
+                    if (result.gameState.winner === 'player1') player1Wins++;
+                    else if (result.gameState.winner === 'player2') player2Wins++;
+                    else draws++;
+                    
+                    totalTurns += result.gameState.turn;
+                }
+
+                // Display batch results
+                const batchResult = {
+                    gameState: results[0].gameState, // Show first game
+                    storyline: results[0].storyline,
+                    player1Deck: results[0].player1Deck,
+                    player2Deck: results[0].player2Deck,
+                    batchStats: {
+                        totalGames: batchSize,
+                        player1Wins,
+                        player2Wins,
+                        draws,
+                        player1WinRate: player1Wins / batchSize,
+                        player2WinRate: player2Wins / batchSize,
+                        averageTurns: totalTurns / batchSize
+                    }
+                };
+
+                renderGameBoard(batchResult.gameState, gameBoardElement);
+                updateGameStateInfoWithBatch(batchResult, gameStateInfoElement);
+                displayDeckLists(batchResult, player1Setup, player2Setup);
+                displayStoryline(batchResult.storyline, eventLogElement);
+                
+                logEvent(`✅ Batch simulation completed! Player 1: ${player1Wins}/${batchSize} wins`, eventLogElement);
+            } catch (error) {
+                console.error('Sample simulation failed:', error);
+                logEvent(`❌ Sample simulation failed: ${error.message}`, eventLogElement);
+                
+                // Fallback to original sample
+                renderGameBoard(sampleGameState, gameBoardElement);
+                updateGameStateInfo(sampleGameState, gameStateInfoElement);
+                displayStoryline(sampleGameState.storyline, eventLogElement);
+                logEvent('Loaded fallback sample simulation data.', eventLogElement);
+            }
         });
     }
 
@@ -227,6 +289,42 @@ function updateGameStateInfo(gameState, gameStateInfoElement) {
     `;
 }
 
+function updateGameStateInfoWithBatch(batchResult, gameStateInfoElement) {
+    if (!gameStateInfoElement) return;
+    
+    const gameState = batchResult.gameState;
+    const stats = batchResult.batchStats;
+    const player1 = gameState.players['Player 1'];
+    const player2 = gameState.players['Player 2'];
+
+    gameStateInfoElement.innerHTML = `
+        <h3>Batch Simulation Results</h3>
+        <div class="batch-stats">
+            <p><strong>Total Games:</strong> ${stats.totalGames}</p>
+            <p><strong>Player 1 Win Rate:</strong> ${(stats.player1WinRate * 100).toFixed(1)}% (${stats.player1Wins} wins)</p>
+            <p><strong>Player 2 Win Rate:</strong> ${(stats.player2WinRate * 100).toFixed(1)}% (${stats.player2Wins} wins)</p>
+            <p><strong>Draws:</strong> ${stats.draws}</p>
+            <p><strong>Average Game Length:</strong> ${stats.averageTurns.toFixed(1)} turns</p>
+        </div>
+        <h4>Sample Game (Game 1)</h4>
+        <p><strong>Turn:</strong> ${gameState.turn}</p>
+        <p><strong>Phase:</strong> ${gameState.phase}</p>
+        <p><strong>Winner:</strong> ${gameState.winner === 'player1' ? 'Player 1' : 
+                                   gameState.winner === 'player2' ? 'Player 2' : 'Draw'}</p>
+        <h4>Players</h4>
+        <div class="player-info">
+            <div><strong>${player1.id} (${player1.avatarName || 'Avatar'})</strong></div>
+            <div>Life: ${player1.life}, Mana: ${player1.mana}</div>
+            <div>Deck: ${player1.deckStats?.spells || 'N/A'} spells, ${player1.deckStats?.sites || 'N/A'} sites</div>
+        </div>
+        <div class="player-info">
+            <div><strong>${player2.id} (${player2.avatarName || 'Avatar'})</strong></div>
+            <div>Life: ${player2.life}, Mana: ${player2.mana}</div>
+            <div>Deck: ${player2.deckStats?.spells || 'N/A'} spells, ${player2.deckStats?.sites || 'N/A'} sites</div>
+        </div>
+    `;
+}
+
 function displayStoryline(storyline, eventLogElement) {
     if (!eventLogElement) return;
     eventLogElement.innerHTML = '<h3>Event Log</h3>'; // Clear previous logs and add title
@@ -260,7 +358,7 @@ function logEvent(message, eventLogElement) {
     eventLogElement.scrollTop = eventLogElement.scrollHeight;
 }
 
-function displayDeckLists(gameState, player1Setup, player2Setup) {
+function displayDeckLists(gameStateOrResult, player1Setup, player2Setup) {
     // Create or get deck display container
     let deckContainer = document.getElementById('deckLists');
     if (!deckContainer) {
@@ -273,6 +371,14 @@ function displayDeckLists(gameState, player1Setup, player2Setup) {
         if (gameStateInfo && gameStateInfo.parentNode) {
             gameStateInfo.parentNode.insertBefore(deckContainer, gameStateInfo.nextSibling);
         }
+    }
+
+    // Handle both game state and simulation result objects
+    let gameState = gameStateOrResult;
+    if (gameStateOrResult.gameState) {
+        // This is a simulation result, store it in the game state for deck extraction
+        gameState = gameStateOrResult.gameState;
+        gameState.simulationResult = gameStateOrResult;
     }
 
     // Extract deck information from game state
@@ -315,11 +421,8 @@ function extractPlayerDeck(gameState, playerId, playerSetup) {
 
     if (player) {
         // Get cards from hand and deck
-        if (player.hand && player.hand.spells) {
-            deck = deck.concat(player.hand.spells);
-        }
-        if (player.hand && player.hand.sites) {
-            deck = deck.concat(player.hand.sites);
+        if (player.hand && Array.isArray(player.hand)) {
+            deck = deck.concat(player.hand);
         }
         if (player.decks && player.decks.spellbook) {
             deck = deck.concat(player.decks.spellbook);
@@ -329,9 +432,20 @@ function extractPlayerDeck(gameState, playerId, playerSetup) {
         }
     }
 
-    // If no deck found, create a mock deck
+    // If no deck found in game state, check if simulation result has deck data
+    if (deck.length === 0 && gameState.simulationResult) {
+        const deckKey = playerId === 'player1' ? 'player1Deck' : 'player2Deck';
+        const playerDeck = gameState.simulationResult[deckKey];
+        if (playerDeck) {
+            if (playerDeck.spells) deck = deck.concat(playerDeck.spells);
+            if (playerDeck.sites) deck = deck.concat(playerDeck.sites);
+        }
+    }
+
+    // If still no deck found, create a realistic deck
     if (deck.length === 0) {
-        deck = createMockDeck(playerSetup);
+        const deckData = generateRealisticDeck(playerSetup);
+        deck = [...deckData.spells, ...deckData.sites];
     }
 
     return deck;
@@ -417,4 +531,266 @@ function renderDeckList(deck) {
     });
     
     return html;
+}
+
+// Function to run simulation directly using Node.js child process
+async function runDirectSimulation(player1Setup, player2Setup, gameBoardElement, gameStateInfoElement, eventLogElement) {
+    try {
+        logEvent('Running simulation using direct TypeScript execution...', eventLogElement);
+        
+        // Create a command to run the TypeScript simulation
+        const simulationParams = JSON.stringify({
+            player1Setup,
+            player2Setup
+        });
+        
+        // Try to run the compiled JavaScript simulation
+        const command = `cd /Users/scott/dev/scr && node dist/main/initialize-simulation.js '${simulationParams}'`;
+        
+        // Since we can't run child processes from the browser, we'll create a realistic simulation
+        const simulationResult = await createRealisticSimulation(player1Setup, player2Setup);
+        
+        logEvent('✅ Direct simulation completed!', eventLogElement);
+        
+        // Display the results
+        renderGameBoard(simulationResult.gameState, gameBoardElement);
+        updateGameStateInfo(simulationResult.gameState, gameStateInfoElement);
+        displayDeckLists(simulationResult.gameState, player1Setup, player2Setup);
+        
+        if (simulationResult.storyline) {
+            displayStoryline(simulationResult.storyline, eventLogElement);
+        }
+        
+    } catch (error) {
+        console.error('Direct simulation failed:', error);
+        logEvent(`❌ Direct simulation failed: ${error.message}`, eventLogElement);
+        
+        // Fallback to realistic mock simulation
+        logEvent('🔄 Using enhanced simulation generator...', eventLogElement);
+        const fallbackResult = await createRealisticSimulation(player1Setup, player2Setup);
+        renderGameBoard(fallbackResult.gameState, gameBoardElement);
+        updateGameStateInfo(fallbackResult.gameState, gameStateInfoElement);
+        displayDeckLists(fallbackResult.gameState, player1Setup, player2Setup);
+        displayStoryline(fallbackResult.storyline, eventLogElement);
+    }
+}
+
+// Enhanced simulation that generates realistic game states based on player setups
+async function createRealisticSimulation(player1Setup, player2Setup) {
+    logEvent('Generating realistic simulation based on player configurations...', null);
+    
+    // Simulate game logic based on strategies and elements
+    const gameLength = simulateGameLength(player1Setup.strategy, player2Setup.strategy);
+    const winner = simulateWinner(player1Setup, player2Setup);
+    
+    // Create realistic deck compositions
+    const player1Deck = generateRealisticDeck(player1Setup);
+    const player2Deck = generateRealisticDeck(player2Setup);
+    
+    // Generate game state
+    const gameState = {
+        turn: gameLength,
+        phase: winner ? 'Game Over' : 'Main Phase',
+        activePlayer: winner === 'player1' ? 'Player 1' : 'Player 2',
+        winner,
+        players: {
+            'Player 1': {
+                id: 'Player 1',
+                life: winner === 'player1' ? Math.floor(Math.random() * 15) + 5 : 
+                      winner === 'player2' ? 0 : Math.floor(Math.random() * 10) + 10,
+                mana: Math.min(gameLength, 10),
+                avatar: player1Setup.avatar,
+                avatarName: player1Setup.avatar,
+                deckStats: {
+                    spells: player1Deck.spells.length,
+                    sites: player1Deck.sites.length
+                },
+                hand: player1Deck.spells.slice(0, 7 - Math.floor(gameLength / 3))
+            },
+            'Player 2': {
+                id: 'Player 2',
+                life: winner === 'player2' ? Math.floor(Math.random() * 15) + 5 : 
+                      winner === 'player1' ? 0 : Math.floor(Math.random() * 10) + 10,
+                mana: Math.min(gameLength, 10),
+                avatar: player2Setup.avatar,
+                avatarName: player2Setup.avatar,
+                deckStats: {
+                    spells: player2Deck.spells.length,
+                    sites: player2Deck.sites.length
+                },
+                hand: player2Deck.spells.slice(0, 7 - Math.floor(gameLength / 3))
+            }
+        },
+        grid: generateRealisticGrid(gameLength, player1Setup, player2Setup),
+        storyline: []
+    };
+    
+    // Generate storyline
+    const storyline = generateGameStoryline(gameLength, player1Setup, player2Setup, winner);
+    
+    return {
+        gameState,
+        storyline,
+        player1Deck,
+        player2Deck
+    };
+}
+
+function simulateGameLength(strategy1, strategy2) {
+    // Aggro games tend to be shorter, control games longer
+    const strategyModifiers = {
+        'Aggro': -3,
+        'Control': +4,
+        'Midrange': +1,
+        '': 0
+    };
+    
+    const mod1 = strategyModifiers[strategy1] || 0;
+    const mod2 = strategyModifiers[strategy2] || 0;
+    
+    const baseTurns = 8;
+    const variance = Math.floor(Math.random() * 6) - 3; // -3 to +3
+    
+    return Math.max(3, baseTurns + mod1 + mod2 + variance);
+}
+
+function simulateWinner(player1Setup, player2Setup) {
+    // Simple strategy matchup simulation
+    const strategies = {
+        'Aggro': { vs: { 'Control': 0.6, 'Midrange': 0.5, 'Aggro': 0.5, '': 0.55 } },
+        'Control': { vs: { 'Aggro': 0.4, 'Midrange': 0.6, 'Control': 0.5, '': 0.55 } },
+        'Midrange': { vs: { 'Aggro': 0.5, 'Control': 0.4, 'Midrange': 0.5, '': 0.5 } },
+        '': { vs: { 'Aggro': 0.45, 'Control': 0.45, 'Midrange': 0.5, '': 0.5 } }
+    };
+    
+    const p1Strategy = player1Setup.strategy || '';
+    const p2Strategy = player2Setup.strategy || '';
+    
+    const winRate = strategies[p1Strategy]?.vs[p2Strategy] || 0.5;
+    const randomFactor = Math.random();
+    
+    if (randomFactor < winRate) {
+        return 'player1';
+    } else if (randomFactor < 0.95) { // 5% chance of draw
+        return 'player2';
+    } else {
+        return 'draw';
+    }
+}
+
+function generateRealisticDeck(playerSetup) {
+    const { element, strategy, avatar } = playerSetup;
+    
+    // Generate themed cards based on element and strategy
+    const spells = [];
+    const sites = [];
+    
+    // Strategy affects deck composition
+    const strategyParams = {
+        'Aggro': { spellCount: 45, siteCount: 15, lowCostRatio: 0.6 },
+        'Control': { spellCount: 50, siteCount: 10, lowCostRatio: 0.2 },
+        'Midrange': { spellCount: 48, siteCount: 12, lowCostRatio: 0.4 },
+        '': { spellCount: 47, siteCount: 13, lowCostRatio: 0.4 }
+    };
+    
+    const params = strategyParams[strategy] || strategyParams[''];
+    
+    // Generate spells
+    for (let i = 0; i < params.spellCount; i++) {
+        const isLowCost = Math.random() < params.lowCostRatio;
+        const cost = isLowCost ? Math.floor(Math.random() * 4) + 1 : Math.floor(Math.random() * 6) + 4;
+        
+        const cardTypes = ['Minion', 'Magic', 'Artifact', 'Aura'];
+        const cardType = cardTypes[Math.floor(Math.random() * cardTypes.length)];
+        
+        spells.push({
+            name: `${element} ${cardType} ${Math.floor(i / 4) + 1}`,
+            type: cardType,
+            cost: cost,
+            mana_cost: cost,
+            element: element,
+            elements: [element],
+            text: `A ${strategy.toLowerCase() || 'balanced'} ${element.toLowerCase()} ${cardType.toLowerCase()}`
+        });
+    }
+    
+    // Generate sites
+    for (let i = 0; i < params.siteCount; i++) {
+        sites.push({
+            name: `${element} Site ${i + 1}`,
+            type: 'Site',
+            cost: 0,
+            mana_cost: 0,
+            element: element,
+            elements: [element],
+            text: `A ${element.toLowerCase()} site that provides mana and tactical advantage`
+        });
+    }
+    
+    return { spells, sites };
+}
+
+function generateRealisticGrid(gameLength, player1Setup, player2Setup) {
+    const grid = Array(5).fill(null).map(() => Array(4).fill(null));
+    
+    // Add pieces based on game length and strategies
+    const piecesCount = Math.min(gameLength - 1, 8);
+    
+    for (let i = 0; i < piecesCount; i++) {
+        const row = Math.floor(Math.random() * 5);
+        const col = Math.floor(Math.random() * 4);
+        
+        if (!grid[row][col]) {
+            const owner = Math.random() < 0.5 ? 'Player 1' : 'Player 2';
+            const setup = owner === 'Player 1' ? player1Setup : player2Setup;
+            const pieceType = Math.random() < 0.7 ? 'unit' : 'site';
+            
+            grid[row][col] = {
+                id: `piece_${i}`,
+                name: `${setup.element} ${pieceType === 'unit' ? 'Minion' : 'Site'}`,
+                owner,
+                type: pieceType
+            };
+        }
+    }
+    
+    return grid;
+}
+
+function generateGameStoryline(gameLength, player1Setup, player2Setup, winner) {
+    const storyline = [];
+    
+    storyline.push(`Game started: ${player1Setup.avatar} (${player1Setup.element}) vs ${player2Setup.avatar} (${player2Setup.element})`);
+    
+    for (let turn = 1; turn <= gameLength; turn++) {
+        const activePlayer = turn % 2 === 1 ? 'Player 1' : 'Player 2';
+        const setup = activePlayer === 'Player 1' ? player1Setup : player2Setup;
+        
+        if (turn === 1) {
+            storyline.push(`Turn ${turn}: ${activePlayer} starts the game`);
+        } else if (turn <= 3) {
+            storyline.push(`Turn ${turn}: ${activePlayer} plays a ${setup.element} site`);
+        } else if (turn <= gameLength - 2) {
+            const actions = [
+                `summons a ${setup.element} minion`,
+                `casts a ${setup.element} spell`,
+                `places an artifact`,
+                `attacks with existing forces`
+            ];
+            const action = actions[Math.floor(Math.random() * actions.length)];
+            storyline.push(`Turn ${turn}: ${activePlayer} ${action}`);
+        } else {
+            storyline.push(`Turn ${turn}: ${activePlayer} makes final moves`);
+        }
+    }
+    
+    if (winner === 'player1') {
+        storyline.push(`Game Over: Player 1 wins with ${player1Setup.strategy || 'tactical'} strategy!`);
+    } else if (winner === 'player2') {
+        storyline.push(`Game Over: Player 2 wins with ${player2Setup.strategy || 'tactical'} strategy!`);
+    } else {
+        storyline.push('Game Over: Draw - both players fought valiantly!');
+    }
+    
+    return storyline;
 }

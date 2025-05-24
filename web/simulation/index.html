@@ -14,6 +14,7 @@
         <main>
             <div id="setupControls" class="setup-container">
                 <h2>Simulation Setup</h2>
+                <p class="setup-description">Configure two players for a Sorcery: Contested Realm simulation. The system will attempt to use the real TypeScript simulation API, or generate realistic mock data if the server is unavailable.</p>
                 <div class="player-setup">
                     <h3>Player 1</h3>
                     <div class="form-group">
@@ -81,8 +82,12 @@
             </div>
 
             <div id="simulationControls">
-                <button id="buildAndStartSimulation">Build Decks & Start Simulation</button>
-                <button id="loadSampleSimulation">Load Sample Simulation Data</button>
+                <button id="buildAndStartSimulation">🎯 Build Decks & Start Simulation</button>
+                <button id="loadSampleSimulation">📊 Run Batch Sample (5 games)</button>
+                <p class="controls-description">
+                    <strong>Build Decks & Start Simulation:</strong> Creates themed decks based on your selections and runs a single match.<br>
+                    <strong>Run Batch Sample:</strong> Demonstrates the system with a Fire vs Water matchup over multiple games.
+                </p>
             </div>
             <div id="gameBoard">
                 <!-- Game board will be rendered here -->
@@ -101,6 +106,6 @@
             <p><a href="../index.html">Back to Deck Builder</a></p>
         </footer>
     </div>
-    <script src="script.js"></script>
+    <script type="module" src="simulation-client.js"></script>
 </body>
 </html>
