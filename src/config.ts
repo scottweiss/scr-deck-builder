@@ -4,7 +4,7 @@
 
 // System mode configuration
 export const SYSTEM_MODE = {
-  DEBUG: process.env.NODE_ENV === 'development',
+  DEBUG: false, // Explicitly set to false to suppress debug messages during deck building
 };
 
 // Direct paths to optimized utilities

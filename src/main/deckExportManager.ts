@@ -36,17 +36,26 @@ export function exportDeck(
 }
 
 /**
- * Log card distribution information
+ * Log complete deck list information
  */
 export function logCardDistribution(copiesInDeck: Record<string, number>): void {
-    const cardDistribution = Object.entries(copiesInDeck)
-        .filter(([_, count]) => count > 1)
-        .sort((a, b) => b[1] - a[1]);
+    const allCards = Object.entries(copiesInDeck)
+        .sort((a, b) => {
+            // Sort by count descending, then alphabetically
+            if (b[1] !== a[1]) {
+                return b[1] - a[1];
+            }
+            return a[0].localeCompare(b[0]);
+        });
 
-    if (cardDistribution.length > 0) {
-        console.log("\nCards with multiple copies:");
-        cardDistribution.forEach(([name, count]) => {
-            console.log(`- ${name}: ${count}x`);
+    if (allCards.length > 0) {
+        console.log("\nDeck List:");
+        allCards.forEach(([name, count]) => {
+            if (count === 1) {
+                console.log(`- ${name}`);
+            } else {
+                console.log(`- ${name} ${count}x`);
+            }
         });
     }
 }
