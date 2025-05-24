@@ -7,8 +7,95 @@ class DeckBuilderUI {
         this.errorDiv = document.getElementById('error');
         this.deckOutput = document.getElementById('deckOutput');
         this.errorMessage = document.getElementById('errorMessage');
+        this.avatarSelect = document.getElementById('avatar');
+        this.elementSelect = document.getElementById('element');
         
         this.initializeEventListeners();
+        this.init();
+    }
+
+    async init() {
+        try {
+            // Load available avatars
+            const response = await fetch('/api/list-avatars');
+            if (!response.ok) {
+                throw new Error('Failed to load avatars');
+            }
+            
+            const avatars = await response.json();
+            this.populateAvatarSelect(avatars);
+
+            // Set up element-avatar syncing
+            this.elementSelect.addEventListener('change', () => this.syncAvatarWithElement());
+            this.avatarSelect.addEventListener('change', () => this.validateElementAvatarSync());
+        } catch (error) {
+            console.error('Failed to initialize:', error);
+            this.showError('Failed to load avatar options. Please try refreshing the page.');
+        }
+    }
+
+    populateAvatarSelect(avatars) {
+        // Clear existing options except the default
+        while (this.avatarSelect.options.length > 1) {
+            this.avatarSelect.remove(1);
+        }
+
+        // Sort avatars by element to group them
+        const sortedAvatars = [...avatars].sort((a, b) => {
+            const elemA = a.elements[0] || '';
+            const elemB = b.elements[0] || '';
+            return elemA.localeCompare(elemB);
+        });
+
+        // Add avatar options grouped by element
+        let currentElement = '';
+        sortedAvatars.forEach(avatar => {
+            const element = avatar.elements[0] || 'Neutral';
+            
+            // Add group separator if element changed
+            if (element !== currentElement) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = element;
+                this.avatarSelect.appendChild(optgroup);
+                currentElement = element;
+            }
+            
+            const option = document.createElement('option');
+            option.value = avatar.name;
+            option.dataset.element = element;
+            option.textContent = `${avatar.name} (${avatar.life} Life)`;
+            this.avatarSelect.lastChild.appendChild(option);
+        });
+    }
+
+    syncAvatarWithElement() {
+        const selectedElement = this.elementSelect.value;
+        const currentAvatar = this.avatarSelect.value;
+        
+        // Only auto-select avatar if none is chosen
+        if (!currentAvatar && selectedElement) {
+            // Find the first avatar matching the selected element
+            const matchingOption = Array.from(this.avatarSelect.options)
+                .find(option => option.dataset.element === selectedElement);
+            
+            if (matchingOption) {
+                this.avatarSelect.value = matchingOption.value;
+            }
+        }
+    }
+
+    validateElementAvatarSync() {
+        const selectedAvatar = this.avatarSelect.selectedOptions[0];
+        const selectedElement = this.elementSelect.value;
+        
+        if (selectedAvatar && selectedElement && 
+            selectedAvatar.dataset.element !== selectedElement) {
+            // Show warning about element mismatch
+            const warningMsg = `Warning: The selected avatar (${selectedAvatar.textContent}) ` +
+                             `is aligned with ${selectedAvatar.dataset.element}, which differs ` +
+                             `from your preferred element (${selectedElement}).`;
+            console.warn(warningMsg);
+        }
     }
 
     initializeEventListeners() {
