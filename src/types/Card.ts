@@ -80,6 +80,12 @@ export interface Card extends RawCard {
   cost: number;
   threshold?: string;
   subtype?: CardSubtype;
+  // Parsed threshold requirements for spells (what's needed to cast)
+  thresholdRequirements?: Record<string, number>;
+  // Elemental affinity for sites (what's provided)
+  elementalAffinity?: Record<string, number>;
+  // Mana generation for sites
+  manaGeneration?: number;
 }
 
 /**

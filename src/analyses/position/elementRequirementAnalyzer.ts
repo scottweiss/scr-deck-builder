@@ -1,5 +1,5 @@
 import { Card, Element } from '../../types/Card';
-import { getCardThreshold } from '../../utils/utils';
+import { getCardThreshold, getCardElementalAffinity, getCardManaGeneration } from '../../utils/utils';
 
 /**
  * Represents a card with its elemental requirement amount
@@ -31,10 +31,11 @@ export interface ElementAnalysis {
 
 /**
  * Analyzes the elemental requirements of cards in a deck
- * @param deck Current cards in the deck
+ * @param deck Current cards in the deck (spells only - sites should be passed separately)
+ * @param sites Optional sites array to calculate available elemental affinity
  * @returns Analysis of elemental requirements
  */
-export function analyzeElementalRequirements(deck: Card[]): ElementAnalysis {
+export function analyzeElementalRequirements(deck: Card[], sites?: Card[]): ElementAnalysis {
     if (!deck || !Array.isArray(deck)) {
         const emptyRecord = {
             Water: 0,
@@ -58,7 +59,7 @@ export function analyzeElementalRequirements(deck: Card[]): ElementAnalysis {
         };
     }
     
-    // Track element counts and requirements
+    // Track elemental affinity from sites (what we have available)
     const elementCounts: Record<Element, number> = {
         Water: 0,
         Fire: 0,
@@ -66,6 +67,20 @@ export function analyzeElementalRequirements(deck: Card[]): ElementAnalysis {
         Air: 0,
         Void: 0
     };
+    
+    // Calculate elemental affinity from sites (if provided)
+    if (sites && Array.isArray(sites)) {
+        for (const site of sites) {
+            // Sites provide elemental affinity through their processed affinity data
+            const siteAffinity = getCardElementalAffinity(site);
+            for (const [element, amount] of Object.entries(siteAffinity)) {
+                const typedElement = element as Element;
+                elementCounts[typedElement] = (elementCounts[typedElement] || 0) + amount;
+            }
+        }
+    }
+    
+    // Track threshold requirements from spells
     const elementThresholds: Record<Element, number> = {
         Water: 0,
         Fire: 0,
@@ -81,12 +96,12 @@ export function analyzeElementalRequirements(deck: Card[]): ElementAnalysis {
         Void: []
     };
     
-    // Analyze element sources and requirements
+    // Analyze threshold requirements from spells
     for (const card of deck) {
-        // Track elements provided by this card
-        const elements = card.elements || [];
-        for (const element of elements) {
-            elementCounts[element] = (elementCounts[element] || 0) + 1;
+        // Only analyze threshold requirements for spell cards
+        // Sites are analyzed above for elemental affinity
+        if (card.type === 'Site') {
+            continue; // Skip sites in the spell analysis
         }
         
         // Parse threshold requirements using the proper threshold parsing function
@@ -115,11 +130,9 @@ export function analyzeElementalRequirements(deck: Card[]): ElementAnalysis {
         } catch (error) {
             console.error(`Error parsing thresholds for card ${card.name}:`, error);
         }
-        
-        // Note: We no longer need to parse threshold from text as getCardThreshold handles all threshold formats
     }
     
-    // Calculate element deficiencies (where count < threshold)
+    // Calculate element deficiencies (where available affinity < required threshold)
     const elementDeficiencies: Record<Element, ElementDeficiency> = {
         Water: { current: 0, required: 0, deficit: 0, cards: [] },
         Fire: { current: 0, required: 0, deficit: 0, cards: [] },
@@ -127,16 +140,17 @@ export function analyzeElementalRequirements(deck: Card[]): ElementAnalysis {
         Air: { current: 0, required: 0, deficit: 0, cards: [] },
         Void: { current: 0, required: 0, deficit: 0, cards: [] }
     };
+    
     for (const element in elementThresholds) {
         const typedElement = element as Element;
-        const count = elementCounts[typedElement] || 0;
-        const threshold = elementThresholds[typedElement] || 0;
+        const availableAffinity = elementCounts[typedElement] || 0;
+        const requiredThreshold = elementThresholds[typedElement] || 0;
         
-        if (count < threshold) {
+        if (requiredThreshold > 0) { // Only create deficiency entries for elements that are actually required
             elementDeficiencies[typedElement] = {
-                current: count,
-                required: threshold,
-                deficit: threshold - count,
+                current: availableAffinity,
+                required: requiredThreshold,
+                deficit: Math.max(0, requiredThreshold - availableAffinity),
                 cards: elementRequirements[typedElement] || []
             };
         }

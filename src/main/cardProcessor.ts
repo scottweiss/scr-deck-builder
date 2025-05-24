@@ -1,4 +1,5 @@
-import { Card, CardType, Element as ElementEnum } from '../types/Card';
+import { Card, RawCard, Element, CardType, CardRarity } from '../types/Card';
+import { parseThreshold } from '../utils/utils';
 
 const utils = require('../utils/utils');
 
@@ -106,7 +107,7 @@ function categorizeCards(uniqueCards: Card[]): ProcessedCardData {
     for (const card of uniqueCards) {
         const cardElements = card.elements;
         if (cardElements && cardElements.length > 0) {
-            cardElements.forEach((element: ElementEnum) => elements.push(element.toString()));
+            cardElements.forEach((element: Element) => elements.push(element.toString()));
         }
     }
 
@@ -120,5 +121,33 @@ function categorizeCards(uniqueCards: Card[]): ProcessedCardData {
         magics,
         keywords,
         elements
+    };
+}
+
+function toElementEnum(element: string): Element | undefined {
+    switch (element) {
+        case 'Water': return Element.Water;
+        case 'Fire': return Element.Fire;
+        case 'Earth': return Element.Earth;
+        case 'Air': return Element.Air;
+        case 'Void': return Element.Void;
+        default: return undefined;
+    }
+}
+
+// If Card type cannot be changed, add parsedThreshold for analysis
+function transformRawCardToCard(raw: RawCard): Card & { parsedThreshold?: Record<string, number> } {
+    return {
+        ...raw,
+        type: raw.extCardType as CardType,
+        mana_cost: Number(raw.extCost) || 0,
+        text: raw.extDescription || '',
+        elements: raw.extElement ? [toElementEnum(raw.extElement)].filter(Boolean) as Element[] : [],
+        power: Number(raw.extPowerRating) || 0,
+        rarity: raw.extRarity as CardRarity,
+        baseName: raw.cleanName || raw.name,
+        cost: Number(raw.extCost) || 0,
+        threshold: raw.extThreshold || '', // keep as string for Card compatibility
+        parsedThreshold: raw.extThreshold ? parseThreshold(raw.extThreshold) : undefined
     };
 }

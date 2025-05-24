@@ -3,6 +3,8 @@ import { calculateSynergy } from '../../analyses/synergy/synergyCalculator';
 import { identifyCardMechanics, canIncludeWithAvatar, evaluateRegionalStrategy } from '../cards/cardAnalysis';
 import { analyzeElementalRequirements, calculateElementalDeficitContribution } from '../../analyses/position/elementRequirementAnalyzer';
 import { getMaxCopiesForRarity } from './rarityManager';
+import { debugElementalThresholds } from '../simulation/metaTester';
+import { getCardThreshold } from '../../utils/utils'; // Added import
 
 /**
  * Find candidate cards of a specific mana cost
@@ -67,6 +69,16 @@ export function findCandidatesOfCost(
  * @returns Sorted cards (best first)
  */
 export function sortCardsByStrategicValue(candidates: Card[], currentDeck: Card[]): Card[] {
+    // Debugging elemental thresholds before analysis
+    if (currentDeck && currentDeck.length > 0) {
+        console.log("Debugging elemental thresholds for currentDeck in sortCardsByStrategicValue (using getCardThreshold):");
+        debugElementalThresholds(currentDeck, getCardThreshold); // Corrected call
+    }
+    if (candidates && candidates.length > 0) {
+        console.log("Debugging elemental thresholds for candidates in sortCardsByStrategicValue (using getCardThreshold):");
+        debugElementalThresholds(candidates, getCardThreshold); // Corrected call
+    }
+
     return candidates.sort((a, b) => {
         const aSynergy = calculateSynergy(a, currentDeck);
         const bSynergy = calculateSynergy(b, currentDeck);
@@ -76,7 +88,7 @@ export function sortCardsByStrategicValue(candidates: Card[], currentDeck: Card[
         const bPowerValue = (b.power || 0) / Math.max(b.mana_cost || 1, 1);
         
         // Consider elemental deficiency contribution
-        const elementalAnalysis = analyzeElementalRequirements(currentDeck);
+        const elementalAnalysis = analyzeElementalRequirements(currentDeck, []); // Pass empty sites array since not available in this context
         const aElementalScore = calculateElementalDeficitContribution(a, elementalAnalysis) * 2; // Higher weight
         const bElementalScore = calculateElementalDeficitContribution(b, elementalAnalysis) * 2;
         

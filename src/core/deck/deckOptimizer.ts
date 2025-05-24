@@ -60,7 +60,7 @@ export function optimizeDeck(
     
     // ENHANCEMENT: Analyze elemental requirements first
     console.log("Analyzing elemental requirements and thresholds...");
-    const elementalAnalysis = analyzeElementalRequirements(selectedSpells);
+    const elementalAnalysis = analyzeElementalRequirements(selectedSpells, []); // Pass empty sites array since not available in this context
     const hasElementDeficiencies = Object.keys(elementalAnalysis.elementDeficiencies || {}).length > 0;
     
     if (hasElementDeficiencies) {

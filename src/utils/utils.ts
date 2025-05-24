@@ -150,13 +150,28 @@ export function parseThreshold(thresholdStr: string): Record<string, number> {
     return thresholdMap;
 }
 
-export function getCardThreshold(card: RawCard | ProcessedCard | Card): Record<string, number> {
-    // If it's already a Card with parsed threshold somewhere, check for it
-    if ((card as any).parsedThreshold) {
-        return (card as any).parsedThreshold;
+/**
+ * Parse elemental affinity from sites (what they provide)
+ * Sites provide affinity through their elemental symbols
+ */
+export function parseElementalAffinity(card: RawCard | Card): Record<string, number> {
+    const affinity: Record<string, number> = {};
+    const elements = getCardElements(card);
+    
+    // Each element symbol on a site provides 1 affinity of that element
+    for (const element of elements) {
+        const elementName = element.toString();
+        affinity[elementName] = (affinity[elementName] || 0) + 1;
     }
     
-    // Get threshold string from various possible sources
+    return affinity;
+}
+
+/**
+ * Parse threshold requirements from spells (what they need)
+ * Spells require threshold to be cast
+ */
+export function parseThresholdRequirements(card: RawCard | Card): Record<string, number> {
     let thresholdStr = '';
     if ((card as any).threshold) {
         thresholdStr = (card as any).threshold;
@@ -165,6 +180,69 @@ export function getCardThreshold(card: RawCard | ProcessedCard | Card): Record<s
     }
     
     return parseThreshold(thresholdStr);
+}
+
+/**
+ * Get mana generation for sites (how much mana they provide)
+ */
+export function getManaGeneration(card: RawCard | Card): number {
+    const cardType = (card as Card).type || (card as RawCard).extCardType;
+    if (cardType === 'Site') {
+        // Sites typically generate 1 mana, but could be specified differently
+        // For now, assume 1 mana per site (this could be enhanced with actual data)
+        return 1;
+    }
+    return 0;
+}
+
+export function getCardThreshold(card: RawCard | ProcessedCard | Card): Record<string, number> {
+    // For new Card structure with proper parsing
+    if ((card as Card).thresholdRequirements) {
+        return (card as Card).thresholdRequirements!;
+    }
+    
+    // If it's already a Card with parsed threshold somewhere, check for it
+    if ((card as any).parsedThreshold) {
+        return (card as any).parsedThreshold;
+    }
+    
+    // Get threshold string from various possible sources for backward compatibility
+    let thresholdStr = '';
+    if ((card as any).threshold) {
+        thresholdStr = (card as any).threshold;
+    } else if ((card as RawCard).extThreshold) {
+        thresholdStr = (card as RawCard).extThreshold;
+    }
+    
+    return parseThreshold(thresholdStr);
+}
+
+/**
+ * Get elemental affinity provided by a site
+ */
+export function getCardElementalAffinity(card: Card): Record<string, number> {
+    if (card.elementalAffinity) {
+        return card.elementalAffinity;
+    }
+    
+    // Fallback for cards not yet properly processed
+    if (card.type === CardType.Site) {
+        return parseElementalAffinity(card);
+    }
+    
+    return {};
+}
+
+/**
+ * Get mana generation provided by a site
+ */
+export function getCardManaGeneration(card: Card): number {
+    if (card.manaGeneration !== undefined) {
+        return card.manaGeneration;
+    }
+    
+    // Fallback for cards not yet properly processed
+    return getManaGeneration(card);
 }
 
 export function transformRawCardToCard(rawCard: RawCard): Card {
@@ -188,6 +266,20 @@ export function transformRawCardToCard(rawCard: RawCard): Card {
         if (!isNaN(parsedDefense)) defense = parsedDefense;
     }
 
+    // Parse different data based on card type
+    let thresholdRequirements: Record<string, number> | undefined = undefined;
+    let elementalAffinity: Record<string, number> | undefined = undefined;
+    let manaGeneration: number | undefined = undefined;
+
+    if (cardType === CardType.Site) {
+        // Sites provide elemental affinity and mana generation
+        elementalAffinity = parseElementalAffinity(rawCard);
+        manaGeneration = getManaGeneration(rawCard);
+    } else {
+        // Spells (Minions, Magic, Artifacts, Auras) have threshold requirements
+        thresholdRequirements = parseThresholdRequirements(rawCard);
+    }
+
     const card: Card = {
         ...rawCard, // Spread all RawCard properties first
         type: cardType,
@@ -202,6 +294,9 @@ export function transformRawCardToCard(rawCard: RawCard): Card {
         defense: defense,
         threshold: rawCard.extThreshold || '', // Keep as string
         subtype: rawCard.extCardSubtype || undefined,
+        thresholdRequirements: thresholdRequirements,
+        elementalAffinity: elementalAffinity,
+        manaGeneration: manaGeneration,
     };
     return card;
 }

@@ -162,7 +162,7 @@ export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
   selectedSpells = magicResult.updatedDeck;
 
   // ENHANCEMENT: Analyze elemental requirements and add fixing cards if needed
-  const elementalAnalysis = (elementAnalyzer as any).analyzeElementalRequirements(selectedSpells);
+  const elementalAnalysis = (elementAnalyzer as any).analyzeElementalRequirements(selectedSpells, []); // Pass empty sites array since not available in this context
   const hasElementDeficiencies = Object.keys(elementalAnalysis.elementDeficiencies || {}).length > 0;
 
   if (hasElementDeficiencies) {

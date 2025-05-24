@@ -2,21 +2,19 @@ import { Card } from './gameState';
 import { BatchResult, SimulationConfig } from './matchSimulator';
 import { AI_STRATEGIES } from './aiEngine';
 import { convertToPlayerDeck } from './testDeckUtils';
-import { 
-    analyzeConsistency, 
-    ConsistencyReport 
-} from './consistencyAnalyzer';
-import { 
-    identifyStrengths, 
-    identifyWeaknesses, 
-    generateRecommendations, 
-    classifyPerformance 
-} from './deckAnalyzer';
+import { analyzeConsistency } from './consistencyAnalyzer';
 import {
     DeckTestResult,
     MetaAnalysisResult,
-    MatchupResult
+    MatchupResult,
+    ConsistencyReport
 } from './deckTestTypes';
+import {
+    classifyPerformance,
+    identifyStrengths,
+    identifyWeaknesses,
+    generateRecommendations
+} from './deckAnalyzer';
 
 /**
  * Test a deck against the meta
@@ -100,3 +98,18 @@ export async function testDeckConsistency(
     
     return analyzeConsistency(result);
 }
+
+// Add this debug function for elemental threshold analysis
+function debugElementalThresholds(deck: Card[], getCardThreshold: (card: Card) => any) {
+    console.log('Deck for elemental threshold analysis:');
+    deck.forEach(card => {
+        console.log({
+            name: card.name,
+            elements: card.elements,
+            threshold: getCardThreshold(card)
+        });
+    });
+}
+
+// Add this export so it can be called from deck building/analysis logic
+export { debugElementalThresholds };
