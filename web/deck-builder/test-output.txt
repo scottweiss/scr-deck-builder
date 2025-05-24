@@ -1,0 +1,13 @@
+=== Testing Deck Builder ===
+
+--- Testing with Fire preference ---
+Building sites from 8 available sites
+Built 30 sites
+Fire-preferred sites: Fire Temple, Fire Temple, Fire Temple, Fire Temple, Mixed Grove, Mixed Grove, Mixed Grove, Mixed Grove, Water Grove, Water Grove, Water Grove, Water Grove, Earth Cavern, Earth Cavern, Earth Cavern, Earth Cavern, Air Peak, Air Peak, Air Peak, Air Peak, Neutral Ground, Neutral Ground, Neutral Ground, Neutral Ground, Ancient Ruins, Ancient Ruins, Ancient Ruins, Ancient Ruins, Sacred Site, Sacred Site
+
+--- Testing with no preference ---
+Building sites from 8 available sites
+Built 30 sites
+All sites: Fire Temple, Fire Temple, Fire Temple, Fire Temple, Water Grove, Water Grove, Water Grove, Water Grove, Earth Cavern, Earth Cavern, Earth Cavern, Earth Cavern, Air Peak, Air Peak, Air Peak, Air Peak, Neutral Ground, Neutral Ground, Neutral Ground, Neutral Ground, Mixed Grove, Mixed Grove, Mixed Grove, Mixed Grove, Ancient Ruins, Ancient Ruins, Ancient Ruins, Ancient Ruins, Sacred Site, Sacred Site
+
+=== Test Complete ===

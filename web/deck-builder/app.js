@@ -148,20 +148,24 @@
             
             // Transform result to match expected format
             currentDeck = {
-                deck: result.deck,
+                spells: result.spells,
+                sites: result.sites,
                 stats: result.stats,
                 summary: {
                     totalCards: result.stats.totalCards,
+                    spellsCount: result.stats.spellsCount,
+                    sitesCount: result.stats.sitesCount,
                     avgManaCost: result.stats.averageManaCost,
                     elements: Object.keys(result.stats.elements),
                     archetypes: Object.keys(result.stats.archetypes)
                 },
                 validation: {
-                    isValid: result.deck.length === 50,
-                    warnings: result.deck.length !== 50 ? [`Deck has ${result.deck.length} cards instead of 50`] : [],
+                    isValid: result.stats.spellsCount === 50 && result.stats.sitesCount === 30,
+                    warnings: getValidationWarnings(result.stats),
                     suggestions: []
                 },
-                deckList: generateDeckList(result.deck)
+                spellsList: generateDeckList(result.spells),
+                sitesList: generateDeckList(result.sites)
             };
             
             displayDeckResults(currentDeck);
@@ -173,6 +177,21 @@
             showError(`Failed to build deck: ${error.message}`);
             hideLoading();
         }
+    }
+
+    // Generate validation warnings based on deck stats
+    function getValidationWarnings(stats) {
+        const warnings = [];
+        
+        if (stats.spellsCount !== 50) {
+            warnings.push(`Spellbook has ${stats.spellsCount} cards instead of 50`);
+        }
+        
+        if (stats.sitesCount !== 30) {
+            warnings.push(`Sites deck has ${stats.sitesCount} cards instead of 30`);
+        }
+        
+        return warnings;
     }
 
     // Generate deck list with card counts
@@ -198,11 +217,11 @@
         // Display avatar (none for now since we don't have avatar selection working)
         displayAvatarInfo(null);
         
-        // Display sites (empty for now)
-        displaySites([]);
+        // Display sites with actual site cards
+        displaySites(result.sitesList);
         
         // Display spells
-        displaySpells(result.deckList);
+        displaySpells(result.spellsList);
     }
 
     // Display deck summary
@@ -214,7 +233,7 @@
         elements.deckSummary.innerHTML = `
             <div class="summary-item">
                 <span class="label">Total Cards:</span>
-                <span class="value">${summary.totalCards}</span>
+                <span class="value">${summary.totalCards} (${summary.spellsCount} spells + ${summary.sitesCount} sites)</span>
             </div>
             <div class="summary-item">
                 <span class="label">Avg Mana Cost:</span>
@@ -280,21 +299,20 @@
     }
 
     // Display sites
-    function displaySites(sites) {
-        if (!sites || sites.length === 0) {
+    function displaySites(sitesList) {
+        if (!sitesList || sitesList.length === 0) {
             elements.sitesList.innerHTML = '<p>No sites in deck</p>';
             return;
         }
 
-        const sitesHtml = sites.map(site => {
-            const elementsHtml = (site.elements || []).map(element => 
-                `<span class="mini-element">${getElementIcon(element)}</span>`
-            ).join('');
+        const sitesHtml = sitesList.map(siteItem => {
+            const count = siteItem.count;
+            const name = siteItem.name;
+            const countText = count > 1 ? ` ${count}x` : '';
 
             return `
                 <div class="card-item site-card">
-                    <span class="card-name">${site.name}</span>
-                    <span class="card-elements">${elementsHtml}</span>
+                    <span class="card-name">- ${name}${countText}</span>
                 </div>
             `;
         }).join('');
@@ -324,9 +342,9 @@
         if (!currentDeck) return;
         
         const exportData = {
-            avatar: currentDeck.avatar?.name || null,
-            sites: currentDeck.sites.map(site => site.name),
-            spells: currentDeck.deckList,
+            avatar: null, // No avatar selection yet
+            sites: currentDeck.sitesList,
+            spells: currentDeck.spellsList,
             summary: currentDeck.summary,
             validation: currentDeck.validation,
             exportedAt: new Date().toISOString()
@@ -347,17 +365,17 @@
         let text = `Sorcery: Contested Realm - Deck List\n`;
         text += `Generated: ${new Date().toLocaleDateString()}\n\n`;
         
-        if (currentDeck.avatar) {
-            text += `Avatar: ${currentDeck.avatar.name}\n\n`;
-        }
-        
-        text += `Sites (${currentDeck.sites.length}):\n`;
-        currentDeck.sites.forEach(site => {
-            text += `- ${site.name}\n`;
+        text += `Sites (${currentDeck.summary.sitesCount}):\n`;
+        currentDeck.sitesList.forEach(({ name, count }) => {
+            if (count === 1) {
+                text += `- ${name}\n`;
+            } else {
+                text += `- ${name} ${count}x\n`;
+            }
         });
         
-        text += `\nSpellbook (${currentDeck.deckList.reduce((sum, card) => sum + card.count, 0)}):\n`;
-        currentDeck.deckList.forEach(({ name, count }) => {
+        text += `\nSpellbook (${currentDeck.summary.spellsCount}):\n`;
+        currentDeck.spellsList.forEach(({ name, count }) => {
             if (count === 1) {
                 text += `- ${name}\n`;
             } else {
@@ -377,9 +395,18 @@
     async function copyDeckList() {
         if (!currentDeck) return;
 
-        let text = `${currentDeck.avatar?.name || 'Unknown Avatar'}\n\n`;
-        text += `Spellbook:\n`;
-        currentDeck.deckList.forEach(({ name, count }) => {
+        let text = `Sorcery Deck\n\n`;
+        text += `Sites (${currentDeck.summary.sitesCount}):\n`;
+        currentDeck.sitesList.forEach(({ name, count }) => {
+            if (count === 1) {
+                text += `${name}\n`;
+            } else {
+                text += `${name} ${count}x\n`;
+            }
+        });
+        
+        text += `\nSpellbook (${currentDeck.summary.spellsCount}):\n`;
+        currentDeck.spellsList.forEach(({ name, count }) => {
             if (count === 1) {
                 text += `${name}\n`;
             } else {

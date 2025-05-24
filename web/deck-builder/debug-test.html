@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test - Deck Builder</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #cce7ff; border: 1px solid #99d6ff; color: #004085; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        #output { margin-top: 20px; }
+        .deck-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Deck Builder Debug Test</h1>
+    
+    <div class="test-result info">
+        <strong>Status:</strong> <span id="status">Loading...</span>
+    </div>
+    
+    <button onclick="testDeckBuilding()">🔨 Test Deck Building</button>
+    <button onclick="testSitesSpecifically()">🗺️ Test Sites Only</button>
+    <button onclick="clearOutput()">🧹 Clear Output</button>
+    
+    <div id="output"></div>
+
+    <!-- Load the scripts -->
+    <script src="sorceryCards.compressed.js"></script>
+    <script src="real-deck-builder.js"></script>
+    
+    <script>
+        let deckBuilder;
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            output.appendChild(div);
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+        
+        async function initialize() {
+            try {
+                document.getElementById('status').textContent = 'Initializing...';
+                
+                // Wait for the global deck builder to be available
+                while (typeof window.RealSorceryDeckBuilder === 'undefined') {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                deckBuilder = new window.RealSorceryDeckBuilder();
+                await deckBuilder.loadCardData();
+                
+                log('✅ Deck builder initialized successfully', 'success');
+                log(`📊 Total cards loaded: ${deckBuilder.cards.length}`, 'info');
+                log(`🗺️ Total sites loaded: ${deckBuilder.sites.length}`, 'info');
+                log(`🧙 Total avatars loaded: ${deckBuilder.avatars.length}`, 'info');
+                
+                document.getElementById('status').textContent = 'Ready';
+                
+            } catch (error) {
+                log(`❌ Initialization failed: ${error.message}`, 'error');
+                document.getElementById('status').textContent = 'Error';
+            }
+        }
+        
+        async function testDeckBuilding() {
+            try {
+                if (!deckBuilder) {
+                    log('❌ Deck builder not initialized', 'error');
+                    return;
+                }
+                
+                log('🔨 Testing deck building...', 'info');
+                
+                const preferences = {
+                    preferredElements: ['Water'],
+                    preferredArchetype: 'Control',
+                    avatarName: null
+                };
+                
+                log(`🎯 Building deck with preferences: ${JSON.stringify(preferences)}`, 'info');
+                
+                const result = await deckBuilder.buildDeck(preferences);
+                
+                log(`✅ Deck built successfully!`, 'success');
+                log(`📊 Total cards: ${result.stats.totalCards}`, 'info');
+                log(`📚 Spells: ${result.stats.spellsCount}`, 'info');
+                log(`🗺️ Sites: ${result.stats.sitesCount}`, 'info');
+                log(`💰 Average mana cost: ${result.stats.averageManaCost}`, 'info');
+                
+                // Display sites specifically
+                const sitesSection = document.createElement('div');
+                sitesSection.className = 'deck-section';
+                sitesSection.innerHTML = `
+                    <h3>🗺️ Sites in Deck (${result.sites.length} cards):</h3>
+                    ${result.sites.map((site, index) => 
+                        `<div>${index + 1}. ${site.name} (${site.elements.join(', ')})</div>`
+                    ).join('')}
+                `;
+                document.getElementById('output').appendChild(sitesSection);
+                
+                // Display spells sample
+                const spellsSection = document.createElement('div');
+                spellsSection.className = 'deck-section';
+                spellsSection.innerHTML = `
+                    <h3>📚 Sample Spells (${result.spells.length} cards):</h3>
+                    ${result.spells.slice(0, 10).map((spell, index) => 
+                        `<div>${index + 1}. ${spell.name} (${spell.mana_cost} mana, ${spell.elements.join(', ')})</div>`
+                    ).join('')}
+                    ${result.spells.length > 10 ? `<div>... and ${result.spells.length - 10} more spells</div>` : ''}
+                `;
+                document.getElementById('output').appendChild(spellsSection);
+                
+            } catch (error) {
+                log(`❌ Deck building test failed: ${error.message}`, 'error');
+                console.error('Full error:', error);
+            }
+        }
+        
+        async function testSitesSpecifically() {
+            try {
+                if (!deckBuilder) {
+                    log('❌ Deck builder not initialized', 'error');
+                    return;
+                }
+                
+                log('🗺️ Testing sites functionality specifically...', 'info');
+                
+                // Check available sites
+                log(`📊 Available sites in database: ${deckBuilder.sites.length}`, 'info');
+                
+                // Show sample sites
+                const sampleSites = deckBuilder.sites.slice(0, 5);
+                log(`🔍 Sample sites:`, 'info');
+                sampleSites.forEach((site, index) => {
+                    log(`  ${index + 1}. ${site.name} - Elements: [${site.elements.join(', ')}]`, 'info');
+                });
+                
+                // Test site building directly
+                log('🔨 Testing direct site building...', 'info');
+                
+                // Call the buildSites function directly if available
+                if (typeof window.buildSites === 'function') {
+                    const testSites = window.buildSites(deckBuilder.sites, ['Water']);
+                    log(`✅ Direct site building test: Generated ${testSites.length} sites`, 'success');
+                    
+                    // Show generated sites
+                    const sitesSection = document.createElement('div');
+                    sitesSection.className = 'deck-section';
+                    sitesSection.innerHTML = `
+                        <h3>🔨 Directly Generated Sites (${testSites.length}):</h3>
+                        ${testSites.map((site, index) => 
+                            `<div>${index + 1}. ${site.name} (${site.elements.join(', ')})</div>`
+                        ).join('')}
+                    `;
+                    document.getElementById('output').appendChild(sitesSection);
+                } else {
+                    log('⚠️ buildSites function not available in global scope', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Sites test failed: ${error.message}`, 'error');
+                console.error('Full error:', error);
+            }
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', initialize);
+    </script>
+</body>
+</html>

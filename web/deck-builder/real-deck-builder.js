@@ -162,8 +162,9 @@ function transformCard(rawCard) {
 
 /**
  * Smart deck building algorithm (adapted from existing cardSelector.ts)
+ * Builds both spellbook (50 cards) and sites (30 cards) as per Sorcery rules
  */
-function buildSmartDeck(availableCards, preferences = {}) {
+function buildSmartDeck(availableCards, availableSites, preferences = {}) {
     const {
         preferredElements = [],
         preferredArchetype = 'Midrange',
@@ -172,9 +173,9 @@ function buildSmartDeck(availableCards, preferences = {}) {
     
     console.log('Building deck with preferences:', preferences);
     
-    // Filter cards by preferences
+    // Filter spells by preferences (exclude sites and avatars from spellbook)
     let candidateCards = availableCards.filter(card => {
-        // Exclude sites and avatars from deck
+        // Exclude sites and avatars from spellbook
         if (card.type === 'Site' || card.type === 'Avatar') return false;
         
         // Prefer cards that match archetype
@@ -190,6 +191,75 @@ function buildSmartDeck(availableCards, preferences = {}) {
         return true;
     });
     
+    // Build sites deck (30 cards)
+    const sites = buildSites(availableSites, preferredElements);
+    
+    // Build spellbook (50 cards)
+    const spells = buildSpells(candidateCards, preferredArchetype, preferredElements);
+    
+    return {
+        spells: spells,
+        sites: sites,
+        totalCards: spells.length + sites.length
+    };
+}
+
+/**
+ * Build sites deck (30 cards) with element preferences
+ */
+function buildSites(availableSites, preferredElements = []) {
+    const sites = [];
+    const maxCopies = 4;
+    const sitesNeeded = 30;
+    
+    // Filter sites by preferred elements
+    let candidateSites = availableSites.filter(site => {
+        if (preferredElements.length === 0) return true;
+        return site.elements.some(element => preferredElements.includes(element)) ||
+               site.elements.length === 0; // Include neutral sites
+    });
+    
+    // Sort sites by preference: matching elements first, then neutral
+    candidateSites.sort((a, b) => {
+        const aScore = a.elements.some(e => preferredElements.includes(e)) ? 1 : 0;
+        const bScore = b.elements.some(e => preferredElements.includes(e)) ? 1 : 0;
+        return bScore - aScore;
+    });
+    
+    // Add sites to deck
+    while (sites.length < sitesNeeded && candidateSites.length > 0) {
+        for (const site of candidateSites) {
+            if (sites.length >= sitesNeeded) break;
+            
+            const currentCopies = sites.filter(s => s.name === site.name).length;
+            if (currentCopies < maxCopies) {
+                sites.push({...site});
+            }
+        }
+        
+        // If we still need more sites and have exhausted preferred sites, add any available
+        if (sites.length < sitesNeeded) {
+            const remainingSites = availableSites.filter(site => {
+                const currentCopies = sites.filter(s => s.name === site.name).length;
+                return currentCopies < maxCopies;
+            });
+            
+            for (const site of remainingSites) {
+                if (sites.length >= sitesNeeded) break;
+                sites.push({...site});
+            }
+        }
+        
+        break; // Prevent infinite loop
+    }
+    
+    return sites;
+}
+
+/**
+ * Build spells deck (50 cards) with optimal mana curve
+ */
+function buildSpells(candidateCards, preferredArchetype, preferredElements) {
     // Optimal mana curve distribution (from existing algorithm)
     const targetDistribution = {
         1: 8,   // 1 mana
@@ -203,7 +273,7 @@ function buildSmartDeck(availableCards, preferences = {}) {
     
     const deck = [];
     const maxCopies = 4; // Standard Sorcery deck building rule
-    const deckSize = 50; // Standard Sorcery deck size
+    const deckSize = 50; // Standard Sorcery spellbook size
     
     // Build deck following mana curve
     for (const [costStr, targetCount] of Object.entries(targetDistribution)) {
@@ -261,11 +331,13 @@ function buildSmartDeck(availableCards, preferences = {}) {
 }
 
 /**
- * Calculate deck statistics
+ * Calculate deck statistics for spells and sites
  */
-function calculateDeckStats(deck) {
+function calculateDeckStats(spells, sites) {
     const stats = {
-        totalCards: deck.length,
+        totalCards: spells.length + sites.length,
+        spellsCount: spells.length,
+        sitesCount: sites.length,
         manaCurve: {},
         elements: {},
         types: {},
@@ -274,12 +346,15 @@ function calculateDeckStats(deck) {
     };
     
     let totalCost = 0;
+    let cardCount = 0;
     
-    deck.forEach(card => {
+    // Calculate stats for spells
+    spells.forEach(card => {
         // Mana curve
         const cost = Math.min(card.mana_cost || 0, 7);
         stats.manaCurve[cost] = (stats.manaCurve[cost] || 0) + 1;
         totalCost += card.mana_cost || 0;
+        cardCount++;
         
         // Elements
         card.elements.forEach(element => {
@@ -290,12 +365,25 @@ function calculateDeckStats(deck) {
         stats.types[card.type] = (stats.types[card.type] || 0) + 1;
         
         // Archetypes
-        card.archetype.forEach(archetype => {
-            stats.archetypes[archetype] = (stats.archetypes[archetype] || 0) + 1;
-        });
+        if (card.archetype && Array.isArray(card.archetype)) {
+            card.archetype.forEach(archetype => {
+                stats.archetypes[archetype] = (stats.archetypes[archetype] || 0) + 1;
+            });
+        }
     });
     
-    stats.averageManaCost = deck.length > 0 ? (totalCost / deck.length).toFixed(2) : 0;
+    // Calculate stats for sites
+    sites.forEach(card => {
+        // Elements
+        card.elements.forEach(element => {
+            stats.elements[element] = (stats.elements[element] || 0) + 1;
+        });
+        
+        // Types
+        stats.types[card.type] = (stats.types[card.type] || 0) + 1;
+    });
+    
+    stats.averageManaCost = cardCount > 0 ? (totalCost / cardCount).toFixed(2) : 0;
     
     return stats;
 }
@@ -361,13 +449,15 @@ class RealSorceryDeckBuilder {
     async buildDeck(preferences = {}) {
         await this.loadCardData();
         
-        const deck = buildSmartDeck(this.cards, preferences);
-        const stats = calculateDeckStats(deck);
+        const deckResult = buildSmartDeck(this.cards, this.sites, preferences);
+        const stats = calculateDeckStats(deckResult.spells, deckResult.sites);
         
         return {
-            deck: deck,
+            spells: deckResult.spells,
+            sites: deckResult.sites,
             stats: stats,
             cardCount: this.cards.length,
+            sitesCount: this.sites.length,
             preferences: preferences
         };
     }

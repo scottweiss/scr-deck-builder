@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Deck Builder Verification Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .results { background: #f5f5f5; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Deck Builder Verification Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Status</h2>
+        <div id="test-status">Running tests...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <script src="sorceryCards.compressed.js"></script>
+    <script src="real-deck-builder.js"></script>
+    <script>
+        function log(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = message;
+            resultsDiv.appendChild(p);
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        async function runTests() {
+            try {
+                log('=== Starting Deck Builder Tests ===');
+                
+                // Test 1: Check if deck builder loads
+                log('Test 1: Checking if RealSorceryDeckBuilder loads...');
+                if (typeof RealSorceryDeckBuilder === 'undefined') {
+                    log('❌ RealSorceryDeckBuilder is not defined', 'error');
+                    return;
+                }
+                log('✅ RealSorceryDeckBuilder loaded successfully', 'success');
+                
+                // Test 2: Create deck builder instance
+                log('Test 2: Creating deck builder instance...');
+                const deckBuilder = new RealSorceryDeckBuilder();
+                log('✅ Deck builder instance created', 'success');
+                
+                // Test 3: Check if card data loads
+                log('Test 3: Loading card data...');
+                await deckBuilder.loadCardData();
+                log('✅ Card data loaded successfully', 'success');
+                
+                // Test 4: Get available cards
+                log('Test 4: Checking available cards...');
+                const builder = new RealSorceryDeckBuilder();
+                await builder.loadCardData();
+                const allCards = builder.cards || [];
+                log(`Found ${allCards.length} total cards`, 'info');
+                
+                // Separate spells and sites
+                const spells = allCards.filter(card => card.type !== 'Site' && card.type !== 'Avatar');
+                const sites = allCards.filter(card => card.type === 'Site');
+                
+                log(`Found ${spells.length} spell cards`, 'info');
+                log(`Found ${sites.length} site cards`, 'info');
+                
+                if (sites.length === 0) {
+                    log('❌ No sites found in card data!', 'error');
+                    return;
+                }
+                log('✅ Sites found in card data', 'success');
+                
+                // Test 5: Build a deck
+                log('Test 5: Building a test deck...');
+                const preferences = {
+                    elements: ['Fire', 'Water'],
+                    archetypes: [],
+                    budget: 'unlimited'
+                };
+                
+                const deckResult = deckBuilder.buildDeck(preferences);
+                log(`Deck building result:`, 'info');
+                log(`- Spells: ${deckResult.spells ? deckResult.spells.length : 'undefined'}`, 'info');
+                log(`- Sites: ${deckResult.sites ? deckResult.sites.length : 'undefined'}`, 'info');
+                
+                if (!deckResult.spells || !deckResult.sites) {
+                    log('❌ Deck result missing spells or sites arrays', 'error');
+                    return;
+                }
+                
+                if (deckResult.sites.length === 0) {
+                    log('❌ No sites in built deck!', 'error');
+                    return;
+                }
+                
+                log('✅ Deck built successfully with sites and spells', 'success');
+                log(`Built deck contains ${deckResult.spells.length} spells and ${deckResult.sites.length} sites`, 'success');
+                
+                // Test 6: Verify site diversity
+                log('Test 6: Checking site diversity...');
+                const uniqueSites = [...new Set(deckResult.sites.map(s => s.name))];
+                log(`Unique sites in deck: ${uniqueSites.length}`, 'info');
+                log(`Site names: ${uniqueSites.slice(0, 5).join(', ')}${uniqueSites.length > 5 ? '...' : ''}`, 'info');
+                
+                log('=== All Tests Completed Successfully! ===', 'success');
+                document.getElementById('test-status').innerHTML = '<span class="success">✅ All tests passed!</span>';
+                
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`, 'error');
+                log(`Stack trace: ${error.stack}`, 'error');
+                document.getElementById('test-status').innerHTML = '<span class="error">❌ Tests failed!</span>';
+            }
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>
