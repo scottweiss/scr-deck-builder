@@ -15,6 +15,7 @@ import {
     identifyWeaknesses,
     generateRecommendations
 } from './deckAnalyzer';
+import { SYSTEM_MODE } from '../../config';
 
 /**
  * Test a deck against the meta
@@ -101,14 +102,16 @@ export async function testDeckConsistency(
 
 // Add this debug function for elemental threshold analysis
 function debugElementalThresholds(deck: Card[], getCardThreshold: (card: Card) => any) {
-    console.log('Deck for elemental threshold analysis:');
-    deck.forEach(card => {
-        console.log({
-            name: card.name,
-            elements: card.elements,
-            threshold: getCardThreshold(card)
+    if (SYSTEM_MODE.DEBUG) {
+        console.log('Deck for elemental threshold analysis:');
+        deck.forEach(card => {
+            console.log({
+                name: card.name,
+                elements: card.elements,
+                threshold: getCardThreshold(card)
+            });
         });
-    });
+    }
 }
 
 // Add this export so it can be called from deck building/analysis logic
