@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Deck Builder Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background-color: #2a2a2a;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Unified Deck Builder Test</h1>
+    <p>Testing the new unified TypeScript-first deck building system</p>
+
+    <div class="test-section">
+        <h2>System Status</h2>
+        <div id="status">Initializing...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Available Tests</h2>
+        <button onclick="testInitialization()">Test Initialization</button>
+        <button onclick="testCardLoading()">Test Card Loading</button>
+        <button onclick="testDeckBuilding()">Test Deck Building</button>
+        <button onclick="testAllFeatures()">Run All Tests</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="results"></div>
+    </div>
+
+    <script src="../dist/sorcery-deck-builder.js"></script>
+    <script>
+        let deckBuilder = null;
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            results.innerHTML += `<div class="${className}">[${new Date().toLocaleTimeString()}] ${message}</div>`;
+            console.log(message);
+        }
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            status.innerHTML = `<span class="${className}">${message}</span>`;
+        }
+
+        async function testInitialization() {
+            try {
+                log('🔄 Testing unified deck builder initialization...');
+                
+                // Check if the unified system is available
+                if (typeof window.SorceryDeckBuilder === 'undefined') {
+                    throw new Error('SorceryDeckBuilder not found in global scope');
+                }
+                
+                deckBuilder = new window.SorceryDeckBuilder();
+                log('✅ Deck builder instance created successfully', 'success');
+                
+                await deckBuilder.initialize();
+                log('✅ Deck builder initialized successfully', 'success');
+                
+                updateStatus('✅ Unified system ready', 'success');
+                return true;
+            } catch (error) {
+                log(`❌ Initialization failed: ${error.message}`, 'error');
+                updateStatus('❌ Initialization failed', 'error');
+                return false;
+            }
+        }
+
+        async function testCardLoading() {
+            try {
+                if (!deckBuilder) {
+                    await testInitialization();
+                }
+                
+                log('🔄 Testing card loading...');
+                
+                const allCards = await deckBuilder.getAllCards();
+                log(`✅ Loaded ${allCards.length} cards`, 'success');
+                
+                const avatars = await deckBuilder.getAvatars();
+                log(`✅ Found ${avatars.length} avatars`, 'success');
+                
+                const sites = await deckBuilder.getSites();
+                log(`✅ Found ${sites.length} sites`, 'success');
+                
+                // Show sample cards
+                if (allCards.length > 0) {
+                    const sampleCard = allCards[0];
+                    log(`📋 Sample card: ${sampleCard.name} (${sampleCard.type})`);
+                }
+                
+                return true;
+            } catch (error) {
+                log(`❌ Card loading failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testDeckBuilding() {
+            try {
+                if (!deckBuilder) {
+                    await testInitialization();
+                }
+                
+                log('🔄 Testing deck building...');
+                
+                const deckResult = await deckBuilder.buildDeck({
+                    preferredElement: 'Fire',
+                    maxCards: 30
+                });
+                
+                log(`✅ Built deck with ${deckResult.stats.totalCards} total cards`, 'success');
+                log(`🎯 Avatar: ${deckResult.avatar.name}`);
+                log(`🏰 Sites: ${deckResult.sites.length} cards`);
+                log(`📚 Spells: ${deckResult.spells.length} cards`);
+                log(`⚡ Synergy Score: ${deckResult.synergy.toFixed(2)}`);
+                
+                // Show deck composition
+                const stats = deckResult.stats;
+                log(`📊 Average Mana Cost: ${stats.averageManaCost.toFixed(1)}`);
+                
+                // Show element distribution
+                const elements = Object.entries(stats.elementDistribution);
+                if (elements.length > 0) {
+                    log(`🌟 Element Distribution: ${elements.map(([e, c]) => `${e}: ${c}`).join(', ')}`);
+                }
+                
+                return true;
+            } catch (error) {
+                log(`❌ Deck building failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testAllFeatures() {
+            log('🚀 Starting comprehensive test suite...');
+            
+            const tests = [
+                { name: 'Initialization', fn: testInitialization },
+                { name: 'Card Loading', fn: testCardLoading },
+                { name: 'Deck Building', fn: testDeckBuilding }
+            ];
+            
+            let passed = 0;
+            let total = tests.length;
+            
+            for (const test of tests) {
+                log(`\n--- Testing ${test.name} ---`);
+                try {
+                    const success = await test.fn();
+                    if (success) {
+                        passed++;
+                        log(`✅ ${test.name} passed`, 'success');
+                    } else {
+                        log(`❌ ${test.name} failed`, 'error');
+                    }
+                } catch (error) {
+                    log(`❌ ${test.name} threw error: ${error.message}`, 'error');
+                }
+            }
+            
+            log(`\n🏁 Test Results: ${passed}/${total} tests passed`);
+            
+            if (passed === total) {
+                log('🎉 All tests passed! Unified deck builder is working correctly.', 'success');
+                updateStatus('🎉 All systems operational', 'success');
+            } else {
+                log(`⚠️  Some tests failed. ${total - passed} issues need attention.`, 'warning');
+                updateStatus(`⚠️  ${total - passed} test(s) failed`, 'warning');
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', async () => {
+            updateStatus('🔄 Loading unified deck builder...', 'warning');
+            log('🌟 Unified Deck Builder Test Suite Started');
+            
+            // Give a moment for everything to load
+            setTimeout(async () => {
+                if (typeof window.SorceryDeckBuilder !== 'undefined') {
+                    log('✅ Unified system detected', 'success');
+                    await testInitialization();
+                } else {
+                    log('❌ Unified system not found - checking what is available...', 'error');
+                    log(`Available globals: ${Object.keys(window).filter(k => k.includes('Sorcery') || k.includes('Deck')).join(', ')}`);
+                    updateStatus('❌ System not found', 'error');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

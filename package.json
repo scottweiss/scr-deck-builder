@@ -8,6 +8,8 @@
     "build": "tsc && mkdir -p dist/data && cp -R src/data/raw dist/data/ && node dist/data/processed/processCards.js",
     "build:force": "tsc --skipLibCheck || true; mkdir -p dist/data && cp -R src/data/raw dist/data/ && node dist/data/processed/processCards.js",
     "build:nocheck": "tsc --skipLibCheck --noEmitOnError false && mkdir -p dist/data && cp -R src/data/raw dist/data/ && node dist/data/processed/processCards.js",
+    "build:browser": "webpack --config webpack.browser.config.js",
+    "build:unified": "npm run build && npm run build:browser",
     "dev": "tsc --watch",
     "type-check": "tsc --noEmit",
     "prepare": "npm run build:force && node dist/data/processed/processCards.js",
@@ -48,6 +50,15 @@
   "devDependencies": {
     "@types/node": "^22.15.21",
     "ts-node": "^10.9.1",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "ts-loader": "^9.5.1",
+    "path-browserify": "^1.0.1",
+    "crypto-browserify": "^3.12.0",
+    "stream-browserify": "^3.0.0",
+    "buffer": "^6.0.3",
+    "process": "^0.11.10",
+    "util": "^0.12.5"
   }
 }
