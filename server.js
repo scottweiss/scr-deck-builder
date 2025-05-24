@@ -149,11 +149,11 @@ app.post('/api/build-deck', async (req, res) => {
 
         console.log('Building deck with args:', args);
 
-        // Path to the TypeScript deck builder
-        const scriptPath = path.join(__dirname, 'src', 'main', 'build-deck.ts');
+        // Path to the compiled JavaScript deck builder
+        const scriptPath = path.join(__dirname, 'dist', 'main', 'build-deck.js');
         
         // Execute the deck builder
-        const deckBuilderProcess = spawn('node', ['-r', 'ts-node/register', scriptPath, ...args], {
+        const deckBuilderProcess = spawn('node', [scriptPath, ...args], {
             cwd: __dirname,
             env: { ...process.env }
         });

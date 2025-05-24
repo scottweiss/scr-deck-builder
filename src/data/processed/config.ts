@@ -23,8 +23,9 @@ export const OUTPUT_DOC_FILE = path.join(PROCESSED_DATA_DIR, 'CARD_DATA.md');
 export const CARD_KEYS = [
     "productId", "name", "cleanName", "imageUrl", "categoryId", 
     "groupId", "url", "modifiedOn", "imageCount", "extRarity", 
-    "extDescription", "extCost", "extThreshold", "extElement", "extCardType",
-    "subTypeName", "setName"
+    "extDescription", "extCost", "extThreshold", "extElement", "extTypeLine",
+    "extCardCategory", "extCardType", "extCardSubtype", "extPowerRating",
+    "extLife", "extFlavorText", "extDefensePower", "subTypeName", "setName"
 ];
 
 /**
