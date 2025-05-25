@@ -3,8 +3,8 @@
  * Part of Phase 1: Core Engine Foundation
  */
 
-import { Card } from '../../../types/Card';
-import { Position, Unit, GridSquare } from './gameState';
+import { Position, Unit, GridSquare, Card } from './gameState';
+import { isBaseCard, adaptBaseCardToSimCard } from '../../../utils/card-adapter';
 
 export interface BoardConfiguration {
   width: number;
@@ -198,8 +198,11 @@ export class BoardStateManager {
    */
   private getAllPositions(): Position[] {
     const positions: Position[] = [];
-    for (let y = 0; y < this.config.height; y++) {
-      for (let x = 0; x < this.config.width; x++) {
+    // Use default values since this.config might not be initialized yet
+    const height = this.config?.height || 4;
+    const width = this.config?.width || 5;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
         positions.push({ x, y });
       }
     }
@@ -247,6 +250,17 @@ export class BoardStateManager {
   public isPositionEmpty(position: Position): boolean {
     const square = this.getSquare(position);
     return square ? square.units.length === 0 : false;
+  }
+  
+  /**
+   * Check if a position is occupied
+   */
+  public isPositionOccupied(position: Position, board?: GridSquare[][]): boolean {
+    const square = this.getSquare(position);
+    if (!square) return false;
+    
+    // Consider occupied if there are any units or a site that's not rubble
+    return square.units.length > 0 || (square.site !== undefined && !square.isRubble);
   }
 
   /**
@@ -388,12 +402,11 @@ export class BoardStateManager {
     let x = from.x;
     let y = from.y;
 
-    while (x !== to.x || y !== to.y) {
-      const e2 = 2 * err;
-      
-      if (e2 > -dy) {
-        err -= dy;
-        x += sx;
+    while (x !== to.x || y !== to.y) {        const e2 = 2 * err;
+        
+        if (e2 > -dy) {
+          err -= dy;
+          x += sx;
       }
       
       if (e2 < dx) {
@@ -443,6 +456,43 @@ export class BoardStateManager {
     return false;
   }
 
+  /**
+   * Place a card at a position on the board
+   * @param card The card to place
+   * @param position The position on the board
+   * @param board Optional board state override
+   * @returns true if card was placed successfully, false otherwise
+   */
+  public placeCard(card: any, position: Position, board?: GridSquare[][]): boolean {
+    const square = this.getSquare(position);
+    if (!square) return false;
+    
+    // Convert to simulation Card type if it's not already in the correct format
+    const simulationCard: Card = isBaseCard(card) ? adaptBaseCardToSimCard(card) : card;
+
+    // Check if card is a Site
+    if (simulationCard.type === 'Site') {
+      return this.placeSite(position, simulationCard);
+    } 
+    // Otherwise treat as a unit
+    else {
+      const unit: Unit = {
+        id: simulationCard.id || `unit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        card: simulationCard,
+        owner: 'player1', // Default, will be overridden by positionSystem
+        position,
+        region: square.region,
+        isTapped: false,
+        damage: 0,
+        summoning_sickness: true,
+        artifacts: [],
+        modifiers: []
+      };
+
+      return this.addUnit(position, unit);
+    }
+  }
+  
   /**
    * Place a site at a position
    */

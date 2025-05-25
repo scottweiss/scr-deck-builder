@@ -85,6 +85,20 @@ export class DamageSystem {
   private creatureDamage: Map<string, CreatureDamage> = new Map();
   private damageHistory: DamageInstance[] = [];
   private damageReplacements: Map<string, Function> = new Map();
+  private damageModifiers: any[] = [];
+  private damagePreventers: any[] = [];
+
+  /**
+   * Reset the damage system state
+   */
+  public reset(): void {
+    this.damageHistory = [];
+    this.damageModifiers = [];
+    this.damagePreventers = [];
+    this.preventionEffects = [];
+    this.creatureDamage.clear();
+    this.damageReplacements.clear();
+  }
 
   /**
    * Deal damage to a target
