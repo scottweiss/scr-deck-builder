@@ -360,10 +360,10 @@ describe('Phase 2 Integration Tests - Complex Scenarios', () => {
 
       // Create various region types
       const positions = [
-        { y: 0, x: 0 }, // surface
-        { y: 0, x: 1 }, // underwater  
-        { y: 0, x: 2 }, // underground
-        { y: 0, x: 3 }  // void
+        { x: 0, y: 0 }, // surface
+        { x: 1, y: 0 }, // underwater  
+        { x: 2, y: 0 }, // underground
+        { x: 3, y: 0 }  // void
       ];
 
       expect(regionManager.createRegion('test-surface', 'surface', [positions[0]], undefined)).toBe(true);
@@ -419,7 +419,7 @@ describe('Phase 2 Integration Tests - Complex Scenarios', () => {
       expect(duration).toBeLessThan(100);
 
       // Verify all systems still work
-      expect(regionManager.getRegionAt({ y: 0, x: 0 })).toBeDefined();
+      expect(regionManager.getRegionAt({ x: 0, y: 0 })).toBeDefined();
       expect(positionSystem.getPlayerCards(player1.id).length).toBeGreaterThan(0);
     });
 
