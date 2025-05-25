@@ -57,6 +57,10 @@ export class ControlAIStrategy extends BaseAIStrategy {
   }
 
   private generateRemovalActions(gameState: GameState, player: Player, actions: GameAction[]): void {
+    if (!player.hand?.spells) {
+      return;
+    }
+    
     const removalSpells = player.hand.spells.filter(card => 
       this.canPlayCard(card, player, gameState) &&
       this.isRemovalSpell(card)
@@ -79,6 +83,10 @@ export class ControlAIStrategy extends BaseAIStrategy {
   }
 
   private generateCardAdvantageActions(gameState: GameState, player: Player, actions: GameAction[]): void {
+    if (!player.hand?.spells) {
+      return;
+    }
+    
     const cardDrawSpells = player.hand.spells.filter(card => 
       this.canPlayCard(card, player, gameState) &&
       this.isCardAdvantageSpell(card)
@@ -95,6 +103,10 @@ export class ControlAIStrategy extends BaseAIStrategy {
   }
 
   private generateDefensivePlayActions(gameState: GameState, player: Player, actions: GameAction[]): void {
+    if (!player.hand?.spells) {
+      return;
+    }
+    
     const defensiveCards = player.hand.spells.filter(card => 
       this.canPlayCard(card, player, gameState) &&
       this.isDefensiveCard(card)

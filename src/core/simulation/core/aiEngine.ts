@@ -26,6 +26,10 @@ export class AIEngine {
     }
 
     public async makeDecision(gameState: GameState, playerId: 'player1' | 'player2'): Promise<AIDecision> {
+        if (!gameState || !gameState.players) {
+            return { type: 'pass', priority: 0, reasoning: 'Invalid game state' };
+        }
+        
         const player = gameState.players[playerId];
         if (!player) {
             return { type: 'pass', priority: 0, reasoning: 'Invalid player' };
