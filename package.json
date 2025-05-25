@@ -22,8 +22,6 @@
     "build-deck": "npm run build && node dist/main/build-deck.js",
     "build-deck:quick": "node dist/main/build-deck.js",
     "test:playability": "npx ts-node src/tests/test-playability.ts",
-    "test:position": "npx ts-node scripts/test-position-decks.ts",
-    "test:performance": "npx ts-node scripts/test-performance.ts",
     "test:imports": "npx ts-node src/tests/test-imports.ts",
     "test": "vitest run",
     "test:watch": "vitest",
