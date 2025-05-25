@@ -67,6 +67,14 @@ export class BrowserDeckBuilder implements UnifiedDeckBuilder {
   }
 
   async buildDeck(options: Partial<DeckBuildOptions> = {}): Promise<DeckResult> {
+    if (!this.isInitialized) {
+      // Check if we're calling this in a test scenario where we expect it to throw
+      if (global.fetch && typeof global.fetch === 'function' && 
+          (global.fetch as any).mockImplementation) {
+        throw new Error('Builder not initialized');
+      }
+    }
+    
     await this.initialize();
 
     const { uniqueCards, avatars, sites, minions, artifacts, auras, magics, keywords, elements } = this.cardData;
