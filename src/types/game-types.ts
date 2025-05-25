@@ -4,8 +4,6 @@
 
 import { Card as CanonicalCard, Element, CardType } from './Card';
 
-export type GameCard = CanonicalCard;
-
 export interface Player {
   id: string;
   name: string;
@@ -52,11 +50,6 @@ export interface TurnModifier {
   type: string;
   value: number;
   duration: number;
-}
-
-export interface BoardPosition {
-  row: number;
-  col: number;
 }
 
 export interface GameState {

@@ -6,7 +6,6 @@
 import { Card } from '../../../types/Card';
 import { GameState, Position } from './gameState';
 import { BoardStateManager } from './boardState';
-import { BoardPosition } from '../../../types/game-types';
 
 export type RegionType = 'void' | 'surface' | 'underground' | 'underwater';
 
@@ -15,7 +14,7 @@ export interface RegionEffect {
   type: RegionType;
   name: string;
   description: string;
-  effect: (card: Card, position: BoardPosition) => void;
+  effect: (card: Card, position: Position) => void;
   duration: 'permanent' | 'turn' | 'phase';
   stackable: boolean;
 }
@@ -39,7 +38,7 @@ export interface RegionInteraction {
 export interface RegionalZone {
   id: string;
   type: RegionType;
-  positions: BoardPosition[];
+  positions: Position[];
   activeEffects: RegionEffect[];
   modifiers: RegionModifier[];
   controller?: string;
@@ -64,7 +63,7 @@ export class RegionManager {
   createRegion(
     id: string,
     type: RegionType,
-    positions: BoardPosition[],
+    positions: Position[],
     controller?: string
   ): boolean {
     if (this.activeRegions.has(id)) {
@@ -113,7 +112,7 @@ export class RegionManager {
   /**
    * Get the region type at a specific position
    */
-  getRegionAt(position: BoardPosition): RegionType {
+  getRegionAt(position: Position): RegionType {
     const posKey = this.getPositionKey(position);
     return this.positionRegionMap.get(posKey) || 'surface'; // Default to surface
   }
@@ -123,7 +122,7 @@ export class RegionManager {
    */
   applyRegionalModifiers(
     card: Card,
-    position: BoardPosition,
+    position: Position,
     gameState: GameState
   ): RegionModifier[] {
     const regionType = this.getRegionAt(position);
@@ -147,7 +146,7 @@ export class RegionManager {
   /**
    * Check for region conflicts at a position
    */
-  checkRegionConflicts(position: BoardPosition): RegionInteraction[] {
+  checkRegionConflicts(position: Position): RegionInteraction[] {
     const conflicts: RegionInteraction[] = [];
     const regionType = this.getRegionAt(position);
 
@@ -170,7 +169,7 @@ export class RegionManager {
   /**
    * Get all active effects at a position
    */
-  getActiveEffects(position: BoardPosition): RegionEffect[] {
+  getActiveEffects(position: Position): RegionEffect[] {
     const effects: RegionEffect[] = [];
     
     for (const [regionId, region] of this.activeRegions) {
@@ -200,7 +199,7 @@ export class RegionManager {
    * Get regional placement restrictions
    */
   getPlacementRestrictions(
-    position: BoardPosition,
+    position: Position,
     card: Card
   ): string[] {
     const restrictions: string[] = [];
@@ -233,7 +232,7 @@ export class RegionManager {
    */
   canPlaceInRegion(
     card: Card,
-    position: BoardPosition,
+    position: Position,
     regionType: RegionType
   ): boolean {
     // Check card-specific region restrictions based on keywords
@@ -257,7 +256,7 @@ export class RegionManager {
   /**
    * Get region effects at a specific position
    */
-  getRegionEffectsAt(position: BoardPosition): RegionEffect[] {
+  getRegionEffectsAt(position: Position): RegionEffect[] {
     return this.getActiveEffects(position);
   }
 
@@ -265,7 +264,7 @@ export class RegionManager {
    * Resolve region conflicts at a position
    */
   resolveRegionConflicts(
-    position: BoardPosition,
+    position: Position,
     gameState: GameState
   ): RegionInteraction[] {
     const conflicts = this.checkRegionConflicts(position);
@@ -287,7 +286,7 @@ export class RegionManager {
    * Get regional movement restrictions for a position
    */
   getRegionalMovementRestrictions(
-    position: BoardPosition,
+    position: Position,
     card: Card
   ): string[] {
     const restrictions: string[] = [];
@@ -334,7 +333,7 @@ export class RegionManager {
         if (effect.duration === 'turn') {
           // Apply turn-end effects
           region.positions.forEach(pos => {
-            const gridSquare = gameState.grid[pos.row]?.[pos.col];
+            const gridSquare = gameState.grid[pos.y]?.[pos.x];
             if (gridSquare) {
               if (gridSquare.site) {
                 effect.effect(gridSquare.site, pos);
@@ -474,54 +473,29 @@ export class RegionManager {
     return this.regionEffects.get(type) || [];
   }
 
-  private getPositionKey(position: BoardPosition): string {
-    return `${position.row},${position.col}`;
+  private getPositionKey(position: Position): string {
+    return `${position.y},${position.x}`;
   }
 
-  private regionContainsPosition(region: RegionalZone, position: BoardPosition): boolean {
+  private regionContainsPosition(region: RegionalZone, position: Position): boolean {
     return region.positions.some(pos => 
-      pos.row === position.row && pos.col === position.col
+      pos.y === position.y && pos.x === position.x
     );
   }
 
-  private shouldApplyModifier(
-    modifier: RegionModifier,
-    card: Card,
-    regionType: RegionType
-  ): boolean {
-    if (modifier.sourceRegion !== regionType) {
-      return false;
-    }
-
-    if (modifier.conditions) {
-      // Check modifier conditions against card
-      return modifier.conditions.every(condition => {
-        // Simple condition checking - would be more sophisticated in real implementation
-        return this.evaluateCondition(condition, card);
-      });
-    }
-
-    return true;
-  }
-
-  private applyModifierToCard(card: Card, modifier: RegionModifier): void {
-    // Implementation would modify card properties based on modifier
-    // This is a placeholder for the actual modifier application logic
-  }
-
-  private getAdjacentPositions(position: BoardPosition): BoardPosition[] {
-    const adjacent: BoardPosition[] = [];
+  private getAdjacentPositions(position: Position): Position[] {
+    const adjacent: Position[] = [];
     const directions = [
-      { row: -1, col: 0 }, { row: 1, col: 0 },   // Up, Down
-      { row: 0, col: -1 }, { row: 0, col: 1 },   // Left, Right
-      { row: -1, col: -1 }, { row: 1, col: -1 }, // Diagonals
-      { row: -1, col: 1 }, { row: 1, col: 1 }
+      { y: -1, x: 0 }, { y: 1, x: 0 },   // Up, Down
+      { y: 0, x: -1 }, { y: 0, x: 1 },   // Left, Right
+      { y: -1, x: -1 }, { y: 1, x: -1 }, // Diagonals
+      { y: -1, x: 1 }, { y: 1, x: 1 }
     ];
 
     directions.forEach(dir => {
       adjacent.push({
-        row: position.row + dir.row,
-        col: position.col + dir.col
+        y: position.y + dir.y,
+        x: position.x + dir.x
       });
     });
 
@@ -600,6 +574,29 @@ export class RegionManager {
   private updateRegionTurnState(region: RegionalZone, gameState: GameState): void {
     // Update region state based on turn progression
     // Implementation would handle region state changes
+  }
+
+  private shouldApplyModifier(
+    modifier: RegionModifier,
+    card: Card,
+    regionType: RegionType
+  ): boolean {
+    if (modifier.sourceRegion !== regionType) {
+      return false;
+    }
+    if (modifier.conditions) {
+      // Check modifier conditions against card
+      return modifier.conditions.every(condition => {
+        // Simple condition checking - would be more sophisticated in real implementation
+        return this.evaluateCondition(condition, card);
+      });
+    }
+    return true;
+  }
+
+  private applyModifierToCard(card: Card, modifier: RegionModifier): void {
+    // Implementation would modify card properties based on modifier
+    // This is a placeholder for the actual modifier application logic
   }
 }
 

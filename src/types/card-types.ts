@@ -13,7 +13,3 @@ export interface CardEffect {
   targets?: TargetType[];
   conditions?: ConditionType[];
 }
-
-// Alias SimulationCard to canonical Card
-type SimulationCard = CanonicalCard;
-export type { SimulationCard };

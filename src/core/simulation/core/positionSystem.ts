@@ -4,10 +4,9 @@
  */
 
 import { Card, CardType } from '../../../types/Card';
-import { Player, BoardPosition } from '../../../types/game-types';
+import { Player } from '../../../types/game-types';
 import { BoardStateManager } from './boardState';
-import { GameState, Position, GridSquare } from './gameState';
-import { boardPositionToPosition, positionToBoardPosition, convertSimpleBoardToGridSquare } from '../../../utils/card-adapter';
+import { GameState, Position } from './gameState';
 
 export interface PositionRule {
   id: string;
@@ -25,7 +24,7 @@ export interface PlacementRestriction {
 
 export interface PositionedCard {
   card: Card;
-  position: BoardPosition;
+  position: Position;
   controller: string;
   placementTurn: number;
   modifiers: PositionModifier[];
@@ -40,7 +39,7 @@ export interface PositionModifier {
 
 export interface PlacementValidation {
   valid: boolean;
-  position: BoardPosition;
+  position: Position;
   card: Card;
   restrictions: PlacementRestriction[];
   errors: string[];
@@ -63,7 +62,7 @@ export class PositionSystem {
    */
   validatePlacement(
     card: Card,
-    position: BoardPosition,
+    position: Position,
     controller: Player,
     gameState: GameState
   ): PlacementValidation {
@@ -84,11 +83,7 @@ export class PositionSystem {
     }
 
     // Check if position is occupied
-    // Convert BoardPosition to Position for boardState methods
-    const pos = boardPositionToPosition(position);
-    // Convert simple board format to GridSquare format for BoardStateManager
-    const gridBoard = gameState.grid;
-    if (this.boardState.isPositionOccupied(pos, gridBoard)) {
+    if (this.boardState.isPositionOccupied(position, gameState.grid)) {
       validation.valid = false;
       validation.errors.push('Position is already occupied');
       return validation;
@@ -111,7 +106,7 @@ export class PositionSystem {
    */
   placeCard(
     card: Card,
-    position: BoardPosition,
+    position: Position,
     controller: Player,
     gameState: GameState
   ): boolean {
@@ -140,7 +135,7 @@ export class PositionSystem {
    */
   moveCard(
     cardId: string,
-    newPosition: BoardPosition,
+    newPosition: Position,
     gameState: GameState
   ): boolean {
     const positionedCard = this.positionedCards.get(cardId);
@@ -159,20 +154,11 @@ export class PositionSystem {
   }
 
   /**
-   * Type guard to check if a value is GridSquare[][]
-   */
-  private isGridSquareBoard(board: any): board is import('./gameState').GridSquare[][] {
-    return Array.isArray(board) && board.length > 0 && Array.isArray(board[0]) &&
-      (board[0].length === 0 || (typeof board[0][0] === 'object' && 'position' in board[0][0]));
-  }
-
-  /**
    * Get all cards adjacent to a position
    */
-  getAdjacentCards(position: BoardPosition, gameState: GameState): PositionedCard[] {
+  getAdjacentCards(position: Position, gameState: GameState): PositionedCard[] {
     // Convert BoardPosition to Position
-    const pos = boardPositionToPosition(position);
-    const adjacentPositions = this.boardState.getAdjacentPositions(pos);
+    const adjacentPositions = this.boardState.getAdjacentPositions(position);
     const adjacentCards: PositionedCard[] = [];
 
     // Defensive: handle undefined or invalid grid
@@ -180,20 +166,8 @@ export class PositionSystem {
       return [];
     }
 
-    // Use grid directly if already GridSquare[][], else convert
-    let gridBoard;
-    if (this.isGridSquareBoard(gameState.grid)) {
-      gridBoard = gameState.grid;
-    } else {
-      try {
-        gridBoard = convertSimpleBoardToGridSquare(gameState.grid as any);
-      } catch {
-        return [];
-      }
-    }
-
     for (const adjPos of adjacentPositions) {
-      const card = this.boardState.getCardAt(adjPos, gridBoard);
+      const card = this.boardState.getCardAt(adjPos, gameState.grid);
       if (card) {
         const positionedCard = this.positionedCards.get(card.id);
         if (positionedCard) {
@@ -208,23 +182,22 @@ export class PositionSystem {
    * Get all cards within a specific range of a position
    */
   getCardsInRange(
-    centerPosition: BoardPosition,
+    centerPosition: Position,
     range: number,
     gameState: GameState,
     includeCenter: boolean = false
   ): PositionedCard[] {
     const cardsInRange: PositionedCard[] = [];
-    const centerPos = boardPositionToPosition(centerPosition);
+    const centerPos = centerPosition;
 
     for (let row = 0; row < 4; row++) {
       for (let col = 0; col < 5; col++) {
-        const position: BoardPosition = { row, col };
-        const pos = boardPositionToPosition(position);
-        const distance = this.boardState.getDistance(centerPos, pos);
+        const position: Position = { x: col, y: row };
+        const distance = this.boardState.getDistance(centerPos, position);
 
         if (distance <= range && (includeCenter || distance > 0)) {
           const gridBoard = gameState.grid;
-          const card = this.boardState.getCardAt(pos, gridBoard);
+          const card = this.boardState.getCardAt(position, gridBoard);
           if (card) {
             const positionedCard = this.positionedCards.get(card.id);
             if (positionedCard) {
@@ -242,20 +215,17 @@ export class PositionSystem {
    * Check if two positions have line of sight
    */
   hasLineOfSight(
-    position1: BoardPosition,
-    position2: BoardPosition,
+    position1: Position,
+    position2: Position,
     gameState: GameState
   ): boolean {
-    const pos1 = boardPositionToPosition(position1);
-    const pos2 = boardPositionToPosition(position2);
-    const gridBoard = gameState.grid;
-    return this.boardState.hasLineOfSight(pos1, pos2, gridBoard);
+    return this.boardState.hasLineOfSight(position1, position2, gameState.grid);
   }
 
   /**
    * Get the position of a card by its ID
    */
-  getCardPosition(cardId: string): BoardPosition | null {
+  getCardPosition(cardId: string): Position | null {
     const positionedCard = this.positionedCards.get(cardId);
     return positionedCard ? positionedCard.position : null;
   }
@@ -271,12 +241,12 @@ export class PositionSystem {
   /**
    * Check if position is a starting position for a player
    */
-  private isStartingPosition(position: BoardPosition, playerId: string): boolean {
+  private isStartingPosition(position: Position, playerId: string): boolean {
     // For Sorcery TCG, starting positions are typically the back rows
     if (playerId === 'player1') {
-      return position.row === 0; // Bottom row for player 1
+      return position.y === 0; // Bottom row for player 1
     } else if (playerId === 'player2') {
-      return position.row === 3; // Top row for player 2
+      return position.y === 3; // Top row for player 2
     }
     return false;
   }
@@ -310,12 +280,12 @@ export class PositionSystem {
     card: Card,
     controller: Player,
     gameState: GameState
-  ): BoardPosition[] {
-    const validPositions: BoardPosition[] = [];
+  ): Position[] {
+    const validPositions: Position[] = [];
 
     for (let row = 0; row < 4; row++) {
       for (let col = 0; col < 5; col++) {
-        const position: BoardPosition = { row, col };
+        const position: Position = { x: col, y: row };
         const validation = this.validatePlacement(card, position, controller, gameState);
         
         if (validation.valid) {
@@ -332,21 +302,21 @@ export class PositionSystem {
    */
   canPlaceCard(
     card: Card,
-    position: BoardPosition,
+    position: Position,
     controller: string,
     gameState: GameState
   ): boolean {
     // Simple implementation for tests - just check bounds
-    return position.row >= 0 && position.row < 4 && 
-           position.col >= 0 && position.col < 5;
+    return position.y >= 0 && position.y < 4 && 
+           position.x >= 0 && position.x < 5;
   }
 
   /**
    * Check adjacency between two positions
    */
-  checkAdjacency(position1: BoardPosition, position2: BoardPosition): boolean {
-    const rowDiff = Math.abs(position1.row - position2.row);
-    const colDiff = Math.abs(position1.col - position2.col);
+  checkAdjacency(position1: Position, position2: Position): boolean {
+    const rowDiff = Math.abs(position1.y - position2.y);
+    const colDiff = Math.abs(position1.x - position2.x);
     
     // Adjacent means exactly one step away (Manhattan distance = 1)
     return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
@@ -401,10 +371,10 @@ export class PositionSystem {
       }
     } else {
       // Additional sites must be adjacent to existing sites
-      const validationPos = boardPositionToPosition(validation.position);
+      const validationPos = validation.position;
       
       const adjacentToSite = playerSites.some(site => {
-        const sitePos = boardPositionToPosition(site.position);
+        const sitePos = site.position;
         return this.boardState.getDistance(validationPos, sitePos) === 1;
       });
       
@@ -427,10 +397,10 @@ export class PositionSystem {
     const playerSites = this.getPlayerCards(controller.id)
       .filter(pc => pc.card.type === 'Site');
 
-    const validationPos = boardPositionToPosition(validation.position);
+    const validationPos = validation.position;
     
     const validPlacement = playerSites.some(site => {
-      const sitePos = boardPositionToPosition(site.position);
+      const sitePos = site.position;
       const distance = this.boardState.getDistance(validationPos, sitePos);
       return distance <= 1; // On the site or adjacent
     });
@@ -450,7 +420,7 @@ export class PositionSystem {
     gameState: GameState
   ): void {
     // Avatars must be placed on friendly sites
-    const validationPos = boardPositionToPosition(validation.position);
+    const validationPos = validation.position;
     const gridBoard = gameState.grid;
     const siteAtPosition = this.boardState.getCardAt(validationPos, gridBoard);
     
@@ -473,12 +443,12 @@ export class PositionSystem {
    */
   checkPlacementRestrictions(
     card: Card,
-    position: BoardPosition,
+    position: Position,
     controller: Player,
     gameState: GameState
   ): PlacementRestriction[] {
     const restrictions: PlacementRestriction[] = [];
-    const positionPos = boardPositionToPosition(position);
+    const positionPos = position;
 
     // Check card type specific restrictions
     switch (card.type) {
@@ -497,7 +467,7 @@ export class PositionSystem {
         } else {
           // Must be adjacent to existing site
           const adjacentToSite = playerSites.some(site => {
-            const sitePos = boardPositionToPosition(site.position);
+            const sitePos = site.position;
             return this.checkAdjacency(position, site.position);
           });
           
@@ -515,7 +485,7 @@ export class PositionSystem {
           .filter(pc => pc.card.type === 'Site');
         
         const nearSite = friendlySites.some(site => {
-          const sitePos = boardPositionToPosition(site.position);
+          const sitePos = site.position;
           const distance = this.boardState.getDistance(positionPos, sitePos);
           return distance <= 1;
         });
@@ -593,9 +563,9 @@ export class PositionSystem {
     });
   }
 
-  private isValidBoardPosition(position: BoardPosition): boolean {
-    return position.row >= 0 && position.row < 4 && 
-           position.col >= 0 && position.col < 5;
+  private isValidBoardPosition(position: Position): boolean {
+    return position.y >= 0 && position.y < 4 && 
+           position.x >= 0 && position.x < 5;
   }
 
   private applyPositionRules(validation: PlacementValidation, gameState: GameState): void {
@@ -608,44 +578,24 @@ export class PositionSystem {
     // This would integrate with the region manager
   }
 
-  private triggerPlacementEffects(card: Card, position: BoardPosition, gameState: GameState): void {
+  private triggerPlacementEffects(card: Card, position: Position, gameState: GameState): void {
     // Trigger "when placed" or "enters the battlefield" effects
     // This would integrate with the effect parser
   }
 
   private triggerMovementEffects(
     card: Card,
-    oldPosition: BoardPosition,
-    newPosition: BoardPosition,
+    oldPosition: Position,
+    newPosition: Position,
     gameState: GameState
   ): void {
     // Trigger movement-related effects
     // This would integrate with the effect parser
   }
 
-  private triggerRemovalEffects(card: Card, position: BoardPosition, gameState: GameState): void {
+  private triggerRemovalEffects(card: Card, position: Position, gameState: GameState): void {
     // Trigger "when removed" or "leaves the battlefield" effects
     // This would integrate with the effect parser
-  }
-
-  /**
-   * Convert BoardPosition (row, col) to Position (x, y)
-   */
-  private adaptBoardPosition(boardPos: BoardPosition): Position {
-    return { 
-      x: boardPos.col, 
-      y: boardPos.row 
-    };
-  }
-
-  /**
-   * Convert Position (x, y) to BoardPosition (row, col)
-   */
-  private adaptPosition(pos: Position): BoardPosition {
-    return { 
-      row: pos.y, 
-      col: pos.x 
-    };
   }
 }
 

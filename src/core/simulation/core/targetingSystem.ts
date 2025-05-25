@@ -3,11 +3,9 @@
  * Handles target validation, selection, and legal targeting rules
  */
 
-import { BoardPosition } from '../../../types/game-types';
 import { Card, TargetType, CardType } from '../../../types/Card';
 import { GameState, Position, GridSquare, Player } from './gameState';
 import { BoardStateManager } from './boardState';
-import { boardPositionToPosition, positionToBoardPosition, convertSimpleBoardToGridSquare } from '../../../utils/card-adapter';
 
 export interface TargetDescriptor {
   type: TargetType;
@@ -25,7 +23,7 @@ export interface TargetCandidate {
   id: string;
   type: 'player' | 'minion' | 'spell' | 'site' | 'position';
   object: any;
-  position?: BoardPosition;
+  position?: Position;
   controller?: Player;
   valid: boolean;
   restrictions?: string[];
@@ -139,15 +137,13 @@ export class TargetingSystem {
    * Check if a target is within range of the source
    */
   isInRange(
-    sourcePosition: BoardPosition,
-    targetPosition: BoardPosition,
+    sourcePosition: Position,
+    targetPosition: Position,
     range: number = Infinity
   ): boolean {
     if (range === Infinity) return true;
     
-    const sourcePos = boardPositionToPosition(sourcePosition);
-    const targetPos = boardPositionToPosition(targetPosition);
-    const distance = this.boardState.getDistance(sourcePos, targetPos);
+    const distance = this.boardState.getDistance(sourcePosition, targetPosition);
     return distance <= range;
   }
 
@@ -155,14 +151,12 @@ export class TargetingSystem {
    * Check line of sight between two positions
    */
   hasLineOfSight(
-    from: BoardPosition,
-    to: BoardPosition,
+    from: Position,
+    to: Position,
     gameState: GameState
   ): boolean {
-    const fromPos = boardPositionToPosition(from);
-    const toPos = boardPositionToPosition(to);
     const gridBoard = gameState.grid;
-    return this.boardState.hasLineOfSight(fromPos, toPos, gridBoard);
+    return this.boardState.hasLineOfSight(from, to, gridBoard);
   }
 
   /**
@@ -205,12 +199,12 @@ export class TargetingSystem {
         for (const unit of square.units) {
           if (unit.card.type === CardType.Minion || unit.card.type === CardType.Avatar) {
             const owner = this.getPlayerById(gameState, unit.owner);
-            const boardPos = positionToBoardPosition({ x, y });
+            const position: Position = { x, y };
             candidates.push({
               id: unit.card.id,
               type: 'minion',
               object: unit.card,
-              position: boardPos,
+              position,
               controller: owner,
               valid: true
             });
@@ -237,12 +231,12 @@ export class TargetingSystem {
         const square = gridBoard[y][x];
         if (square.site) {
           // Ownership of sites may be determined by control, here we set controller to undefined
-          const boardPos = positionToBoardPosition({ x, y });
+          const position: Position = { x, y };
           candidates.push({
             id: square.site.id,
             type: 'site',
             object: square.site,
-            position: boardPos,
+            position,
             controller: undefined, // Could be set if ownership logic is available
             valid: true
           });
@@ -299,10 +293,9 @@ export class TargetingSystem {
     // Use gameState.grid for board positions
     for (let row = 0; row < 4; row++) {
       for (let col = 0; col < 5; col++) {
-        const position: BoardPosition = { row, col };
-        const pos = boardPositionToPosition(position);
+        const position: Position = { x: col, y: row };
         const gridBoard = gameState.grid;
-        const occupied = this.boardState.isPositionOccupied(pos, gridBoard);
+        const occupied = this.boardState.isPositionOccupied(position, gridBoard);
         candidates.push({
           id: `${row}-${col}`,
           type: 'position',

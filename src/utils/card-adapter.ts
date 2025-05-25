@@ -3,8 +3,7 @@
  * and position conversion utilities
  */
 import { Card, CardType, Element, CardRarity } from '../types/Card';
-import { BoardPosition } from '../types/game-types';
-import { Position, GridSquare } from '../core/simulation/core/gameState';
+import { GridSquare } from '../core/simulation/core/gameState';
 
 // Type guard that checks if an object is "card-like"
 export function isCardLike(card: any): boolean {
@@ -27,25 +26,6 @@ export function extractKeywordsFromText(text: string): string[] {
   const keywordRegex = /\b(Airborne|Burrowing|Charge|Deathrite|Spellcaster|Stealth|Submerge|Voidwalk|Movement \+\d+|Ranged \d+|Lethal|Lance|Waterbound|Fire Affinity|Water Affinity|Earth Affinity|Air Affinity|Void Affinity|Swift|Aquatic)\b/g;
   const matches = text.match(keywordRegex);
   return matches || [];
-}
-
-/**
- * Convert a BoardPosition to Position
- * Used to convert between different position representations in the codebase
- */
-export function boardPositionToPosition(boardPos: BoardPosition): Position {
-  return {
-    x: boardPos.col,
-    y: boardPos.row
-  };
-}
-
-/**
- * Convert a Position to BoardPosition
- * Used to convert between different position representations in the codebase
- */
-export function positionToBoardPosition(pos: Position): BoardPosition {
-  return { row: pos.y, col: pos.x };
 }
 
 // --- Board conversion helpers (now use canonical Card type) ---

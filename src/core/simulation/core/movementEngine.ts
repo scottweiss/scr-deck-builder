@@ -8,7 +8,6 @@ import { Card } from '../../../types/Card';
 import { Position } from './gameState';
 import { BoardStateManager } from './boardState';
 import { PositionSystem } from './positionSystem';
-import { positionToBoardPosition } from '../../../utils/card-adapter';
 import { Player as LegacyPlayer, GameState as LegacyGameState } from '../../../types/game-types'; // For test compliance only
 
 export interface MovementRule {
@@ -240,9 +239,9 @@ export class MovementEngine {
   getMovementRestrictionsAt(position: Position): MovementRestriction[] {
     return this.restrictions.filter(restriction =>
       restriction.affectedPositions.some(pos => {
-        const a = positionToBoardPosition(pos);
-        const b = positionToBoardPosition(position);
-        return a.row === b.row && a.col === b.col;
+        const a = pos;
+        const b = position;
+        return a.y === b.y && a.x === b.x;
       })
     );
   }

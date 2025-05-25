@@ -4,11 +4,10 @@
  */
 
 import { Card } from '../../../types/Card';
-import { Player, GameState } from '../../../core/simulation/core/gameState';
+import { Player, GameState, Position } from '../../../core/simulation/core/gameState';
 import { PositionSystem } from '../../../core/simulation/core/positionSystem';
 import { BoardStateManager } from '../../../core/simulation/core/boardState';
 import { CardType } from '../../../types/Card';
-import { BoardPosition } from '../../../types/game-types';
 
 export interface MovementRule {
   id: string;
@@ -19,9 +18,9 @@ export interface MovementRule {
 }
 
 export interface MovementPath {
-  start: BoardPosition;
-  end: BoardPosition;
-  steps: BoardPosition[];
+  start: Position;
+  end: Position;
+  steps: Position[];
   cost: number;
   valid: boolean;
   blockedBy: string[];
@@ -30,14 +29,14 @@ export interface MovementPath {
 export interface MovementRestriction {
   type: 'terrain' | 'creature' | 'effect' | 'distance';
   source: string;
-  affectedPositions: BoardPosition[];
+  affectedPositions: Position[];
   description: string;
 }
 
 export interface MovementResult {
   success: boolean;
-  actualPath: BoardPosition[];
-  finalPosition: BoardPosition;
+  actualPath: Position[];
+  finalPosition: Position;
   costPaid: number;
   errors: string[];
 }
@@ -57,29 +56,29 @@ export class MovementEngine {
   /**
    * Get movement range for a creature
    */
-  getMovementRange(creatureId: string, gameState: GameState): BoardPosition[] {
+  getMovementRange(creatureId: string, gameState: GameState): Position[] {
     // Simple stub implementation that returns adjacent positions
     const position = this.positionSystem.getCardPosition(creatureId);
     if (!position) {
       // Return some default movement range for testing
       return [
-        { row: 0, col: 1 },
-        { row: 1, col: 0 },
-        { row: 1, col: 1 },
-        { row: 2, col: 2 }
+        { y: 0, x: 1 },
+        { y: 1, x: 0 },
+        { y: 1, x: 1 },
+        { y: 2, x: 2 }
       ];
     }
 
     // Return adjacent positions as movement range
-    const range: BoardPosition[] = [];
+    const range: Position[] = [];
     for (let rowOffset = -1; rowOffset <= 1; rowOffset++) {
       for (let colOffset = -1; colOffset <= 1; colOffset++) {
-        const newRow = position.row + rowOffset;
-        const newCol = position.col + colOffset;
+        const newRow = position.y + rowOffset;
+        const newCol = position.x + colOffset;
         
         if (newRow >= 0 && newRow < 4 && newCol >= 0 && newCol < 5 &&
             !(rowOffset === 0 && colOffset === 0)) {
-          range.push({ row: newRow, col: newCol });
+          range.push({ y: newRow, x: newCol });
         }
       }
     }
@@ -91,8 +90,8 @@ export class MovementEngine {
    * Calculate movement path between two positions
    */
   calculateMovementPath(
-    start: BoardPosition,
-    end: BoardPosition,
+    start: Position,
+    end: Position,
     creatureId: string,
     gameState: GameState
   ): MovementPath {
@@ -146,7 +145,7 @@ export class MovementEngine {
    */
   executeMovement(
     creatureId: string,
-    destination: BoardPosition,
+    destination: Position,
     gameState: GameState
   ): MovementResult {
     const currentPosition = this.positionSystem.getCardPosition(creatureId);
@@ -154,7 +153,7 @@ export class MovementEngine {
       return {
         success: false,
         actualPath: [],
-        finalPosition: currentPosition || { row: -1, col: -1 },
+        finalPosition: currentPosition || { y: -1, x: -1 },
         costPaid: 0,
         errors: ['Creature not found on board - creatureId: ' + creatureId]
       };
@@ -203,7 +202,7 @@ export class MovementEngine {
    */
   isValidDestination(
     creatureId: string,
-    destination: BoardPosition,
+    destination: Position,
     gameState: GameState
   ): boolean {
     const currentPosition = this.positionSystem.getCardPosition(creatureId);
@@ -220,7 +219,7 @@ export class MovementEngine {
    */
   getMovementCost(
     creatureId: string,
-    destination: BoardPosition,
+    destination: Position,
     gameState: GameState
   ): number {
     const currentPosition = this.positionSystem.getCardPosition(creatureId);
@@ -251,10 +250,10 @@ export class MovementEngine {
   /**
    * Get all movement restrictions affecting a position
    */
-  getRestrictionsAt(position: BoardPosition): MovementRestriction[] {
+  getRestrictionsAt(position: Position): MovementRestriction[] {
     return this.movementRestrictions.filter(restriction =>
       restriction.affectedPositions.some(pos =>
-        pos.row === position.row && pos.col === position.col
+        pos.y === position.y && pos.x === position.x
       )
     );
   }
@@ -327,15 +326,15 @@ export class MovementEngine {
   }
 
   private getPositionsInRange(
-    center: BoardPosition,
+    center: Position,
     range: number,
     gameState: GameState
-  ): BoardPosition[] {
-    const positions: BoardPosition[] = [];
+  ): Position[] {
+    const positions: Position[] = [];
 
     for (let row = 0; row < 4; row++) {
       for (let col = 0; col < 5; col++) {
-        const position: BoardPosition = { row, col };
+        const position: Position = { y: row, x: col };
         const distance = this.calculateDistance(center, position);
 
         if (distance <= range && distance > 0) {
@@ -350,18 +349,18 @@ export class MovementEngine {
     return positions;
   }
 
-  private calculateDirectPath(start: BoardPosition, end: BoardPosition): BoardPosition[] {
-    const path: BoardPosition[] = [start];
+  private calculateDirectPath(start: Position, end: Position): Position[] {
+    const path: Position[] = [start];
     
     let current = { ...start };
     
-    while (current.row !== end.row || current.col !== end.col) {
+    while (current.y !== end.y || current.x !== end.x) {
       // Move towards target (simplified pathfinding)
-      if (current.row < end.row) current.row++;
-      else if (current.row > end.row) current.row--;
+      if (current.y < end.y) current.y++;
+      else if (current.y > end.y) current.y--;
       
-      if (current.col < end.col) current.col++;
-      else if (current.col > end.col) current.col--;
+      if (current.x < end.x) current.x++;
+      else if (current.x > end.x) current.x--;
       
       path.push({ ...current });
     }
@@ -370,8 +369,8 @@ export class MovementEngine {
   }
 
   private validateMovementStep(
-    from: BoardPosition,
-    to: BoardPosition,
+    from: Position,
+    to: Position,
     creature: Card,
     gameState: GameState
   ): { valid: boolean; cost: number; blockers: string[] } {
@@ -411,8 +410,8 @@ export class MovementEngine {
   }
 
   private createInvalidPath(
-    start: BoardPosition,
-    end: BoardPosition,
+    start: Position,
+    end: Position,
     errors: string[]
   ): MovementPath {
     return {
@@ -426,8 +425,8 @@ export class MovementEngine {
   }
 
   private isPositionAccessible(
-    from: BoardPosition,
-    to: BoardPosition,
+    from: Position,
+    to: Position,
     gameState: GameState
   ): boolean {
     // Check if there's a valid path to the position
@@ -466,8 +465,8 @@ export class MovementEngine {
   }
 
   private calculateStepCost(
-    from: BoardPosition,
-    to: BoardPosition,
+    from: Position,
+    to: Position,
     creature: Card,
     gameState: GameState
   ): number {
@@ -501,9 +500,9 @@ export class MovementEngine {
     return false; // Simplified
   }
 
-  private isValidBoardPosition(position: BoardPosition): boolean {
-    return position.row >= 0 && position.row < 4 && 
-           position.col >= 0 && position.col < 5;
+  private isValidBoardPosition(position: Position): boolean {
+    return position.y >= 0 && position.y < 4 && 
+           position.x >= 0 && position.x < 5;
   }
 
   private findCreatureById(creatureId: string, gameState: GameState): Card | null {
@@ -531,11 +530,11 @@ export class MovementEngine {
   }
 
   // Helper methods for simplified implementation
-  private calculateDistance(pos1: BoardPosition, pos2: BoardPosition): number {
-    return Math.abs(pos1.row - pos2.row) + Math.abs(pos1.col - pos2.col);
+  private calculateDistance(pos1: Position, pos2: Position): number {
+    return Math.abs(pos1.y - pos2.y) + Math.abs(pos1.x - pos2.x);
   }
 
-  private getCardAt(position: BoardPosition, gameState: GameState): Card | null {
+  private getCardAt(position: Position, gameState: GameState): Card | null {
     // Convert BoardPosition to Position for boardState
     const adaptedPosition = this.toBoardStatePosition(position);
     
@@ -543,7 +542,7 @@ export class MovementEngine {
     return null; // Stub for testing purposes
   }
 
-  private hasLineOfSight(from: BoardPosition, to: BoardPosition, gameState: GameState): boolean {
+  private hasLineOfSight(from: Position, to: Position, gameState: GameState): boolean {
     // Simple implementation for testing
     return true; // Stub for testing purposes
   }
@@ -551,20 +550,20 @@ export class MovementEngine {
   /**
    * Convert BoardPosition (row, col) to Position (x, y) for BoardStateManager
    */
-  private toBoardStatePosition(boardPos: BoardPosition): { x: number, y: number } {
+  private toBoardStatePosition(boardPos: Position): { x: number, y: number } {
     return { 
-      x: boardPos.col, 
-      y: boardPos.row 
+      x: boardPos.x, 
+      y: boardPos.y 
     };
   }
 
   /**
    * Convert Position (x, y) to BoardPosition (row, col) 
    */
-  private fromBoardStatePosition(pos: { x: number, y: number }): BoardPosition {
+  private fromBoardStatePosition(pos: { x: number, y: number }): Position {
     return { 
-      row: pos.y, 
-      col: pos.x 
+      y: pos.y, 
+      x: pos.x 
     };
   }
 }

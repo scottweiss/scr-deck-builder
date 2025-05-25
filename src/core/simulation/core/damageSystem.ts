@@ -3,7 +3,7 @@
  * Handles all damage calculation, prevention, redirection, and special damage types
  */
 
-import { Player, GameState, BoardPosition } from '../../../types/game-types';
+import { Player, GameState } from '../../../types/game-types';
 import { Card } from '../../../types/Card';
 
 export interface DamageSource {
