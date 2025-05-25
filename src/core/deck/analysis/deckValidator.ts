@@ -17,8 +17,8 @@ export class DeckValidator {
         const errors: string[] = [];
         const warnings: string[] = [];
 
-        // Rule: Exactly one Avatar required
-        // Avatar is now always required by type signature
+        // Rule: Avatar does not count toward deck totals per official rules
+        // Avatar is validated separately and is not part of Atlas or Spellbook
 
         // Rule: Atlas must contain at least 30 site cards
         if (sites.length < 30) {
@@ -149,18 +149,22 @@ export class DeckValidator {
      */
     private static validateSpellcasterRestrictions(spells: Card[]): string[] {
         const warnings: string[] = [];
-        const spellcasterCount = spells.filter(card => 
-            (card.text || "").toLowerCase().includes("spellcaster")
+        const spellcasterMinionCount = spells.filter(card => 
+            (card.text || "").toLowerCase().includes("spellcaster") && card.type === "Minion"
         ).length;
 
         const spellCount = spells.filter(card => 
             card.type === "Magic"
         ).length;
 
-        // Warn if deck has spellcasters but few spells
-        if (spellcasterCount > 0 && spellCount < 15) {
+        // Note: All Avatars are inherently Spellcasters per official rules
+        // Only warn about minion spellcasters if there are many spells requiring specific casting
+        const totalSpellcasters = spellcasterMinionCount + 1; // +1 for Avatar which is always a spellcaster
+
+        // Only warn if there are many magic spells but very few total spellcasters
+        if (spellCount > 20 && totalSpellcasters < 3) {
             warnings.push(
-                `Deck contains ${spellcasterCount} spellcaster(s) but only ${spellCount} spells - consider adding more spells`
+                `Deck contains ${spellCount} magic spells but only ${totalSpellcasters} total spellcasters (including Avatar) - consider adding spellcaster minions`
             );
         }
 

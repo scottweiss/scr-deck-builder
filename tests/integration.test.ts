@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, vi } from 'vitest'
 import { BrowserDeckBuilder } from '../src/browser/unified-deck-builder'
 
 describe('Integration Tests', () => {

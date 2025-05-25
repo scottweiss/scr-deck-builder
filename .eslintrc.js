@@ -45,7 +45,6 @@ export default [
       'dist/**/*',
       'node_modules/**/*',
       '**/*.js',
-      'webpack.*.js',
       'vite.config.ts',
       'vitest.config.ts',
       'src/data/processed/sorceryCards.compressed.js',

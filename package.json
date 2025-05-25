@@ -25,11 +25,10 @@
     "test:position": "npx ts-node scripts/test-position-decks.ts",
     "test:performance": "npx ts-node scripts/test-performance.ts",
     "test:imports": "npx ts-node src/tests/test-imports.ts",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
-    "test:watch": "vitest --watch",
     "process-cards": "npx ts-node src/data/processed/processCards.ts",
     "system:status": "node -e \"const config = require('./dist/config'); console.log('Using optimized system')\"",
     "serve": "node tools/server.js",
@@ -71,8 +70,6 @@
     "typescript": "^5.8.3",
     "util": "^0.12.5",
     "vite": "^6.3.5",
-    "vitest": "^3.1.4",
-    "webpack": "^5.89.0",
-    "webpack-cli": "^5.1.4"
+    "vitest": "^3.1.4"
   }
 }

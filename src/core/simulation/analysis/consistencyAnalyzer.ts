@@ -15,6 +15,11 @@ export function analyzeConsistency(result: BatchResult): ConsistencyReport {
         winRateVariance: variance,
         turnVariance,
         consistencyScore: Math.max(0, 1 - (variance * 2)), // Higher is more consistent
+        varianceMetrics: {  // Add missing property
+            winRate: variance,
+            turns: turnVariance,
+            overall: Math.max(0, 1 - (variance + turnVariance) / 2)
+        },
         recommendations: generateConsistencyRecommendations(variance, turnVariance)
     };
 }

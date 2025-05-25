@@ -42,6 +42,9 @@ export async function generatePerformanceReport(
         strategyPerformance: strategyTest,
         composition,
         overallRating: calculateOverallRating(metaTest, consistencyTest),
+        strengths: metaTest.strengths,  // Extract to top level for test compatibility
+        weaknesses: metaTest.weaknesses,
+        recommendations: metaTest.recommendations,
         timestamp: Date.now()
     };
 }

@@ -20,8 +20,7 @@ export default defineConfig({
         'web/',
         'tests/test-setup.ts',
         '**/*.d.ts',
-        '**/*.config.*',
-        '**/webpack.*.js'
+        '**/*.config.*'
       ]
     },
     
@@ -41,7 +40,10 @@ export default defineConfig({
     hookTimeout: 10000,
     
     // Reporter
-    reporters: ['verbose', 'html'],
+    reporters: ['verbose'],
+    
+    // Watch mode configuration
+    watch: false,
     
     // Allow tests to run in parallel
     pool: 'threads',

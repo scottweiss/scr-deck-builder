@@ -35,6 +35,8 @@ export async function analyzeMatchup(
         deck1: deck1.name,
         deck2: deck2.name,
         deck1WinRate: result.player1WinRate,
+        winRate: result.player1WinRate,  // Add alias for test compatibility
+        averageTurns: result.averageTurns,  // Add missing property
         favorability: calculateFavorability(result.player1WinRate),
         keyFactors: identifyMatchupFactors(result)
     };

@@ -168,9 +168,10 @@ export const RuleEnforcer = {
     generateRulesSummary(): RulesSummary {
         return {
             deckConstruction: [
-                'Atlas: Exactly 30 site cards',
-                'Spellbook: 60-65 spell cards (no duplicates beyond rarity limits)',
+                'Atlas: At least 30 site cards (minimum required)',
+                'Spellbook: At least 50 spell cards (minimum required)', 
                 'Avatar: Exactly 1 avatar card',
+                'Larger decks allowed as long as reasonably shuffleable',
                 'No more than 4 copies of any ordinary spell',
                 'No more than 3 copies of any exceptional spell',
                 'No more than 2 copies of any elite spell',

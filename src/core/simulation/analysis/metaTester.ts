@@ -69,11 +69,22 @@ export function analyzeTestResults(
     return {
         deckName: 'Test Deck',
         winRate: overallWinRate,
+        overallWinRate: overallWinRate,  // Add alias for test compatibility
         averageTurns,
         performance,
         strengths,
         weaknesses,
-        recommendations
+        recommendations,
+        matchupResults: results.map((result, index) => ({
+            opponentName: metaDecks[index]?.name || `Opponent ${index + 1}`,
+            winRate: result.player1WinRate,
+            averageTurns: result.averageTurns,
+            favorability: result.player1WinRate >= 0.6 ? 'favored' : 
+                         result.player1WinRate <= 0.4 ? 'unfavored' : 'even' as any,
+            keyFactors: ['Test matchup'],
+            turns: result.averageTurns,
+            gamesPlayed: result.totalGames
+        }))
     };
 }
 
