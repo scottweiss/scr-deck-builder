@@ -20,4 +20,7 @@ export interface Card {
   effect?: string;
   keywords?: string[];
   subtypes?: string[];
+  power?: number; // Optional property for card's power
+  life?: number;  // Optional property for card's life
+  elements?: string[]; // Optional property for elemental symbols
 }

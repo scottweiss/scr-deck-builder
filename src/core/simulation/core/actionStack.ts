@@ -35,6 +35,9 @@ export interface GameAction {
   manaCost?: number;
   elementalCost?: string[];
   additionalCosts?: ActionCost[];
+
+  // Explanation or reasoning for the action
+  reasoning?: string;
 }
 
 export interface ActionCost {

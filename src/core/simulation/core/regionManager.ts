@@ -4,8 +4,9 @@
  */
 
 import { Card } from '../../../types/card-types';
-import { Player, GameState, BoardPosition } from '../../../types/game-types';
+import { GameState, Position } from './gameState';
 import { BoardStateManager } from './boardState';
+import { BoardPosition } from '../../../types/game-types';
 
 export type RegionType = 'void' | 'surface' | 'underground' | 'underwater';
 
@@ -333,9 +334,14 @@ export class RegionManager {
         if (effect.duration === 'turn') {
           // Apply turn-end effects
           region.positions.forEach(pos => {
-            const cardAtPosition = gameState.board[pos.row]?.[pos.col];
-            if (cardAtPosition) {
-              effect.effect(cardAtPosition, pos);
+            const gridSquare = gameState.grid[pos.row]?.[pos.col];
+            if (gridSquare) {
+              if (gridSquare.site) {
+                effect.effect(gridSquare.site, pos);
+              }
+              for (const unit of gridSquare.units) {
+                effect.effect(unit.card, pos);
+              }
             }
           });
         }

@@ -73,11 +73,7 @@ export interface Player {
     spellbook: Card[];
     atlas: Card[];
   };
-  // Also support legacy deck property for compatibility
-  deck?: Card[];
   cemetery: Card[];
-  // Also support graveyard property for compatibility
-  graveyard?: Card[];
   controlledSites: string[]; // Site IDs
   elementalAffinity: {
     air: number;
@@ -108,8 +104,6 @@ export interface GameState {
   winner?: 'player1' | 'player2' | 'draw';
   gameOver: boolean;
   firstPlayer: 'player1' | 'player2';
-  // Legacy compatibility property
-  currentPlayerId?: 'player1' | 'player2';
 }
 
 export interface GameEvent {
@@ -127,6 +121,19 @@ export interface GameEvent {
   timestamp?: number;
   // Additional data field for complex events
   data?: any;
+}
+
+// Define GameAction interface
+export interface GameAction {
+  type: 'PLAY_CARD' | 'MOVE' | 'ATTACK' | 'PASS' | 'ACTIVATE_ABILITY';
+  playerId: 'player1' | 'player2';
+  cardId?: string;
+  unitId?: string;
+  sourcePosition?: Position;
+  targetPosition?: Position;
+  targetUnitId?: string;
+  priority?: number;
+  metadata?: any;
 }
 
 export class GameStateManager {
@@ -241,7 +248,7 @@ export class GameStateManager {
     grid[0][2].units.push(player1Avatar);
     grid[3][2].units.push(player2Avatar);
 
-    return {
+    this.state = {
       turn: 1,
       phase: {
         type: 'start',
@@ -260,6 +267,8 @@ export class GameStateManager {
       gameOver: false,
       firstPlayer
     };
+
+    return this.state;
   }
 
   public getState(): GameState {
@@ -444,100 +453,6 @@ export class GameStateManager {
     } else {
       player.hand.sites.push(card);
     }
-
     return card;
-  }
-
-  public addEvent(event: Omit<GameEvent, 'id'>): void {
-    const gameEvent: GameEvent = {
-      ...event,
-      id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    };
-    this.state.storyline.push(gameEvent);
-  }
-
-  public resolveNextEvent(): GameEvent | null {
-    const event = this.state.storyline.find(e => !e.resolved);
-    if (event) {
-      event.resolved = true;
-      return event;
-    }
-    return null;
-  }
-
-  public clearResolvedEvents(): void {
-    this.state.storyline = this.state.storyline.filter(e => !e.resolved);
-  }
-
-  public endTurn(): void {
-    // Clear damage from all units
-    this.state.units.forEach(unit => {
-      if (unit.id.startsWith('avatar_')) {
-        // Avatars don't heal automatically
-        return;
-      }
-      unit.damage = 0;
-    });
-
-    // Clear summoning sickness
-    this.state.units.forEach(unit => {
-      unit.summoning_sickness = false;
-    });
-
-    // Clear mana
-    this.clearMana(this.state.phase.activePlayer);
-
-    // Switch active player
-    this.state.phase.activePlayer = this.state.phase.activePlayer === 'player1' ? 'player2' : 'player1';
-    
-    // Increment turn if back to first player
-    if (this.state.phase.activePlayer === this.state.firstPlayer) {
-      this.state.turn++;
-    }
-
-    // Reset to start phase
-    this.state.phase.type = 'start';
-    this.state.phase.step = 1;
-  }
-
-  public advancePhase(): void {
-    if (this.state.phase.type === 'start') {
-      this.state.phase.type = 'main';
-    } else if (this.state.phase.type === 'main') {
-      this.state.phase.type = 'end';
-    } else {
-      this.endTurn();
-    }
-  }
-
-  // Additional utility methods needed by other modules
-
-  public placeUnit(gameState: GameState, card: Card, owner: 'player1' | 'player2', position: Position): string | null {
-    const unitId = `unit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    const unit: Unit = {
-      id: unitId,
-      card,
-      owner,
-      position,
-      region: 'surface',
-      isTapped: false,
-      damage: 0,
-      summoning_sickness: true,
-      artifacts: [],
-      modifiers: [],
-      name: card.name,
-      power: card.power,
-      life: card.life,
-      canAct: false,
-      abilities: [], // Would be parsed from card text
-      elements: card.elements?.map(e => e.toString()) || [],
-      cost: card.mana_cost
-    };
-
-    gameState.units.set(unitId, unit);
-    gameState.grid[position.y][position.x].units.push(unit);
-    
-    return unitId;
   }
 }

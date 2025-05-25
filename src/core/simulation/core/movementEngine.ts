@@ -4,9 +4,10 @@
  */
 
 import { Card } from '../../../types/card-types';
-import { Player, GameState, BoardPosition } from '../../../types/game-types';
+import { GameState, Position } from './gameState';
 import { BoardStateManager } from './boardState';
 import { PositionSystem } from './positionSystem';
+import { positionToBoardPosition } from '../../../utils/card-adapter';
 
 export interface MovementRule {
   id: string;
@@ -17,9 +18,9 @@ export interface MovementRule {
 }
 
 export interface MovementPath {
-  start: BoardPosition;
-  end: BoardPosition;
-  path: BoardPosition[];
+  start: Position;
+  end: Position;
+  path: Position[];
   cost: number;
   isValid: boolean;
   restrictions: string[];
@@ -28,7 +29,7 @@ export interface MovementPath {
 export interface MovementRestriction {
   type: 'blocked' | 'difficult_terrain' | 'no_retreat' | 'forced_movement';
   source: string;
-  affectedPositions: BoardPosition[];
+  affectedPositions: Position[];
   modifier?: number;
 }
 
@@ -46,7 +47,7 @@ export class MovementEngine {
   /**
    * Calculate movement range for a card
    */
-  getMovementRange(cardId: string, gameState: GameState): BoardPosition[] {
+  getMovementRange(cardId: string, gameState: GameState): Position[] {
     const card = this.findCardById(cardId, gameState);
     if (!card) return [];
 
@@ -54,12 +55,12 @@ export class MovementEngine {
     if (!currentPosition) return [];
 
     const speed = this.getCardSpeed(card, gameState);
-    const validPositions: BoardPosition[] = [];
+    const validPositions: Position[] = [];
 
     // Calculate all positions within movement range
     for (let row = 0; row < 4; row++) {
       for (let col = 0; col < 5; col++) {
-        const targetPosition: BoardPosition = { row, col };
+        const targetPosition: Position = { x: col, y: row };
         const path = this.calculateMovementPath(currentPosition, targetPosition, cardId, gameState);
         
         if (path.isValid && path.cost <= speed) {
@@ -75,8 +76,8 @@ export class MovementEngine {
    * Calculate the optimal path between two positions
    */
   calculateMovementPath(
-    start: BoardPosition, 
-    end: BoardPosition, 
+    start: Position, 
+    end: Position, 
     cardId: string, 
     gameState: GameState
   ): MovementPath {
@@ -108,7 +109,7 @@ export class MovementEngine {
   /**
    * Execute a movement action
    */
-  executeMovement(cardId: string, targetPosition: BoardPosition, gameState: GameState): boolean {
+  executeMovement(cardId: string, targetPosition: Position, gameState: GameState): boolean {
     const currentPosition = this.getCardPosition(cardId, gameState);
     if (!currentPosition) return false;
 
@@ -157,8 +158,8 @@ export class MovementEngine {
    * Check if destination is valid for movement
    */
   isValidDestination(
-    from: BoardPosition,
-    to: BoardPosition,
+    from: Position,
+    to: Position,
     cardId: string,
     gameState: GameState
   ): boolean {
@@ -170,8 +171,8 @@ export class MovementEngine {
    * Get movement cost between two positions
    */
   getMovementCost(
-    from: BoardPosition,
-    to: BoardPosition,
+    from: Position,
+    to: Position,
     cardId: string,
     gameState: GameState
   ): number {
@@ -222,7 +223,7 @@ export class MovementEngine {
   /**
    * Check if movement is possible between two positions
    */
-  canMoveBetween(from: BoardPosition, to: BoardPosition, cardId: string, gameState: GameState): boolean {
+  canMoveBetween(from: Position, to: Position, cardId: string, gameState: GameState): boolean {
     const path = this.calculateMovementPath(from, to, cardId, gameState);
     const card = this.findCardById(cardId, gameState);
     if (!card) return false;
@@ -234,45 +235,46 @@ export class MovementEngine {
   /**
    * Get all movement restrictions affecting a position
    */
-  getMovementRestrictionsAt(position: BoardPosition): MovementRestriction[] {
+  getMovementRestrictionsAt(position: Position): MovementRestriction[] {
     return this.restrictions.filter(restriction =>
-      restriction.affectedPositions.some(pos =>
-        pos.row === position.row && pos.col === position.col
-      )
+      restriction.affectedPositions.some(pos => {
+        const a = positionToBoardPosition(pos);
+        const b = positionToBoardPosition(position);
+        return a.row === b.row && a.col === b.col;
+      })
     );
   }
 
   /**
    * Calculate distance between two positions
    */
-  getDistance(from: BoardPosition, to: BoardPosition): number {
-    return Math.abs(from.row - to.row) + Math.abs(from.col - to.col);
+  getDistance(from: Position, to: Position): number {
+    return Math.abs(from.x - to.x) + Math.abs(from.y - to.y);
   }
 
   /**
    * Get all adjacent positions to a given position
    */
-  getAdjacentPositions(position: BoardPosition): BoardPosition[] {
-    const adjacent: BoardPosition[] = [];
+  getAdjacentPositions(position: Position): Position[] {
+    const adjacent: Position[] = [];
     const directions = [
-      { row: -1, col: 0 }, // North
-      { row: 1, col: 0 },  // South
-      { row: 0, col: -1 }, // West
-      { row: 0, col: 1 },  // East
-      { row: -1, col: -1 }, // Northwest
-      { row: -1, col: 1 },  // Northeast
-      { row: 1, col: -1 },  // Southwest
-      { row: 1, col: 1 }    // Southeast
+      { x: 0, y: -1 }, // North
+      { x: 0, y: 1 },  // South
+      { x: -1, y: 0 }, // West
+      { x: 1, y: 0 },  // East
+      { x: -1, y: -1 }, // Northwest
+      { x: 1, y: -1 },  // Northeast
+      { x: -1, y: 1 },  // Southwest
+      { x: 1, y: 1 }    // Southeast
     ];
 
     for (const dir of directions) {
       const newPos = {
-        row: position.row + dir.row,
-        col: position.col + dir.col
+        x: position.x + dir.x,
+        y: position.y + dir.y
       };
-      
-      // Check if position is within board bounds (assuming 8x8 for now)
-      if (newPos.row >= 0 && newPos.row < 8 && newPos.col >= 0 && newPos.col < 8) {
+      // Check if position is within board bounds (4x5)
+      if (newPos.x >= 0 && newPos.x < 5 && newPos.y >= 0 && newPos.y < 4) {
         adjacent.push(newPos);
       }
     }
@@ -283,9 +285,9 @@ export class MovementEngine {
   /**
    * Check if two positions are adjacent
    */
-  areAdjacent(pos1: BoardPosition, pos2: BoardPosition): boolean {
+  areAdjacent(pos1: Position, pos2: Position): boolean {
     const distance = this.getDistance(pos1, pos2);
-    return distance === 1 || (Math.abs(pos1.row - pos2.row) === 1 && Math.abs(pos1.col - pos2.col) === 1);
+    return distance === 1 || (Math.abs(pos1.x - pos2.x) === 1 && Math.abs(pos1.y - pos2.y) === 1);
   }
 
   /**
@@ -319,14 +321,18 @@ export class MovementEngine {
   /**
    * Get card position from game state
    */
-  private getCardPosition(cardId: string, gameState: GameState): BoardPosition | null {
-    // Search through the game board
-    if (gameState.board) {
-      for (let row = 0; row < gameState.board.length; row++) {
-        for (let col = 0; col < gameState.board[row].length; col++) {
-          const card = gameState.board[row][col];
-          if (card && card.id === cardId) {
-            return { row, col };
+  private getCardPosition(cardId: string, gameState: GameState): Position | null {
+    if (gameState.grid) {
+      for (let row = 0; row < gameState.grid.length; row++) {
+        for (let col = 0; col < gameState.grid[row].length; col++) {
+          const square = gameState.grid[row][col];
+          if (square.site && square.site.id === cardId) {
+            return { x: col, y: row };
+          }
+          for (const unit of square.units) {
+            if (unit.card.id === cardId) {
+              return { x: col, y: row };
+            }
           }
         }
       }
@@ -339,34 +345,32 @@ export class MovementEngine {
    */
   private findCardById(cardId: string, gameState: GameState): Card | null {
     // Search through all players' battlefield and hand
-    for (const player of gameState.players) {
-      // Check battlefield
-      const cardInBattlefield = player.battlefield.find(card => card.id === cardId);
-      if (cardInBattlefield) return cardInBattlefield;
-      
-      // Check hand
-      const cardInHand = player.hand.find(card => card.id === cardId);
-      if (cardInHand) return cardInHand;
+    for (const player of Object.values(gameState.players)) {
+      // battlefield and hand are not arrays of Card in new model, so skip
+      // Instead, search grid for site/units
     }
-    
     // Check board positions
-    if (gameState.board) {
-      for (const row of gameState.board) {
-        for (const card of row) {
-          if (card && card.id === cardId) {
-            return card;
+    if (gameState.grid) {
+      for (const row of gameState.grid) {
+        for (const square of row) {
+          if (square.site && square.site.id === cardId) {
+            return square.site;
+          }
+          for (const unit of square.units) {
+            if (unit.card.id === cardId) {
+              return unit.card;
+            }
           }
         }
       }
     }
-    
     return null;
   }
 
   /**
    * Move a card to a new position (placeholder implementation)
    */
-  private moveCard(cardId: string, targetPosition: BoardPosition, gameState: GameState): boolean {
+  private moveCard(cardId: string, targetPosition: Position, gameState: GameState): boolean {
     // This would integrate with the actual board state management
     // For now, return true as a placeholder
     return true;
@@ -375,7 +379,7 @@ export class MovementEngine {
   /**
    * Apply movement effects (placeholder implementation)
    */
-  private applyMovementEffects(cardId: string, from: BoardPosition, to: BoardPosition, gameState: GameState): void {
+  private applyMovementEffects(cardId: string, from: Position, to: Position, gameState: GameState): void {
     // Apply any effects that trigger on movement
     // Placeholder implementation
   }
@@ -405,14 +409,14 @@ export class MovementEngine {
   }
 
   private calculateOptimalPath(
-    start: BoardPosition,
-    end: BoardPosition,
+    start: Position,
+    end: Position,
     maxDistance: number,
     gameState: GameState
-  ): { positions: BoardPosition[]; cost: number; valid: boolean; restrictions: string[] } {
+  ): { positions: Position[]; cost: number; valid: boolean; restrictions: string[] } {
     // Simple pathfinding - for complex pathfinding, implement A* algorithm
-    const dx = end.col - start.col;
-    const dy = end.row - start.row;
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
     const distance = Math.abs(dx) + Math.abs(dy);
     
     if (distance > maxDistance) {
@@ -425,14 +429,14 @@ export class MovementEngine {
     }
 
     // Generate simple straight-line path
-    const path: BoardPosition[] = [start];
+    const path: Position[] = [start];
     let current = { ...start };
     
-    while (current.col !== end.col || current.row !== end.row) {
-      if (current.col < end.col) current.col++;
-      else if (current.col > end.col) current.col--;
-      else if (current.row < end.row) current.row++;
-      else if (current.row > end.row) current.row--;
+    while (current.x !== end.x || current.y !== end.y) {
+      if (current.x < end.x) current.x++;
+      else if (current.x > end.x) current.x--;
+      else if (current.y < end.y) current.y++;
+      else if (current.y > end.y) current.y--;
       
       path.push({ ...current });
     }

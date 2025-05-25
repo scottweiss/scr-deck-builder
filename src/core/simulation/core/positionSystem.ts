@@ -4,10 +4,10 @@
  */
 
 import { Card } from '../../../types/card-types';
-import { Player, GameState, BoardPosition } from '../../../types/game-types';
+import { Player, BoardPosition } from '../../../types/game-types';
 import { BoardStateManager } from './boardState';
 import { Card as BaseCard } from '../../../types/Card';
-import { Position } from './gameState';
+import { GameState, Position } from './gameState';
 import { boardPositionToPosition, positionToBoardPosition, convertSimpleBoardToGridSquare } from '../../../utils/card-adapter';
 
 export interface PositionRule {
@@ -88,7 +88,7 @@ export class PositionSystem {
     // Convert BoardPosition to Position for boardState methods
     const pos = boardPositionToPosition(position);
     // Convert simple board format to GridSquare format for BoardStateManager
-    const gridBoard = convertSimpleBoardToGridSquare(gameState.board);
+    const gridBoard = convertSimpleBoardToGridSquare(gameState.grid);
     if (this.boardState.isPositionOccupied(pos, gridBoard)) {
       validation.valid = false;
       validation.errors.push('Position is already occupied');
@@ -124,7 +124,7 @@ export class PositionSystem {
       card,
       position,
       controller: controller.id,
-      placementTurn: gameState.turnNumber,
+      placementTurn: gameState.turn,
       modifiers: []
     };
     
@@ -160,6 +160,14 @@ export class PositionSystem {
   }
 
   /**
+   * Type guard to check if a value is GridSquare[][]
+   */
+  private isGridSquareBoard(board: any): board is import('./gameState').GridSquare[][] {
+    return Array.isArray(board) && board.length > 0 && Array.isArray(board[0]) &&
+      (board[0].length === 0 || (typeof board[0][0] === 'object' && 'position' in board[0][0]));
+  }
+
+  /**
    * Get all cards adjacent to a position
    */
   getAdjacentCards(position: BoardPosition, gameState: GameState): PositionedCard[] {
@@ -168,8 +176,24 @@ export class PositionSystem {
     const adjacentPositions = this.boardState.getAdjacentPositions(pos);
     const adjacentCards: PositionedCard[] = [];
 
+    // Defensive: handle undefined or invalid grid
+    if (!gameState.grid || !Array.isArray(gameState.grid) || gameState.grid.length === 0) {
+      return [];
+    }
+
+    // Use grid directly if already GridSquare[][], else convert
+    let gridBoard;
+    if (this.isGridSquareBoard(gameState.grid)) {
+      gridBoard = gameState.grid;
+    } else {
+      try {
+        gridBoard = convertSimpleBoardToGridSquare(gameState.grid as any);
+      } catch {
+        return [];
+      }
+    }
+
     for (const adjPos of adjacentPositions) {
-      const gridBoard = convertSimpleBoardToGridSquare(gameState.board);
       const card = this.boardState.getCardAt(adjPos, gridBoard);
       if (card) {
         const positionedCard = this.positionedCards.get(card.id);
@@ -178,7 +202,6 @@ export class PositionSystem {
         }
       }
     }
-
     return adjacentCards;
   }
 
@@ -201,7 +224,7 @@ export class PositionSystem {
         const distance = this.boardState.getDistance(centerPos, pos);
 
         if (distance <= range && (includeCenter || distance > 0)) {
-          const gridBoard = convertSimpleBoardToGridSquare(gameState.board);
+          const gridBoard = convertSimpleBoardToGridSquare(gameState.grid);
           const card = this.boardState.getCardAt(pos, gridBoard);
           if (card) {
             const positionedCard = this.positionedCards.get(card.id);
@@ -226,7 +249,7 @@ export class PositionSystem {
   ): boolean {
     const pos1 = boardPositionToPosition(position1);
     const pos2 = boardPositionToPosition(position2);
-    const gridBoard = convertSimpleBoardToGridSquare(gameState.board);
+    const gridBoard = convertSimpleBoardToGridSquare(gameState.grid);
     return this.boardState.hasLineOfSight(pos1, pos2, gridBoard);
   }
 
@@ -429,7 +452,7 @@ export class PositionSystem {
   ): void {
     // Avatars must be placed on friendly sites
     const validationPos = boardPositionToPosition(validation.position);
-    const gridBoard = convertSimpleBoardToGridSquare(gameState.board);
+    const gridBoard = convertSimpleBoardToGridSquare(gameState.grid);
     const siteAtPosition = this.boardState.getCardAt(validationPos, gridBoard);
     
     if (!siteAtPosition || siteAtPosition.type !== 'Site') {
@@ -508,7 +531,7 @@ export class PositionSystem {
 
       case 'Avatar':
         // Must be placed on a site
-        const gridBoard2 = convertSimpleBoardToGridSquare(gameState.board);
+        const gridBoard2 = convertSimpleBoardToGridSquare(gameState.grid);
         const siteAtPosition = this.boardState.getCardAt(positionPos, gridBoard2);
         if (!siteAtPosition || siteAtPosition.type !== 'Site') {
           restrictions.push({
