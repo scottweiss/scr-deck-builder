@@ -3,7 +3,8 @@ import { CardType } from '../../../types/Card';
 import { GameState, Card, Player } from './gameState';
 import { GameStateManager } from './gameState';
 import { TurnEngine } from './turnEngine';
-import { AIEngine, AIStrategy, AI_STRATEGIES } from './aiEngine';
+import { AIEngine } from './aiEngine';
+import { AIStrategy } from '../ai/aiStrategy';
 import { CombatSystem } from './combatSystem';
 import { SpellEffectSystem } from './spellEffectSystem';
 
@@ -14,13 +15,16 @@ export interface PlayerDeck {
 }
 
 export interface SimulationConfig {
-    player1Deck: PlayerDeck;
-    player2Deck: PlayerDeck;
+    player1Deck?: PlayerDeck;
+    player2Deck?: PlayerDeck;
     player1Strategy: AIStrategy;
     player2Strategy: AIStrategy;
+    player1Difficulty?: import('../ai/difficultyManager').AIDifficulty;
+    player2Difficulty?: import('../ai/difficultyManager').AIDifficulty;
     maxTurns: number;
-    timeoutMs: number;
+    timeoutMs?: number;
     enableLogging: boolean;
+    logLevel?: 'debug' | 'info' | 'warn' | 'error';
     seed?: number;
 }
 
@@ -120,7 +124,7 @@ export class MatchSimulator {
                     }
 
                     // Check timeout
-                    if (Date.now() - this.startTime > config.timeoutMs) {
+                    if (Date.now() - this.startTime > (config.timeoutMs || 60000)) {
                         reason = 'timeout';
                         break;
                     }
@@ -397,6 +401,10 @@ export class MatchSimulator {
     }
 
     private initializeGame(config: SimulationConfig): GameState {
+        if (!config.player1Deck || !config.player2Deck) {
+            throw new Error('Both player decks are required for simulation');
+        }
+        
         const gameState = this.gameStateManager.initializeGame(config.player1Deck, config.player2Deck);
         
         // Initialize combat system now that we have gameState

@@ -134,6 +134,7 @@ export interface GameAction {
   targetUnitId?: string;
   priority?: number;
   metadata?: any;
+  reasoning?: string; // For AI decision explanation
 }
 
 export class GameStateManager {

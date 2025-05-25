@@ -24,7 +24,7 @@ export interface TargetRestriction {
 
 export interface TargetCandidate {
   id: string;
-  type: 'player' | 'creature' | 'spell' | 'site' | 'position';
+  type: 'player' | 'minion' | 'spell' | 'site' | 'position';
   object: any;
   position?: BoardPosition;
   controller?: Player;
@@ -62,27 +62,22 @@ export class TargetingSystem {
         case 'player':
           candidates.push(...this.getPlayerTargets(gameState, controller, sourceCard));
           break;
-          
-        case 'creature':
-          candidates.push(...this.getCreatureTargets(gameState, controller, sourceCard));
+        case 'minion':
+          candidates.push(...this.getMinionTargets(gameState, controller, sourceCard));
           break;
-          
         case 'spell':
           candidates.push(...this.getSpellTargets(gameState, controller, sourceCard));
           break;
-          
         case 'site':
           candidates.push(...this.getSiteTargets(gameState, controller, sourceCard));
           break;
-          
         case 'any':
           candidates.push(
             ...this.getPlayerTargets(gameState, controller, sourceCard),
-            ...this.getCreatureTargets(gameState, controller, sourceCard),
+            ...this.getMinionTargets(gameState, controller, sourceCard),
             ...this.getSpellTargets(gameState, controller, sourceCard)
           );
           break;
-          
         case 'position':
           candidates.push(...this.getPositionTargets(gameState, controller, sourceCard));
           break;
@@ -195,27 +190,25 @@ export class TargetingSystem {
   }
 
   /**
-   * Get valid creature targets
+   * Get valid minion targets (minions and avatars)
    */
-  private getCreatureTargets(
+  private getMinionTargets(
     gameState: GameState,
     controller: Player,
     sourceCard: SimulationCard
   ): TargetCandidate[] {
     const candidates: TargetCandidate[] = [];
-
-    // Use gameState.units to find all creatures (Minion or Avatar), filter by owner
+    // Use gameState.units to find all minions and avatars
     const units = Object.values(gameState.units || {});
     units.forEach((unit: GameCard & { owner: string }) => {
       if (unit.type === CardType.Minion || unit.type === CardType.Avatar) {
-        // Find the owning player
         const owner = this.getPlayerById(gameState, unit.owner);
         const gridBoard = convertSimpleBoardToGridSquare(gameState.grid);
         const position = this.boardState.getCardPosition(unit.id, gridBoard);
         const boardPos = position ? positionToBoardPosition(position) : undefined;
         candidates.push({
           id: unit.id,
-          type: 'creature',
+          type: 'minion',
           object: unit,
           position: boardPos,
           controller: owner,
@@ -362,8 +355,7 @@ export class TargetingSystem {
    * Create a target candidate from a game object
    */
   private createTargetCandidate(target: any, gameState: GameState): TargetCandidate {
-    let type: 'player' | 'creature' | 'spell' | 'site' | 'position' = 'creature';
-    
+    let type: 'player' | 'minion' | 'spell' | 'site' | 'position' = 'minion';
     if (target.type === 'Player' || target.health !== undefined) {
       type = 'player';
     } else if (target.type === CardType.Site) {
@@ -371,7 +363,6 @@ export class TargetingSystem {
     } else if (target.row !== undefined && target.col !== undefined) {
       type = 'position';
     }
-
     return {
       id: target.id || `${target.row}-${target.col}`,
       type,
@@ -413,19 +404,16 @@ export class TargetingSystem {
     sourceCard: SimulationCard,
     includeUntargetable: boolean = false
   ): TargetCandidate[] {
-    const creatures = this.getCreatureTargets(gameState, controller, sourceCard);
-    
+    // For backward compatibility, alias to getMinionTargets
+    const minions = this.getMinionTargets(gameState, controller, sourceCard);
     if (includeUntargetable) {
-      return creatures;
+      return minions;
     }
-
-    return creatures.filter(creature => {
-      const card = creature.object;
-      
+    return minions.filter(minion => {
+      const card = minion.object;
       if (card.keywords?.includes('shroud') || card.keywords?.includes('hexproof')) {
         return false;
       }
-      
       return true;
     });
   }

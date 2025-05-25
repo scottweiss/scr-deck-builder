@@ -6,10 +6,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { AIEngine } from '../src/core/simulation/core/aiEngine';
 import { TurnEngine } from '../src/core/simulation/core/turnEngine';
-import { AggressiveAIStrategy as AggressiveAI } from '../src/core/simulation/ai/strategies/aggressiveAI';
-import { ControlAIStrategy as ControlAI } from '../src/core/simulation/ai/strategies/controlAI';
-import { MidrangeAIStrategy as MidrangeAI } from '../src/core/simulation/ai/strategies/midrangeAI';
-import { ComboAIStrategy as ComboAI } from '../src/core/simulation/ai/strategies/comboAI';
+import { AI_STRATEGIES } from '../src/core/simulation/ai/aiStrategies';
 import { DifficultyManager } from '../src/core/simulation/ai/difficultyManager';
 import { ActionEvaluator } from '../src/core/simulation/ai/actionEvaluator';
 import { GameStateEvaluator } from '../src/core/simulation/ai/gameStateEvaluator';
@@ -28,24 +25,23 @@ describe('Phase 3: AI Engine Integration Tests', () => {
 
   describe('AI Strategy Implementation Validation', () => {
     it('should have all four AI strategies implemented', () => {
-      expect(AggressiveAI).toBeDefined();
-      expect(ControlAI).toBeDefined();
-      expect(MidrangeAI).toBeDefined();
-      expect(ComboAI).toBeDefined();
+      expect(AI_STRATEGIES.AGGRESSIVE).toBeDefined();
+      expect(AI_STRATEGIES.CONTROL).toBeDefined();
+      expect(AI_STRATEGIES.MIDRANGE).toBeDefined();
+      expect(AI_STRATEGIES.COMBO).toBeDefined();
     });
 
     it('should create AI strategy instances successfully', () => {
-      const aggressive = new AggressiveAI();
-      const control = new ControlAI();
-      const midrange = new MidrangeAI();
-      const combo = new ComboAI();
+      const aggressive = AI_STRATEGIES.AGGRESSIVE;
+      const control = AI_STRATEGIES.CONTROL;
+      const midrange = AI_STRATEGIES.MIDRANGE;
+      const combo = AI_STRATEGIES.COMBO;
 
       expect(aggressive).toBeDefined();
       expect(control).toBeDefined();
       expect(midrange).toBeDefined();
       expect(combo).toBeDefined();
 
-      // Verify they all implement the AIStrategy interface
       expect(typeof aggressive.generateActions).toBe('function');
       expect(typeof control.generateActions).toBe('function');
       expect(typeof midrange.generateActions).toBe('function');
@@ -58,14 +54,8 @@ describe('Phase 3: AI Engine Integration Tests', () => {
       gameState.initializeGame(mockDeck, mockDeck);
       const state = gameState.getState();
       const player = state.players.player1;
-
-      const aggressive = new AggressiveAI();
-      const control = new ControlAI();
-
-      const aggressiveActions = aggressive.generateActions(state, player);
-      const controlActions = control.generateActions(state, player);
-
-      // Actions should be different between strategies
+      const aggressiveActions = AI_STRATEGIES.AGGRESSIVE.generateActions(state, player);
+      const controlActions = AI_STRATEGIES.CONTROL.generateActions(state, player);
       expect(aggressiveActions).toBeDefined();
       expect(controlActions).toBeDefined();
       expect(Array.isArray(aggressiveActions)).toBe(true);
@@ -78,8 +68,8 @@ describe('Phase 3: AI Engine Integration Tests', () => {
       const gameState = new GameStateManager();
       const turnEngine = new TurnEngine(gameState);
 
-      const aggressiveEngine = new AIEngine(new AggressiveAI(), turnEngine, 'medium');
-      const controlEngine = new AIEngine(new ControlAI(), turnEngine, 'hard');
+      const aggressiveEngine = new AIEngine(AI_STRATEGIES.AGGRESSIVE, turnEngine, 'medium');
+      const controlEngine = new AIEngine(AI_STRATEGIES.CONTROL, turnEngine, 'hard');
 
       expect(aggressiveEngine).toBeDefined();
       expect(controlEngine).toBeDefined();
@@ -91,7 +81,7 @@ describe('Phase 3: AI Engine Integration Tests', () => {
       gameState.initializeGame(mockDeck, mockDeck);
       const turnEngine = new TurnEngine(gameState);
 
-      const aggressiveEngine = new AIEngine(new AggressiveAI(), turnEngine, 'easy');
+      const aggressiveEngine = new AIEngine(AI_STRATEGIES.AGGRESSIVE, turnEngine, 'easy');
       const state = gameState.getState();
 
       const decision = await aggressiveEngine.makeDecision(state, 'player1');
@@ -182,16 +172,20 @@ describe('Phase 3: AI Engine Integration Tests', () => {
       const state = gameState.getState();
       const player = state.players.player1;
 
-      const strategy = new MidrangeAI();
+      const strategy = AI_STRATEGIES.MIDRANGE;
       const actions = strategy.generateActions(state, player);
       const rankedActions = ActionEvaluator.rankActions(actions, state, player);
 
       expect(Array.isArray(rankedActions)).toBe(true);
       
-      const validRankedActions = rankedActions.filter((action): action is GameAction => action.priority !== undefined);
+      const validRankedActions = rankedActions.filter(action => typeof action.priority === 'number');
       if (validRankedActions.length > 1) {
         for (let i = 0; i < validRankedActions.length - 1; i++) {
-          expect(validRankedActions[i].priority).toBeGreaterThanOrEqual(validRankedActions[i + 1].priority);
+          const curr = validRankedActions[i].priority;
+          const next = validRankedActions[i + 1].priority;
+          if (typeof curr === 'number' && typeof next === 'number') {
+            expect(curr).toBeGreaterThanOrEqual(next);
+          }
         }
       }
     });
@@ -241,7 +235,7 @@ describe('Phase 3: AI Engine Integration Tests', () => {
       const state = gameState.getState();
 
       const tree = new DecisionTree({ maxDepth: 2, maxBranching: 3 });
-      const strategy = new MidrangeAI();
+      const strategy = AI_STRATEGIES.MIDRANGE;
       
       const result = tree.findBestAction(state, 'player1', strategy.generateActions(state, 'player1'));
 
@@ -266,14 +260,14 @@ describe('Phase 3: AI Engine Integration Tests', () => {
       const state = gameState.getState();
       const player = state.players.player1;
 
-      const aggressive = new AggressiveAI();
+      const aggressive = AI_STRATEGIES.AGGRESSIVE;
       const actions = aggressive.generateActions(state, player);
 
       // Aggressive AI should generate some actions
       expect(actions.length).toBeGreaterThan(0);
       
       // Should have reasonably high priority actions (aggressive play)
-      const highPriorityActions = actions.filter(a => a.priority > 0.6);
+      const highPriorityActions = actions.filter(a => typeof a.priority === 'number' && a.priority > 0.6);
       expect(highPriorityActions.length).toBeGreaterThan(0);
     });
 
@@ -284,16 +278,18 @@ describe('Phase 3: AI Engine Integration Tests', () => {
       const state = gameState.getState();
       const player = state.players.player1;
 
-      const control = new ControlAI();
+      const control = AI_STRATEGIES.CONTROL;
       const actions = control.generateActions(state, player);
 
       expect(actions.length).toBeGreaterThan(0);
       
       // Control AI should mention card advantage or removal in reasoning
-      const controlActions = actions.filter(a => 
-        a.reasoning.includes('advantage') || 
-        a.reasoning.includes('removal') ||
-        a.reasoning.includes('control')
+      const controlActions = actions.filter(a =>
+        typeof a.reasoning === 'string' && (
+          a.reasoning.includes('advantage') ||
+          a.reasoning.includes('removal') ||
+          a.reasoning.includes('control')
+        )
       );
       expect(controlActions.length).toBeGreaterThan(0);
     });
@@ -305,10 +301,10 @@ describe('Phase 3: AI Engine Integration Tests', () => {
       const turnEngine = new TurnEngine(gameState);
 
       const engines = [
-        new AIEngine(new AggressiveAI(), turnEngine, 'easy'),
-        new AIEngine(new ControlAI(), turnEngine, 'medium'),
-        new AIEngine(new MidrangeAI(), turnEngine, 'hard'),
-        new AIEngine(new ComboAI(), turnEngine, 'expert')
+        new AIEngine(AI_STRATEGIES.AGGRESSIVE, turnEngine, 'easy'),
+        new AIEngine(AI_STRATEGIES.CONTROL, turnEngine, 'medium'),
+        new AIEngine(AI_STRATEGIES.MIDRANGE, turnEngine, 'hard'),
+        new AIEngine(AI_STRATEGIES.COMBO, turnEngine, 'expert')
       ];
 
       expect(engines.length).toBe(4);
@@ -322,7 +318,7 @@ describe('Phase 3: AI Engine Integration Tests', () => {
       const mockDeck = createMockDeck();
       gameState.initializeGame(mockDeck, mockDeck);
       const turnEngine = new TurnEngine(gameState);
-      const engine = new AIEngine(new MidrangeAI(), turnEngine, 'medium');
+      const engine = new AIEngine(AI_STRATEGIES.MIDRANGE, turnEngine, 'medium');
       const state = gameState.getState();
 
       const startTime = Date.now();
@@ -338,7 +334,7 @@ describe('Phase 3: AI Engine Integration Tests', () => {
     it('should handle edge cases gracefully', async () => {
       const gameState = new GameStateManager();
       const turnEngine = new TurnEngine(gameState);
-      const engine = new AIEngine(new AggressiveAI(), turnEngine, 'easy');
+      const engine = new AIEngine(AI_STRATEGIES.AGGRESSIVE, turnEngine, 'easy');
 
       // Test with minimal game state
       const emptyState = gameState.getState();
@@ -353,10 +349,10 @@ describe('Phase 3: AI Engine Integration Tests', () => {
     it('should have all Phase 3 files created', () => {
       // This test verifies that all the AI system files exist and can be imported
       expect(AIEngine).toBeDefined();
-      expect(AggressiveAI).toBeDefined();
-      expect(ControlAI).toBeDefined();
-      expect(MidrangeAI).toBeDefined();
-      expect(ComboAI).toBeDefined();
+      expect(AI_STRATEGIES.AGGRESSIVE).toBeDefined();
+      expect(AI_STRATEGIES.CONTROL).toBeDefined();
+      expect(AI_STRATEGIES.MIDRANGE).toBeDefined();
+      expect(AI_STRATEGIES.COMBO).toBeDefined();
       expect(DifficultyManager).toBeDefined();
       expect(ActionEvaluator).toBeDefined();
       expect(GameStateEvaluator).toBeDefined();
@@ -369,7 +365,7 @@ describe('Phase 3: AI Engine Integration Tests', () => {
 
       // Should be able to create AI engine with existing systems
       expect(() => {
-        new AIEngine(new MidrangeAI(), turnEngine, 'medium');
+        new AIEngine(AI_STRATEGIES.MIDRANGE, turnEngine, 'medium');
       }).not.toThrow();
     });
   });
@@ -382,8 +378,8 @@ function createMockDeck() {
   return {
     avatar: { id: 'avatar1', name: 'Avatar', type: 'Avatar' as 'Avatar', cost: 0, subtypes: [], effect: '' },
     spells: [
-      { id: 'spell1', name: 'Fireball', type: 'Sorcery' as 'Sorcery', cost: 2, subtypes: ['Fire'], effect: 'Deal 3 damage' },
-      { id: 'spell2', name: 'Heal', type: 'Instant' as 'Instant', cost: 1, subtypes: ['Holy'], effect: 'Restore 3 health' }
+      { id: 'spell1', name: 'Fireball', type: 'Magic' as 'Magic', cost: 2, subtypes: ['Fire'], effect: 'Deal 3 damage' },
+      { id: 'spell2', name: 'Heal', type: 'Magic' as 'Magic', cost: 1, subtypes: ['Holy'], effect: 'Restore 3 health' }
     ],
     sites: [
       { id: 'site1', name: 'Mountain', type: 'Site' as 'Site', cost: 0, subtypes: ['Land'], effect: '' }

@@ -161,9 +161,9 @@ export class AggressiveAIStrategy extends BaseAIStrategy {
   }
 
   private isAggressiveCard(card: Card): boolean {
-    // Prefer low-cost creatures
-    if (card.type === 'Creature') {
-      return (card.cost || 0) <= 3; // Low cost creatures for aggression
+    // Prefer low-cost minions
+    if (card.type === 'Minion') {
+      return (card.cost || 0) <= 3; // Low cost minions for aggression
     }
     
     // Prefer direct damage spells

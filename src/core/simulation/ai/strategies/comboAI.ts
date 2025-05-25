@@ -329,7 +329,7 @@ export class ComboAIStrategy extends BaseAIStrategy {
            text.includes('heal') ||
            text.includes('shield') ||
            text.includes('protection') ||
-           card.type === 'Creature' && (card.cost || 0) >= 3; // Defensive creatures
+           card.type === 'Minion' && (card.cost || 0) >= 3; // Defensive minions
   }
 
   private hasExpensiveComboCards(hand: Card[]): boolean {
@@ -371,5 +371,12 @@ export class ComboAIStrategy extends BaseAIStrategy {
     }
     
     return positions;
+  }
+
+  private canPlayCard(card: Card, player: Player, gameState: GameState): boolean {
+    // Check mana cost
+    if ((card.cost || 0) > player.mana) return false;
+    // TODO: Add elemental affinity and other Sorcery-specific checks if needed
+    return true;
   }
 }

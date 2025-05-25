@@ -5,7 +5,7 @@
 
 import { Card } from '../../../types';
 import { MatchSimulator, SimulationConfig as MatchSimulatorConfig, SimulationResult as MatchSimulatorResult, GameLogEntry } from '../core/matchSimulator';
-import { AI_STRATEGIES, AIStrategy } from '../core/aiEngine';
+import { AI_STRATEGIES, AIStrategy } from '../ai/aiStrategies';
 
 export interface DeckSimulationConfig {
   deck: Card[];

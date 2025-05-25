@@ -77,7 +77,7 @@ export interface GameState {
 }
 
 export type EffectType = 'damage' | 'heal' | 'draw' | 'move' | 'create' | 'destroy' | 'modify';
-export type TargetType = 'player' | 'creature' | 'spell' | 'site' | 'position' | 'any';
+export type TargetType = 'player' | 'minion' | 'spell' | 'site' | 'position' | 'any';
 export type ConditionType = 'controller' | 'opponent' | 'type' | 'subtype' | 'cost';
 
 export interface CardEffect {

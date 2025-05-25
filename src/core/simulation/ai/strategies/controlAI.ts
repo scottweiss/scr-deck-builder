@@ -16,10 +16,12 @@ export class ControlAIStrategy extends BaseAIStrategy {
     const oppUnits = Array.from(gameState.units.values()).filter(u => u.owner !== player.id);
     const opp = player.id === 'player1' ? gameState.players.player2 : gameState.players.player1;
     
-    // Value card advantage heavily
-    const handSize = player.hand.spells.length + player.hand.sites.length;
-    const oppHandSize = opp.hand.spells.length + opp.hand.sites.length;
-    score += (handSize - oppHandSize) * 15;
+    // Value card advantage heavily (add defensive checks)
+    if (player.hand?.spells && player.hand?.sites && opp.hand?.spells && opp.hand?.sites) {
+      const handSize = player.hand.spells.length + player.hand.sites.length;
+      const oppHandSize = opp.hand.spells.length + opp.hand.sites.length;
+      score += (handSize - oppHandSize) * 15;
+    }
     
     // Value board control over raw aggression
     score += myUnits.length * 3;
@@ -53,6 +55,11 @@ export class ControlAIStrategy extends BaseAIStrategy {
     // 4. Generate defensive positioning
     this.generateDefensiveMovementActions(gameState, player, actions);
     
+    // 5. Generate fallback actions if no other actions were generated
+    if (actions.length === 0) {
+      this.generateFallbackActions(gameState, player, actions);
+    }
+    
     return actions;
   }
 
@@ -76,7 +83,8 @@ export class ControlAIStrategy extends BaseAIStrategy {
           playerId: player.id,
           cardId: spell.id,
           targetUnitId: threat.id,
-          priority: 80 // High priority for removal
+          priority: 80, // High priority for removal
+          reasoning: 'removal - eliminate threatening creature'
         });
       }
     }
@@ -97,7 +105,8 @@ export class ControlAIStrategy extends BaseAIStrategy {
         type: 'PLAY_CARD',
         playerId: player.id,
         cardId: spell.id,
-        priority: 60 // Medium-high priority for card advantage
+        priority: 60, // Medium-high priority for card advantage
+        reasoning: 'card advantage - gain hand size advantage'
       });
     }
   }
@@ -128,7 +137,8 @@ export class ControlAIStrategy extends BaseAIStrategy {
           playerId: player.id,
           cardId: card.id,
           targetPosition: position,
-          priority
+          priority,
+          reasoning: 'control - defensive positioning to maintain board control'
         });
       }
     }
@@ -154,43 +164,87 @@ export class ControlAIStrategy extends BaseAIStrategy {
     }
   }
 
+  private generateFallbackActions(gameState: GameState, player: Player, actions: GameAction[]): void {
+    // Generate basic actions to ensure Control AI always has some actions to consider
+    
+    // 1. Try to play any affordable spells for control value
+    if (player.hand?.spells) {
+      for (const spell of player.hand.spells) {
+        if (this.canPlayCard(spell, player, gameState)) {
+          actions.push({
+            type: 'PLAY_CARD',
+            playerId: player.id,
+            cardId: spell.id,
+            priority: 30,
+            reasoning: 'control - conservative spell play for board presence'
+          });
+        }
+      }
+    }
+    
+    // 2. Generate pass action as last resort
+    if (actions.length === 0) {
+      actions.push({
+        type: 'PASS',
+        playerId: player.id,
+        priority: 10,
+        reasoning: 'control - pass turn to maintain resources'
+      });
+    }
+  }
+
+  // Helper methods for card identification and threat assessment
   private isRemovalSpell(card: Card): boolean {
+    // Look for removal keywords in card text or name
     const text = (card.effect || '').toLowerCase();
-    return text.includes('destroy') || text.includes('banish') || 
-           text.includes('damage') || text.includes('exile');
+    const name = card.name.toLowerCase();
+    return text.includes('destroy') || text.includes('remove') || 
+           text.includes('damage') || name.includes('bolt') || 
+           name.includes('strike') || name.includes('destroy');
   }
 
   private isCardAdvantageSpell(card: Card): boolean {
+    // Look for card draw or advantage keywords
     const text = (card.effect || '').toLowerCase();
+    const name = card.name.toLowerCase();
     return text.includes('draw') || text.includes('search') || 
-           text.includes('return') || text.includes('cycle');
+           text.includes('tutor') || name.includes('insight') ||
+           name.includes('vision') || name.includes('study');
   }
 
   private isDefensiveCard(card: Card): boolean {
-    // Prefer higher cost, defensive creatures
+    // Look for defensive creatures or protective spells
     if (card.type === 'Creature') {
-      return (card.cost || 0) >= 3; // Higher cost usually means better stats
+      // Defensive creatures typically have higher life than power
+      const power = card.power || 0;
+      const life = card.life || 0;
+      return life > power && life >= 2;
     }
     
-    // Defensive spells
     const text = (card.effect || '').toLowerCase();
-    return text.includes('prevent') || text.includes('counter') || 
-           text.includes('heal') || text.includes('shield');
+    return text.includes('protect') || text.includes('prevent') ||
+           text.includes('counter') || text.includes('shield');
   }
 
   private getThreateningUnits(gameState: GameState, player: Player): Unit[] {
     const oppUnits = Array.from(gameState.units.values()).filter(u => u.owner !== player.id);
     
-    // For now, return all opponent units as threats (would need more sophisticated threat assessment)
-    return oppUnits.filter(u => !u.isTapped); // Prefer removing untapped threats
+    // Sort by threat level (power + ability to deal damage)
+    return oppUnits.sort((a, b) => {
+      const threatA = (a.card.power || 0) + (a.card.life || 0);
+      const threatB = (b.card.power || 0) + (b.card.life || 0);
+      return threatB - threatA; // Descending order
+    }).slice(0, 3); // Return top 3 threats
+  }
+
+  private canPlayCard(card: Card, player: Player, gameState: GameState): boolean {
+    return (card.cost || 0) <= player.mana;
   }
 
   private getDefensivePositions(gameState: GameState, player: Player): Position[] {
     const positions: Position[] = [];
     
-    // Find positions that protect key areas or avatar
-    const avatar = player.avatar;
-    
+    // Find empty positions that are defensively valuable
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 4; y++) {
         const square = gameState.grid[y][x];
@@ -204,14 +258,6 @@ export class ControlAIStrategy extends BaseAIStrategy {
     }
     
     return positions;
-  }
-
-  private isDefensivePosition(gameState: GameState, pos: Position, player: Player): boolean {
-    // Position is defensive if it's near the avatar or blocks enemy approach
-    const avatar = player.avatar;
-    const distanceToAvatar = Math.abs(pos.x - avatar.position.x) + Math.abs(pos.y - avatar.position.y);
-    
-    return distanceToAvatar <= 2; // Close to avatar for protection
   }
 
   private getDefensiveMovementTargets(gameState: GameState, unit: Unit, player: Player): Position[] {
@@ -235,8 +281,12 @@ export class ControlAIStrategy extends BaseAIStrategy {
     return targets;
   }
 
-  private canPlayCard(card: Card, player: Player, gameState: GameState): boolean {
-    return (card.cost || 0) <= player.mana;
+  private isDefensivePosition(gameState: GameState, pos: Position, player: Player): boolean {
+    // Position is defensive if it's near the avatar or blocks enemy approach
+    const avatar = player.avatar;
+    const distanceToAvatar = Math.abs(pos.x - avatar.position.x) + Math.abs(pos.y - avatar.position.y);
+    
+    return distanceToAvatar <= 2; // Close to avatar for protection
   }
 
   private getDirectionsTowards(from: Position, to: Position): Array<{x: number, y: number}> {

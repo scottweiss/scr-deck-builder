@@ -3,7 +3,7 @@
  */
 
 export type EffectType = 'damage' | 'heal' | 'draw' | 'move' | 'create' | 'destroy' | 'modify';
-export type TargetType = 'player' | 'creature' | 'spell' | 'site' | 'position' | 'any';
+export type TargetType = 'player' | 'minion' | 'spell' | 'site' | 'position' | 'any';
 export type ConditionType = 'controller' | 'opponent' | 'type' | 'subtype' | 'cost';
 
 export interface CardEffect {
@@ -15,7 +15,7 @@ export interface CardEffect {
 export interface Card {
   id: string;
   name: string;
-  type: 'Creature' | 'Instant' | 'Sorcery' | 'Enchantment' | 'Artifact' | 'Site' | 'Avatar';
+  type: 'Minion' | 'Magic' | 'Artifact' | 'Aura' | 'Site' | 'Avatar';
   cost?: number;
   effect?: string;
   keywords?: string[];

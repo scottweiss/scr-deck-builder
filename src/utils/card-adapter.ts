@@ -23,7 +23,7 @@ export function isCardLike(card: any): boolean {
  * Universal card converter - handles all card type conversions
  * This is a smart function that detects the input card type and converts it to the target type
  * @param card Any card-like object from any part of the codebase
- * @param targetType The desired output card type: 'base', 'sim', or 'game'
+ * @param targetType The desired output card type: 'base', 'sim' or 'game'
  */
 export function convertCard(
   card: BaseCard | SimulationCard | GameCard | any, 
@@ -64,13 +64,27 @@ export function adaptBaseCardToSimCard(baseCard: BaseCard): SimulationCard {
   return {
     id: baseCard.productId || `card_${Date.now()}`,
     name: baseCard.name || baseCard.cleanName || '',
-    // Map CardType enum to string literal type
-    type: mapCardTypeToSimType(baseCard.type),
-    cost: baseCard.cost || baseCard.mana_cost || 0,
+    type: mapCardTypeToSimType(baseCard.type) as SimulationCard['type'],
+    cost: baseCard.cost ?? baseCard.mana_cost ?? 0,
     effect: baseCard.text || '',
-    keywords: baseCard.keywords || extractKeywordsFromText(baseCard.text || ''),
+    keywords: (baseCard as any).keywords ?? extractKeywordsFromText(baseCard.text || ''),
     subtypes: baseCard.subtype ? [baseCard.subtype] : []
-  };
+  } as SimulationCard;
+}
+
+/**
+ * Converts a BaseCard to a GameCard (from game-types.ts)
+ */
+export function adaptBaseCardToGameCard(baseCard: BaseCard): GameCard {
+  return {
+    id: baseCard.productId || `card_${Date.now()}`,
+    name: baseCard.name || baseCard.cleanName || '',
+    type: mapCardTypeToSimType(baseCard.type) as GameCard['type'],
+    cost: baseCard.cost ?? baseCard.mana_cost ?? 0,
+    effect: baseCard.text || '',
+    keywords: (baseCard as any).keywords ?? extractKeywordsFromText(baseCard.text || ''),
+    subtypes: baseCard.subtype ? [baseCard.subtype] : []
+  } as GameCard;
 }
 
 /**
@@ -82,30 +96,11 @@ export function adaptSimCardToBaseCard(simCard: SimulationCard): Partial<BaseCar
     productId: simCard.id,
     name: simCard.name,
     cleanName: simCard.name.toLowerCase().replace(/\s+/g, '_'),
-    type: mapSimTypeToCardType(simCard.type),
-    mana_cost: simCard.cost || 0,
-    cost: simCard.cost || 0,
+    type: mapSimTypeToCardType(simCard.type) as CardType,
+    mana_cost: simCard.cost ?? 0,
+    cost: simCard.cost ?? 0,
     text: simCard.effect || '',
-    elements: [],  // We can't determine elements from SimulationCard
-    power: 0,      // Default values
-    rarity: CardRarity.Common,
-    baseName: simCard.name,
-    keywords: simCard.keywords || []
-  };
-}
-
-/**
- * Converts a BaseCard to a GameCard (from game-types.ts)
- */
-export function adaptBaseCardToGameCard(baseCard: BaseCard): GameCard {
-  return {
-    id: baseCard.productId || `card_${Date.now()}`,
-    name: baseCard.name || baseCard.cleanName || '',
-    type: mapCardTypeToSimType(baseCard.type),
-    cost: baseCard.cost || baseCard.mana_cost || 0,
-    effect: baseCard.text || '',
-    keywords: baseCard.keywords || extractKeywordsFromText(baseCard.text || ''),
-    subtypes: baseCard.subtype ? [baseCard.subtype] : []
+    baseName: simCard.name
   };
 }
 
@@ -115,7 +110,13 @@ export function adaptBaseCardToGameCard(baseCard: BaseCard): GameCard {
  */
 export function adaptSimCardToGameCard(simCard: SimulationCard): GameCard {
   return {
-    ...simCard // SimulationCard and GameCard have compatible interfaces
+    id: simCard.id,
+    name: simCard.name,
+    type: simCard.type,
+    cost: simCard.cost ?? 0,
+    effect: simCard.effect || '',
+    keywords: simCard.keywords ?? [],
+    subtypes: simCard.subtypes ?? []
   };
 }
 
@@ -124,7 +125,13 @@ export function adaptSimCardToGameCard(simCard: SimulationCard): GameCard {
  */
 export function adaptGameCardToSimCard(gameCard: GameCard): SimulationCard {
   return {
-    ...gameCard // They share the same structure
+    id: gameCard.id,
+    name: gameCard.name,
+    type: gameCard.type,
+    cost: gameCard.cost ?? 0,
+    effect: gameCard.effect || '',
+    keywords: gameCard.keywords ?? [],
+    subtypes: gameCard.subtypes ?? []
   };
 }
 
@@ -136,15 +143,11 @@ export function adaptGameCardToBaseCard(gameCard: GameCard): Partial<BaseCard> {
     productId: gameCard.id,
     name: gameCard.name,
     cleanName: gameCard.name.toLowerCase().replace(/\s+/g, '_'),
-    type: mapSimTypeToCardType(gameCard.type),
-    mana_cost: gameCard.cost || 0,
-    cost: gameCard.cost || 0,
+    type: mapSimTypeToCardType(gameCard.type) as CardType,
+    mana_cost: gameCard.cost ?? 0,
+    cost: gameCard.cost ?? 0,
     text: gameCard.effect || '',
-    elements: [],  // Can't determine from GameCard
-    power: 0,      // Default values
-    rarity: CardRarity.Common,
-    baseName: gameCard.name,
-    keywords: gameCard.keywords || []
+    baseName: gameCard.name
   };
 }
 
@@ -157,24 +160,21 @@ function createCardFromGeneric(card: any, targetType: 'base' | 'sim' | 'game'): 
       productId: card.id || card.productId || `card_${Date.now()}`,
       name: card.name || '',
       cleanName: (card.name || '').toLowerCase().replace(/\s+/g, '_'),
-      type: getTypeFromCard(card),
-      mana_cost: card.cost || card.mana_cost || 0,
-      cost: card.cost || card.mana_cost || 0,
+      type: mapSimTypeToCardType(card.type) as CardType,
+      mana_cost: card.cost ?? card.mana_cost ?? 0,
+      cost: card.cost ?? card.mana_cost ?? 0,
       text: card.effect || card.text || '',
-      elements: card.elements || [],
-      power: card.power || 0,
-      rarity: card.rarity || CardRarity.Common,
       baseName: card.baseName || card.name || ''
     };
   } else if (targetType === 'sim' || targetType === 'game') {
     return {
       id: card.id || card.productId || `card_${Date.now()}`,
       name: card.name || '',
-      type: mapCardTypeToSimString(getTypeFromCard(card)),
-      cost: card.cost || card.mana_cost || 0,
+      type: mapCardTypeToSimType(card.type) as SimulationCard['type'],
+      cost: card.cost ?? card.mana_cost ?? 0,
       effect: card.effect || card.text || '',
-      keywords: card.keywords || extractKeywordsFromText(card.effect || card.text || ''),
-      subtypes: card.subtypes || (card.subtype ? [card.subtype] : [])
+      keywords: card.keywords ?? extractKeywordsFromText(card.effect || card.text || ''),
+      subtypes: card.subtypes ?? (card.subtype ? [card.subtype] : [])
     };
   }
   return card;
@@ -237,16 +237,16 @@ function mapCardTypeToSimString(cardType: CardType): string {
  */
 function mapCardTypeToSimType(cardType: CardType): SimulationCard['type'] {
   const typeMap: Record<CardType, SimulationCard['type']> = {
-    [CardType.Minion]: 'Creature',
-    [CardType.Magic]: 'Instant',
+    [CardType.Minion]: 'Minion',
+    [CardType.Magic]: 'Magic',
     [CardType.Artifact]: 'Artifact',
-    [CardType.Aura]: 'Enchantment',
+    [CardType.Aura]: 'Aura',
     [CardType.Site]: 'Site',
     [CardType.Avatar]: 'Avatar',
-    [CardType.Unknown]: 'Creature' // Default to creature for unknown
+    [CardType.Unknown]: 'Minion' // Default to minion for unknown
   };
   
-  return typeMap[cardType] || 'Creature';
+  return typeMap[cardType] || 'Minion';
 }
 
 /**
@@ -254,11 +254,10 @@ function mapCardTypeToSimType(cardType: CardType): SimulationCard['type'] {
  */
 function mapSimTypeToCardType(simType: SimulationCard['type']): CardType {
   const typeMap: Record<string, CardType> = {
-    'Creature': CardType.Minion,
-    'Instant': CardType.Magic,
-    'Sorcery': CardType.Magic,
-    'Enchantment': CardType.Aura,
+    'Minion': CardType.Minion,
+    'Magic': CardType.Magic,
     'Artifact': CardType.Artifact,
+    'Aura': CardType.Aura,
     'Site': CardType.Site,
     'Avatar': CardType.Avatar
   };

@@ -7,10 +7,7 @@ import { GameState, Player } from '../core/gameState';
 import { AIEngine } from '../core/aiEngine';
 import { TurnEngine } from '../core/turnEngine';
 import { MatchSimulator, SimulationConfig } from '../core/matchSimulator';
-import { AggressiveAIStrategy } from '../ai/strategies/aggressiveAI';
-import { ControlAIStrategy } from '../ai/strategies/controlAI';
-import { MidrangeAIStrategy } from '../ai/strategies/midrangeAI';
-import { ComboAIStrategy } from '../ai/strategies/comboAI';
+import { AI_STRATEGIES } from '../ai/aiStrategies';
 import { DifficultyManager, AIDifficulty } from '../ai/difficultyManager';
 import { AIStrategy } from '../ai/aiStrategy';
 import { Card } from '../../../types/card-types';
@@ -82,10 +79,10 @@ export class AIVsAITestFramework {
      * Initialize all AI strategies
      */
     private initializeStrategies(): void {
-        this.strategies.set('aggressive', new AggressiveAIStrategy());
-        this.strategies.set('control', new ControlAIStrategy());
-        this.strategies.set('midrange', new MidrangeAIStrategy());
-        this.strategies.set('combo', new ComboAIStrategy());
+        this.strategies.set('AGGRESSIVE', AI_STRATEGIES.AGGRESSIVE);
+        this.strategies.set('CONTROL', AI_STRATEGIES.CONTROL);
+        this.strategies.set('MIDRANGE', AI_STRATEGIES.MIDRANGE);
+        this.strategies.set('COMBO', AI_STRATEGIES.COMBO);
     }
 
     /**
@@ -144,7 +141,7 @@ export class AIVsAITestFramework {
         console.log('📈 Testing Difficulty Progression...');
 
         const matches: AIMatchResult[] = [];
-        const strategy = 'midrange'; // Use consistent strategy
+        const strategy = 'MIDRANGE'; // Use consistent strategy
 
         // Test each difficulty against the next
         for (let i = 0; i < this.difficulties.length - 1; i++) {
@@ -199,13 +196,26 @@ export class AIVsAITestFramework {
     }
 
     /**
+     * Public wrapper for runMatchup for use by QuickAITestRunner
+     */
+    public async runMatchupPublic(
+        strategy1: string,
+        strategy2: string,
+        diff1: AIDifficulty,
+        diff2: AIDifficulty,
+        games: number
+    ): Promise<AIMatchResult[]> {
+        return this.runMatchup(strategy1, strategy2, diff1, diff2, games);
+    }
+
+    /**
      * Test performance consistency and decision speed
      */
     public async testPerformanceConsistency(): Promise<AITestSuite> {
         console.log('⚡ Testing Performance Consistency...');
 
         const matches: AIMatchResult[] = [];
-        const strategy = 'midrange';
+        const strategy = 'MIDRANGE';
 
         // Run same matchup multiple times to test consistency
         const consistencyResults = await this.runMatchup(
@@ -275,12 +285,23 @@ export class AIVsAITestFramework {
         const deck2 = this.createTestDeck('control');
 
         const config: SimulationConfig = {
-            maxTurns: 100,
-            enableLogging: false,
-            player1Strategy: strategy1 as any,
-            player2Strategy: strategy2 as any,
+            player1Deck: {
+                avatar: deck1[0],
+                spells: deck1.slice(1),
+                sites: []
+            },
+            player2Deck: {
+                avatar: deck2[0],
+                spells: deck2.slice(1),
+                sites: []
+            },
+            player1Strategy: this.strategies.get(strategy1)!,
+            player2Strategy: this.strategies.get(strategy2)!,
             player1Difficulty: diff1,
             player2Difficulty: diff2,
+            maxTurns: 100,
+            timeoutMs: 30000,
+            enableLogging: false,
             logLevel: 'error'
         };
 
@@ -292,35 +313,48 @@ export class AIVsAITestFramework {
      * Test aggressive AI behavior patterns
      */
     private async testAggressiveBehavior(): Promise<AIBehaviorTest> {
-        const aggressive = this.strategies.get('aggressive')!;
-        const mockGameState = this.createMockGameState();
-        const player = mockGameState.players.player1;
+        try {
+            const aggressive = this.strategies.get('AGGRESSIVE')!;
+            const mockGameState = this.createMockGameState();
+            const player = mockGameState.players.player1;
 
-        const actions = aggressive.generateActions(mockGameState, player);
-        
-        // Aggressive AI should prioritize low-cost creatures and attacks
-        const hasLowCostCreatures = actions.some(action => 
-            action.type === 'play_card' && action.priority > 0.7
-        );
-        const hasAttacks = actions.some(action => 
-            action.type === 'attack' && action.priority > 0.8
-        );
+            console.log('Testing aggressive behavior with mock game state...');
+            const actions = aggressive.generateActions(mockGameState, player);
+            
+            // Aggressive AI should prioritize low-cost minions and attacks
+            const hasLowCostMinions = actions.some(action => 
+                action.type === 'PLAY_CARD' && (action.priority || 0) > 50
+            );
+            const hasAttacks = actions.some(action => 
+                action.type === 'ATTACK' && (action.priority || 0) > 60
+            );
 
-        return {
-            name: 'Aggressive Behavior',
-            description: 'Should prioritize low-cost creatures and attacks',
-            setup: () => {},
-            expectedBehavior: () => hasLowCostCreatures || hasAttacks,
-            passed: hasLowCostCreatures || hasAttacks,
-            details: `Found ${actions.filter(a => a.type === 'play_card').length} play actions, ${actions.filter(a => a.type === 'attack').length} attack actions`
-        };
+            return {
+                name: 'Aggressive Behavior',
+                description: 'Should prioritize low-cost minions and attacks',
+                setup: () => {},
+                expectedBehavior: () => hasLowCostMinions || hasAttacks,
+                passed: hasLowCostMinions || hasAttacks,
+                details: `Found ${actions.filter(a => a.type === 'PLAY_CARD').length} play actions, ${actions.filter(a => a.type === 'ATTACK').length} attack actions`
+            };
+        } catch (error) {
+            console.error('Error in testAggressiveBehavior:', error);
+            return {
+                name: 'Aggressive Behavior',
+                description: 'Should prioritize low-cost minions and attacks',
+                setup: () => {},
+                expectedBehavior: () => false,
+                passed: false,
+                details: `Error: ${error}`
+            };
+        }
     }
 
     /**
      * Test control AI behavior patterns
      */
     private async testControlBehavior(): Promise<AIBehaviorTest> {
-        const control = this.strategies.get('control')!;
+        const control = this.strategies.get('CONTROL')!;
         const mockGameState = this.createMockGameState();
         const player = mockGameState.players.player1;
 
@@ -328,10 +362,10 @@ export class AIVsAITestFramework {
         
         // Control AI should prioritize removal and card advantage
         const hasRemoval = actions.some(action => 
-            action.type === 'play_card' && action.reasoning.includes('removal')
+            action.type === 'PLAY_CARD' && action.reasoning && action.reasoning.includes('removal')
         );
         const hasCardAdvantage = actions.some(action => 
-            action.reasoning.includes('card advantage') || action.reasoning.includes('draw')
+            action.reasoning && (action.reasoning.includes('card advantage') || action.reasoning.includes('draw'))
         );
 
         return {
@@ -340,7 +374,7 @@ export class AIVsAITestFramework {
             setup: () => {},
             expectedBehavior: () => hasRemoval || hasCardAdvantage,
             passed: hasRemoval || hasCardAdvantage,
-            details: `Found ${actions.filter(a => a.reasoning.includes('removal')).length} removal actions, ${actions.filter(a => a.reasoning.includes('card')).length} card advantage actions`
+            details: `Found ${actions.filter(a => a.reasoning && a.reasoning.includes('removal')).length} removal actions, ${actions.filter(a => a.reasoning && a.reasoning.includes('card')).length} card advantage actions`
         };
     }
 
@@ -348,16 +382,17 @@ export class AIVsAITestFramework {
      * Test midrange AI behavior patterns
      */
     private async testMidrangeBehavior(): Promise<AIBehaviorTest> {
-        const midrange = this.strategies.get('midrange')!;
+        const midrange = this.strategies.get('MIDRANGE')!;
         const mockGameState = this.createMockGameState();
         const player = mockGameState.players.player1;
 
         const actions = midrange.generateActions(mockGameState, player);
         
         // Midrange should have balanced priorities
-        const playActions = actions.filter(a => a.type === 'play_card');
-        const avgPriority = playActions.reduce((sum, a) => sum + a.priority, 0) / playActions.length;
-        const isBalanced = avgPriority > 0.4 && avgPriority < 0.8;
+        const playActions = actions.filter(a => a.type === 'PLAY_CARD');
+        const avgPriority = playActions.length > 0 ? 
+            playActions.reduce((sum, a) => sum + (a.priority || 0), 0) / playActions.length : 0;
+        const isBalanced = avgPriority > 20 && avgPriority < 80;
 
         return {
             name: 'Midrange Behavior',
@@ -373,7 +408,7 @@ export class AIVsAITestFramework {
      * Test combo AI behavior patterns
      */
     private async testComboBehavior(): Promise<AIBehaviorTest> {
-        const combo = this.strategies.get('combo')!;
+        const combo = this.strategies.get('COMBO')!;
         const mockGameState = this.createMockGameState();
         const player = mockGameState.players.player1;
 
@@ -381,10 +416,10 @@ export class AIVsAITestFramework {
         
         // Combo AI should prioritize combo pieces and protection
         const hasComboFocus = actions.some(action => 
-            action.reasoning.includes('combo') || action.reasoning.includes('engine')
+            action.reasoning && (action.reasoning.includes('combo') || action.reasoning.includes('engine'))
         );
         const hasProtection = actions.some(action => 
-            action.reasoning.includes('protect') || action.reasoning.includes('counter')
+            action.reasoning && (action.reasoning.includes('protect') || action.reasoning.includes('counter'))
         );
 
         return {
@@ -393,7 +428,7 @@ export class AIVsAITestFramework {
             setup: () => {},
             expectedBehavior: () => hasComboFocus || hasProtection,
             passed: hasComboFocus || hasProtection,
-            details: `Found ${actions.filter(a => a.reasoning.includes('combo')).length} combo actions, ${actions.filter(a => a.reasoning.includes('protect')).length} protection actions`
+            details: `Found ${actions.filter(a => a.reasoning && a.reasoning.includes('combo')).length} combo actions, ${actions.filter(a => a.reasoning && a.reasoning.includes('protect')).length} protection actions`
         };
     }
 
@@ -465,9 +500,50 @@ export class AIVsAITestFramework {
      * Create a mock game state for testing
      */
     private createMockGameState(): GameState {
+        // Create proper avatar units
+        const player1Avatar = {
+            id: 'avatar_player1',
+            card: {
+                id: 'avatar_p1',
+                name: 'Test Avatar',
+                type: 'Avatar' as any,
+                cost: 0,
+                life: 20,
+                power: 3
+            },
+            owner: 'player1' as const,
+            position: { x: 2, y: 0 },
+            region: 'surface' as const,
+            isTapped: false,
+            damage: 0,
+            summoning_sickness: false,
+            artifacts: [],
+            modifiers: []
+        };
+
+        const player2Avatar = {
+            id: 'avatar_player2',
+            card: {
+                id: 'avatar_p2',
+                name: 'Test Avatar',
+                type: 'Avatar' as any,
+                cost: 0,
+                life: 20,
+                power: 3
+            },
+            owner: 'player2' as const,
+            position: { x: 2, y: 3 },
+            region: 'surface' as const,
+            isTapped: false,
+            damage: 0,
+            summoning_sickness: false,
+            artifacts: [],
+            modifiers: []
+        };
+
         const mockPlayer: Player = {
             id: 'player1',
-            avatar: {} as any,
+            avatar: player1Avatar,
             life: 20,
             maxLife: 20,
             atDeathsDoor: false,
@@ -490,6 +566,49 @@ export class AIVsAITestFramework {
             }
         };
 
+        const mockPlayer2: Player = {
+            id: 'player2',
+            avatar: player2Avatar,
+            life: 20,
+            maxLife: 20,
+            atDeathsDoor: false,
+            mana: 5,
+            hand: {
+                spells: this.createTestCards(),
+                sites: []
+            },
+            decks: {
+                spellbook: [],
+                atlas: []
+            },
+            cemetery: [],
+            controlledSites: [],
+            elementalAffinity: {
+                air: 2,
+                earth: 1,
+                fire: 1,
+                water: 1
+            }
+        };
+
+        // Initialize proper 5x4 grid with GridSquare structure
+        const grid: any[][] = [];
+        for (let y = 0; y < 4; y++) {
+            grid[y] = [];
+            for (let x = 0; x < 5; x++) {
+                grid[y][x] = {
+                    position: { x, y },
+                    units: [],
+                    region: 'void',
+                    isRubble: false
+                };
+            }
+        }
+
+        // Place avatars on the grid
+        grid[0][2].units.push(player1Avatar);
+        grid[3][2].units.push(player2Avatar);
+
         return {
             turn: 3,
             phase: {
@@ -497,12 +616,15 @@ export class AIVsAITestFramework {
                 step: 1,
                 activePlayer: 'player1'
             },
-            grid: Array(5).fill(null).map(() => Array(4).fill(null)),
+            grid,
             players: {
                 player1: mockPlayer,
-                player2: { ...mockPlayer, id: 'player2' }
+                player2: mockPlayer2
             },
-            units: new Map(),
+            units: new Map([
+                ['avatar_player1', player1Avatar as any],
+                ['avatar_player2', player2Avatar as any]
+            ]),
             artifacts: new Map(),
             sites: new Map(),
             storyline: [],
@@ -517,30 +639,30 @@ export class AIVsAITestFramework {
     private createTestCards(): Card[] {
         return [
             {
-                id: 'test-creature-1',
+                id: 'test-minion-1',
                 name: 'Swift Scout',
-                type: 'Creature',
+                type: 'Minion',
                 cost: 2,
                 subtypes: ['Scout'],
                 keywords: ['Swift'],
                 effect: 'When played, draw a card.'
             },
             {
-                id: 'test-spell-1',
+                id: 'test-magic-1',
                 name: 'Lightning Bolt',
-                type: 'Spell',
+                type: 'Magic',
                 cost: 1,
-                subtypes: ['Instant'],
-                effect: 'Deal 3 damage to target creature or player.'
+                subtypes: ['Magic'],
+                effect: 'Deal 3 damage to target minion or player.'
             },
             {
-                id: 'test-creature-2',
+                id: 'test-minion-2',
                 name: 'Shield Guardian',
-                type: 'Creature',
+                type: 'Minion',
                 cost: 4,
                 subtypes: ['Guardian'],
                 keywords: ['Defender'],
-                effect: 'Blocks for adjacent creatures.'
+                effect: 'Blocks for adjacent minions.'
             }
         ];
     }
@@ -648,7 +770,7 @@ export class QuickAITestRunner {
         try {
             // Run a subset of tests for quick validation
             const behaviorSuite = await framework.testAIBehaviors();
-            const quickBalance = await framework.runMatchup('aggressive', 'control', 'medium', 'medium', 5);
+            const quickBalance = await framework.runMatchupPublic('AGGRESSIVE', 'CONTROL', 'medium', 'medium', 5);
             
             const allBehaviorsPassed = behaviorSuite.insights.every(insight => insight.includes('PASS'));
             const balanceReasonable = quickBalance.length > 0;

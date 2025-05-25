@@ -171,14 +171,14 @@ class SpellParser {
         if (clause.includes('target')) {
             if (clause.includes('player')) {
                 targets.push(this.createTargetSpec('player', 1));
-            } else if (clause.includes('unit') || clause.includes('minion') || clause.includes('creature')) {
+            } else if (clause.includes('unit') || clause.includes('minion')) {
                 targets.push(this.createTargetSpec('unit', 1, this.parseTargetRestrictions(clause)));
             }
         }
         if (clause.includes('all ') || clause.includes('each ')) {
             if (clause.includes('player')) {
                 targets.push(this.createTargetSpec('player', 99));
-            } else if (clause.includes('unit') || clause.includes('minion') || clause.includes('creature')) {
+            } else if (clause.includes('unit') || clause.includes('minion')) {
                 targets.push(this.createTargetSpec('unit', 99, this.parseTargetRestrictions(clause)));
             }
         }
@@ -266,7 +266,6 @@ class SpellParser {
     private createDefaultTarget(type: 'unit' | 'player' | 'position' | 'card'): TargetSpecification {
         return this.createTargetSpec(type, 1);
     }
-
     private createTargetSpec(type: 'unit' | 'player' | 'position' | 'card', count: number, restrictions: TargetRestriction[] = []): TargetSpecification {
         return {
             type,

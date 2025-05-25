@@ -1,6 +1,7 @@
 import { GameStateManager, GameState, Player, GamePhase, Unit } from '../core/gameState';
 import { TurnEngine } from '../core/turnEngine';
-import { AIEngine, AI_STRATEGIES } from '../core/aiEngine';
+import { AIEngine } from '../core/aiEngine';
+import { AI_STRATEGIES } from '../ai/aiStrategies';
 import { CombatSystem } from '../core/combatSystem';
 import { SpellEffectSystem } from '../core/spellEffectSystem';
 import { MatchSimulator } from '../core/matchSimulator';

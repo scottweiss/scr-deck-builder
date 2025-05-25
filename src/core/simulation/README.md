@@ -129,7 +129,7 @@ src/core/simulation/
 
 ```typescript
 import { SimulationIntegration } from './src/core/simulation/simulationIntegration';
-import { AI_STRATEGIES } from './src/core/simulation/aiEngine';
+import { AI_STRATEGIES } from './src/core/simulation/ai/aiStrategies';
 
 const integration = new SimulationIntegration();
 

@@ -19,16 +19,16 @@ describe('Simulation Tests', () => {
       const fireDeck = createTestDeck('fire', 'aggro')
       const waterDeck = createTestDeck('water', 'control')
       
-      expect(fireDeck.length).toBe(40)
-      expect(waterDeck.length).toBe(40)
+      expect(fireDeck.length).toBe(81)
+      expect(waterDeck.length).toBe(81)
       
-      // Check that fire deck has fire elements
+      // Check that fire deck has fire elements in spells/sites
       const fireElements = fireDeck.filter(card => 
         card.elements?.includes(Element.Fire)
       )
       expect(fireElements.length).toBeGreaterThan(0)
       
-      // Check that water deck has water elements
+      // Check that water deck has water elements in spells/sites
       const waterElements = waterDeck.filter(card => 
         card.elements?.includes(Element.Water)
       )
@@ -38,8 +38,10 @@ describe('Simulation Tests', () => {
     it('should create baseline deck for testing', () => {
       const baseline = createBaselineDeck()
       
-      expect(baseline.length).toBe(40)
-      expect(baseline.every(card => card.productId.startsWith('baseline_'))).toBe(true)
+      expect(baseline.length).toBe(81)
+      // Check that all baseline spells/sites have correct naming
+      const spellSiteCards = baseline.filter(card => card.type !== CardType.Avatar)
+      expect(spellSiteCards.every(card => card.name.startsWith('Baseline'))).toBe(true)
       
       // Check mana curve distribution
       const manaCosts = baseline.map(card => card.mana_cost || 0)
