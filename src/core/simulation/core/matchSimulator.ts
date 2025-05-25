@@ -1,10 +1,11 @@
+import { CardType } from '../../../types/Card';
+
 import { GameState, Card, Player } from './gameState';
 import { GameStateManager } from './gameState';
 import { TurnEngine } from './turnEngine';
 import { AIEngine, AIStrategy, AI_STRATEGIES } from './aiEngine';
 import { CombatSystem } from './combatSystem';
 import { SpellEffectSystem } from './spellEffectSystem';
-import { CardType } from '../../../types/Card';
 
 export interface PlayerDeck {
     avatar: Card;

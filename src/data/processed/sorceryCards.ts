@@ -19,9 +19,7 @@
 
 import { RawCard, Card, CardSet } from '../../types/Card';
 import { SYSTEM_MODE } from '../../config';
-
-// Import utils for card transformation
-const utils = require('../../utils/utils');
+import * as utils from '../../utils/utils';
 
 // Compressed card data structure to reduce file size
 // Each card is stored as an array with a consistent index map
@@ -52,7 +50,7 @@ async function loadCards(): Promise<RawCard[]> {
   
   try {
     // Load the compressed card data from the generated JavaScript file
-    const compressedData = require('./sorceryCards.compressed');
+    const compressedData = await import('./sorceryCards.compressed');
     
     // Decompress the card data into full objects
     _loadedCards = compressedData.cards.map((cardArray: any[]) => {
@@ -79,7 +77,7 @@ async function loadCards(): Promise<RawCard[]> {
  */
 export async function getCardCount(): Promise<number> {
   try {
-    const compressedData = require('./sorceryCards.compressed');
+    const compressedData = await import('./sorceryCards.compressed');
     return compressedData.cards.length;
   } catch (error) {
     console.error("Failed to get card count:", error);

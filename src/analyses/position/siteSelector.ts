@@ -5,6 +5,7 @@
 
 import { Card, Element } from '../../types/Card';
 import { filterOutRubble, getCardElementalAffinity } from '../../utils/utils';
+
 import { analyzeElementalRequirements } from './elementRequirementAnalyzer';
 
 interface SiteSelectionOptions {

@@ -3,7 +3,6 @@
  * Handles parsing and execution of spell effects
  */
 
-import { GameState, Card, Unit, Position, GameEvent, Player } from './gameState';
 import {
     SpellEffect,
     TargetSpecification,
@@ -12,6 +11,8 @@ import {
     SpellTarget,
     SpellExecutionResult
 } from '../types/spellEffectTypes';
+
+import { GameState, Card, Unit, Position, GameEvent, Player } from './gameState';
 import { spellParser } from './spellParser';
 
 export class SpellEffectSystem {

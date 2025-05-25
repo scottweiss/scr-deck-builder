@@ -1,8 +1,7 @@
 import { Card } from '../types/Card';
 import { Deck } from '../types/Deck';
-
-const deckExporter = require('../core/deck/builder/deckExporter');
-const deckStats = require('../analyses/synergy/deckStats');
+import * as deckExporter from '../core/deck/builder/deckExporter';
+import * as deckStats from '../analyses/synergy/deckStats';
 
 export interface ExportOptions {
     exportJson: boolean;

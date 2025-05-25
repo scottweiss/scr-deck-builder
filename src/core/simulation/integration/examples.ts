@@ -3,9 +3,10 @@
  */
 
 import { Card, Element, CardType } from '../../../types/Card';
-import { SimulationIntegration, DeckSimulationConfig } from './simulationIntegration';
 import { AI_STRATEGIES } from '../core/aiEngine';
 import { SimulationTestFramework } from '../testing/testFramework';
+
+import { SimulationIntegration, DeckSimulationConfig } from './simulationIntegration';
 
 // Mock implementations for missing components
 class MockMatchSimulator {

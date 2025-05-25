@@ -1,7 +1,6 @@
 import { Card, RawCard, Element, CardType, CardRarity } from '../types/Card';
 import { parseThreshold } from '../utils/utils';
-
-const utils = require('../utils/utils');
+import * as utils from '../utils/utils';
 
 export interface ProcessedCardData {
     uniqueCards: Card[];

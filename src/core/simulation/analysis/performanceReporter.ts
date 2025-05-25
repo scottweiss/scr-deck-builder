@@ -5,6 +5,7 @@ import {
     ConsistencyReport,
     DeckComposition
 } from '../types/deckTestTypes';
+
 import { analyzeDeckComposition } from './deckAnalyzer';
 
 /**

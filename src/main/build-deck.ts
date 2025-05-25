@@ -2,14 +2,15 @@ import * as path from 'path';
 import { performance } from 'perf_hooks';
 import * as fs from 'fs';
 
-// Import configuration
 import config from '../config';
-
-// Import types
 import { Card, CardType, Element as ElementEnum } from '../types/Card';
 import { Deck } from '../types/Deck';
+import * as utils from '../utils/utils';
+import * as deckStats from '../analyses/synergy/deckStats';
+import * as siteSelector from '../analyses/position/siteSelector';
+import * as deckBuilder from '../core/deck/builder/deckBuilder';
+import * as synergyCalculator from '../analyses/synergy/synergyCalculator';
 
-// Import modular functions
 import { parseCommandLineArgs, BuildOptions } from './commandLineParser';
 import { processCardData } from './cardProcessor';
 import { selectAvatar } from './avatarSelector';
@@ -18,11 +19,6 @@ import { generateDeckReport, DeckStatsData } from './deckReporting';
 import { exportDeck, logCardDistribution } from './deckExportManager';
 
 // Import remaining modules
-const utils = require('../utils/utils');
-const deckStats = require('../analyses/synergy/deckStats');
-const siteSelector = require('../analyses/position/siteSelector');
-const deckBuilder = require('../core/deck/builder/deckBuilder');
-const synergyCalculator = require('../analyses/synergy/synergyCalculator');
 
 interface CardCounts {
     [cardName: string]: number;

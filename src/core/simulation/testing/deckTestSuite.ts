@@ -1,32 +1,20 @@
 import { MatchSimulator, SimulationBatch } from '../core/matchSimulator';
 import { Card } from '../core/gameState';
 import { Element, CardType } from '../../../types/Card';
-
-// Import modular components
-import {
-    convertToPlayerDeck,
-    createBaselineDeck,
-    getMetaDecks
-} from './testDeckUtils';
-
 import {
     testDeckAgainstMeta,
     testDeckConsistency
 } from '../analysis/metaTester';
-
 import {
     analyzeMatchup,
     testDeckStrategies
 } from '../analysis/matchupAnalyzer';
-
 import {
     optimizeDeck
 } from '../analysis/deckOptimizer';
-
 import {
     generatePerformanceReport
 } from '../analysis/performanceReporter';
-
 import {
     DeckTestResult,
     MatchupAnalysis,
@@ -37,6 +25,12 @@ import {
     PerformanceReport,
     DeckComposition
 } from '../types/deckTestTypes';
+
+import {
+    convertToPlayerDeck,
+    createBaselineDeck,
+    getMetaDecks
+} from './testDeckUtils';
 
 /**
  * Main class for deck testing functionality

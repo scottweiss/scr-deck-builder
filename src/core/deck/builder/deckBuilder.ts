@@ -7,10 +7,11 @@ import * as deckPlayability from '../../../analyses/playability/deckPlayability'
 import { calculateCardAllocation } from '../allocation/cardAllocation';
 import { analyzeCardCombos } from '../analysis/comboDetection';
 import { isUtilityArtifact, sortArtifactsWithUtilityPriority } from '../allocation/utilityArtifactPrioritizer';
+import { Combo } from '../../cards/cardCombos';
+
 import { completeDeckWithSynergyCards, addElementalFixingCards } from './deckCompletion';
 import { isComboCard, sortMinions, sortAuras, sortMagics } from './cardSorting';
 import { selectMinions, selectAuras, selectMagics } from './cardSelection';
-import { Combo } from '../../cards/cardCombos';
 
 // Re-export functions for backward compatibility
 export { calculateCardAllocation } from '../allocation/cardAllocation';

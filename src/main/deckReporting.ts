@@ -1,7 +1,6 @@
 import { Card } from '../types/Card';
-
-const deckStats = require('../analyses/synergy/deckStats');
-const synergyCalculator = require('../analyses/synergy/synergyCalculator');
+import * as deckStats from '../analyses/synergy/deckStats';
+import * as synergyCalculator from '../analyses/synergy/synergyCalculator';
 
 export interface DeckStatsData {
     mana_curve: { [cost: string]: number };

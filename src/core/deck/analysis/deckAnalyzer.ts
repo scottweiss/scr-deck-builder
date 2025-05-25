@@ -1,4 +1,5 @@
 import { Card } from '../../../types/Card';
+
 import { ManaCostDistribution, calculateCurrentCurve } from './manaCurveAnalyzer';
 
 /**

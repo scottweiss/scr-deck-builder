@@ -1,13 +1,14 @@
 import { Card } from '../core/gameState';
 import { SimulationConfig } from '../core/matchSimulator';
 import { AI_STRATEGIES } from '../core/aiEngine';
-import { calculateFavorability } from './deckAnalyzer';
-import { identifyMatchupFactors } from './deckAnalyzer';
 import { convertToPlayerDeck } from '../testing/testDeckUtils';
 import {
     MatchupAnalysis,
     MatchupResult
 } from '../types/deckTestTypes';
+
+import { calculateFavorability } from './deckAnalyzer';
+import { identifyMatchupFactors } from './deckAnalyzer';
 
 /**
  * Run matchup analysis between two decks

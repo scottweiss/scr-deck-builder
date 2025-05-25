@@ -2,8 +2,9 @@
  * Turn-based game engine for Sorcery: Contested Realm match simulation
  */
 
-import { GameStateManager, GameState, Player, Unit, Position } from './gameState';
 import { Card } from '../../../types/Card';
+
+import { GameStateManager, GameState, Player, Unit, Position } from './gameState';
 
 export interface TurnAction {
   type: 'play_site' | 'cast_spell' | 'move_attack' | 'activate_ability' | 'pass';

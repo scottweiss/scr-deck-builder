@@ -13,8 +13,10 @@
  */
 
 import fs from 'fs';
-import { parse } from 'csv-parse/sync';
 import path from 'path';
+
+import { parse } from 'csv-parse/sync';
+
 import { getConfig } from './config';
 
 /**

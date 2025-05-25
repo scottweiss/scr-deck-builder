@@ -2,20 +2,22 @@ import { Card } from '../core/gameState';
 import { BatchResult, SimulationConfig } from '../core/matchSimulator';
 import { AI_STRATEGIES } from '../core/aiEngine';
 import { convertToPlayerDeck } from '../testing/testDeckUtils';
-import { analyzeConsistency } from './consistencyAnalyzer';
 import {
     DeckTestResult,
     MetaAnalysisResult,
     MatchupResult,
     ConsistencyReport
 } from '../types/deckTestTypes';
+import { SYSTEM_MODE } from '../../../config';
+
+import { analyzeConsistency } from './consistencyAnalyzer';
 import {
     classifyPerformance,
     identifyStrengths,
     identifyWeaknesses,
     generateRecommendations
 } from './deckAnalyzer';
-import { SYSTEM_MODE } from '../../../config';
+
 
 /**
  * Test a deck against the meta

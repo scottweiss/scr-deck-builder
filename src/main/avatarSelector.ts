@@ -1,7 +1,6 @@
 import { Card, Element as ElementEnum } from '../types/Card';
-
-const utils = require('../utils/utils');
-const cardAnalysis = require('../core/cards/cardAnalysis');
+import * as utils from '../utils/utils';
+import * as cardAnalysis from '../core/cards/cardAnalysis';
 
 export interface AvatarSelectionResult {
     selectedAvatar: Card | undefined;

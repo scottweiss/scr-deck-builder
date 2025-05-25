@@ -1,16 +1,14 @@
 import { Card } from '../../../types/Card';
-import { calculateSynergy } from '../../../analyses/synergy/synergyCalculator';
+import { calculateSynergy, getDeckAnalysis } from '../../../analyses/synergy/synergyCalculator';
 import { identifyCardMechanics, canIncludeWithAvatar, evaluateRegionalStrategy } from '../../cards/cardAnalysis';
 import { analyzeElementalRequirements, calculateElementalDeficitContribution } from '../../../analyses/position/elementRequirementAnalyzer';
-
-// Import modular functions
+import * as cardCombos from '../../cards/cardCombos';
 import { 
     getMaxCopiesForRarity, 
     addCardWithCopies, 
     enforceRarityLimits,
     CopiesInDeck 
 } from '../allocation/rarityManager';
-
 import {
     getIdealManaCurve,
     calculateCurrentCurve,
@@ -22,6 +20,7 @@ import {
     ManaCostDistribution,
     CriticalManaCosts
 } from '../analysis/manaCurveAnalyzer';
+import { logDeckPlayabilityAnalysis } from '../analysis/deckAnalyzer';
 
 import {
     findCandidatesOfCost,
@@ -31,7 +30,6 @@ import {
     removeCardsStrategically
 } from './cardSelector';
 
-import { logDeckPlayabilityAnalysis } from '../analysis/deckAnalyzer';
 
 // Re-export functions for backward compatibility
 export { getMaxCopiesForRarity, addCardWithCopies, enforceRarityLimits };
@@ -55,10 +53,6 @@ export function optimizeDeck(
     preferredArchetype?: string,
     sites: Card[] = [] // Add optional sites parameter
 ): Card[] {
-    // Get synergy calculator and card combo system
-    const synergyCalculator = require('../../../analyses/synergy/synergyCalculator');
-    const cardCombos = require('../../cards/cardCombos');
-    
     // ENHANCEMENT: Analyze elemental requirements first
     console.log("Analyzing elemental requirements and thresholds...");
     const elementalAnalysis = analyzeElementalRequirements(selectedSpells, sites); // Pass provided sites for elemental affinity
@@ -74,7 +68,7 @@ export function optimizeDeck(
     }
     
     // Analyze the current deck for combos and archetypes
-    const deckAnalysis = synergyCalculator.getDeckAnalysis(selectedSpells);
+    const deckAnalysis = getDeckAnalysis(selectedSpells);
     const combos = deckAnalysis?.combos || [];
     const archetypes = deckAnalysis?.archetypes || [];
     

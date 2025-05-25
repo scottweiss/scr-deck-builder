@@ -1,4 +1,5 @@
 import { parse } from 'csv-parse/sync';
+
 import { RawCard, Card, Element, CardRarity, ProcessedCard, CardSet, CardType } from '../types/Card'; // Added CardSet, CardType
 
 export function getCardAttribute(card: RawCard | ProcessedCard | null | undefined, attributeName: string): string {
@@ -90,8 +91,8 @@ export function extractKeywords(text: string): string[] {
 }
 
 export async function readCardData(dataSets?: string[]): Promise<Card[]> { // Fixed return type to Card[]
-    // Require here to avoid circular dependency at module load
-    const sorceryCards = require('../data/processed/sorceryCards');
+    // Import here to avoid circular dependency at module load
+    const sorceryCards = await import('../data/processed/sorceryCards');
     
     let cards: Card[] = [];
     if (dataSets && Array.isArray(dataSets)) {

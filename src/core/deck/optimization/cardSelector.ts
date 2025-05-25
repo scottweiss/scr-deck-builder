@@ -3,9 +3,10 @@ import { SYSTEM_MODE } from '../../../config';
 import { calculateSynergy } from '../../../analyses/synergy/synergyCalculator';
 import { identifyCardMechanics, canIncludeWithAvatar, evaluateRegionalStrategy } from '../../cards/cardAnalysis';
 import { analyzeElementalRequirements, calculateElementalDeficitContribution } from '../../../analyses/position/elementRequirementAnalyzer';
-import { getMaxCopiesForRarity } from './deckOptimizer';
 import { debugElementalThresholds } from '../../simulation/analysis/metaTester';
 import { getCardThreshold } from '../../../utils/utils'; // Added import
+
+import { getMaxCopiesForRarity } from './deckOptimizer';
 
 /**
  * Find candidate cards of a specific mana cost
