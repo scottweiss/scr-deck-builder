@@ -50,7 +50,7 @@ export class MovementEngine {
     const card = this.findCardById(cardId, gameState);
     if (!card) return [];
 
-    const currentPosition = this.boardState.getCardPosition(cardId);
+    const currentPosition = this.getCardPosition(cardId, gameState);
     if (!currentPosition) return [];
 
     const speed = this.getCardSpeed(card, gameState);
@@ -109,7 +109,7 @@ export class MovementEngine {
    * Execute a movement action
    */
   executeMovement(cardId: string, targetPosition: BoardPosition, gameState: GameState): boolean {
-    const currentPosition = this.boardState.getCardPosition(cardId);
+    const currentPosition = this.getCardPosition(cardId, gameState);
     if (!currentPosition) return false;
 
     const path = this.calculateMovementPath(currentPosition, targetPosition, cardId, gameState);
@@ -122,7 +122,7 @@ export class MovementEngine {
     if (path.cost > speed) return false;
 
     // Execute the movement
-    this.boardState.moveCard(cardId, targetPosition);
+    if (!this.moveCard(cardId, targetPosition, gameState)) return false;
     
     // Apply movement effects
     this.applyMovementEffects(cardId, currentPosition, targetPosition, gameState);
@@ -137,7 +137,7 @@ export class MovementEngine {
    * Get card movement speed
    */
   private getCardSpeed(card: Card, gameState: GameState): number {
-    let baseSpeed = card.stats?.speed || 1;
+    let baseSpeed = 1; // Default speed for all cards
     
     // Apply movement modifiers
     const rules = this.movementRules.get(card.id) || [];
@@ -289,31 +289,6 @@ export class MovementEngine {
   }
 
   /**
-   * Helper method to find card by ID
-   */
-  private findCardById(cardId: string, gameState: GameState): Card | null {
-    // Search in both players' areas
-    for (const player of [gameState.player1, gameState.player2]) {
-      // Check creatures on board
-      for (const creature of player.creatures) {
-        if (creature.id === cardId) return creature;
-      }
-      
-      // Check artifacts
-      for (const artifact of player.artifacts) {
-        if (artifact.id === cardId) return artifact;
-      }
-      
-      // Check sites
-      for (const site of player.sites) {
-        if (site.id === cardId) return site;
-      }
-    }
-    
-    return null;
-  }
-
-  /**
    * Reset movement engine state
    */
   reset(): void {
@@ -326,7 +301,7 @@ export class MovementEngine {
    */
   getMovementSummary(cardId: string, gameState: GameState): object {
     const card = this.findCardById(cardId, gameState);
-    const position = this.boardState.getCardPosition(cardId);
+    const position = this.getCardPosition(cardId, gameState);
     const speed = card ? this.getCardSpeed(card, gameState) : 0;
     const range = this.getMovementRange(cardId, gameState);
     
@@ -339,6 +314,78 @@ export class MovementEngine {
       movementRules: this.movementRules.get(cardId) || [],
       activeRestrictions: this.restrictions.length
     };
+  }
+
+  /**
+   * Get card position from game state
+   */
+  private getCardPosition(cardId: string, gameState: GameState): BoardPosition | null {
+    // Search through the game board
+    if (gameState.board) {
+      for (let row = 0; row < gameState.board.length; row++) {
+        for (let col = 0; col < gameState.board[row].length; col++) {
+          const card = gameState.board[row][col];
+          if (card && card.id === cardId) {
+            return { row, col };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Find a card by ID in the game state
+   */
+  private findCardById(cardId: string, gameState: GameState): Card | null {
+    // Search through all players' battlefield and hand
+    for (const player of gameState.players) {
+      // Check battlefield
+      const cardInBattlefield = player.battlefield.find(card => card.id === cardId);
+      if (cardInBattlefield) return cardInBattlefield;
+      
+      // Check hand
+      const cardInHand = player.hand.find(card => card.id === cardId);
+      if (cardInHand) return cardInHand;
+    }
+    
+    // Check board positions
+    if (gameState.board) {
+      for (const row of gameState.board) {
+        for (const card of row) {
+          if (card && card.id === cardId) {
+            return card;
+          }
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Move a card to a new position (placeholder implementation)
+   */
+  private moveCard(cardId: string, targetPosition: BoardPosition, gameState: GameState): boolean {
+    // This would integrate with the actual board state management
+    // For now, return true as a placeholder
+    return true;
+  }
+
+  /**
+   * Apply movement effects (placeholder implementation)
+   */
+  private applyMovementEffects(cardId: string, from: BoardPosition, to: BoardPosition, gameState: GameState): void {
+    // Apply any effects that trigger on movement
+    // Placeholder implementation
+  }
+
+  /**
+   * Trigger movement-related events (placeholder implementation)
+   */
+  private triggerMovementEvents(cardId: string, path: MovementPath, gameState: GameState): void {
+    // Trigger any events related to movement
+    // Placeholder implementation
   }
 
   // Private helper methods

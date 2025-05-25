@@ -152,9 +152,6 @@ export class CombatPhase {
 
       this.combatState.attackers.push(declaration);
       
-      // Cache for efficiency
-      this.attackerCache.set(attackerId, attacker);
-      
       // Tap the attacker (unless it has vigilance)
       if (!attacker.keywords?.includes('vigilance')) {
         this.tapCreature(attacker, gameState);
@@ -196,9 +193,6 @@ export class CombatPhase {
       };
 
       this.combatState.blockers.push(declaration);
-      
-      // Cache for efficiency
-      this.blockerCache.set(blockerId, blocker);
     }
 
     // Separate blocked and unblocked attackers
@@ -216,6 +210,8 @@ export class CombatPhase {
   initiateCombat(activePlayer: string, gameState: GameState): CombatState {
     return this.startCombatPhase(activePlayer, gameState);
   }
+
+
 
   /**
    * Assign combat damage
@@ -286,23 +282,6 @@ export class CombatPhase {
   }
 
   /**
-   * Validate combat step transition
-   */
-  validateCombatStep(fromStep: string, toStep: string, gameState: GameState): boolean {
-    const validTransitions: Map<string, string[]> = new Map([
-      ['beginning', ['declare_attackers']],
-      ['declare_attackers', ['declare_blockers']],
-      ['declare_blockers', ['first_strike', 'combat_damage']],
-      ['first_strike', ['combat_damage']],
-      ['combat_damage', ['end']],
-      ['end', []]
-    ]);
-
-    const allowedSteps = validTransitions.get(fromStep) || [];
-    return allowedSteps.includes(toStep);
-  }
-
-  /**
    * Calculate combat damage for creatures
    */
   calculateCombatDamage(attackerId: string, blockerId?: string, gameState?: GameState): number {
@@ -312,15 +291,6 @@ export class CombatPhase {
     // For now, return a basic damage value
     // In full implementation, this would check power/toughness
     return 1; // Simplified implementation
-  }
-
-  /**
-   * Reset combat phase state (for cleanup)
-   */
-  reset(): void {
-    this.combatState = this.initializeCombatState();
-    this.attackerCache.clear();
-    this.blockerCache.clear();
   }
 
   // Private helper methods
@@ -417,15 +387,47 @@ export class CombatPhase {
     }
   }
 
-  private findCardById(id: string, gameState: GameState): Card | null {
-    // Check cache first
-    if (this.attackerCache.has(id)) {
-      return this.attackerCache.get(id)!;
+  private dealUnblockedDamage(attack: AttackDeclaration, gameState: GameState): void {
+    // Deal damage equal to attacker's power to the target
+    const power = this.getCreaturePower(attack.attacker);
+    
+    if (attack.target === 'player') {
+      this.dealDamageToPlayer(attack.targetId, power, gameState);
     }
-    if (this.blockerCache.has(id)) {
-      return this.blockerCache.get(id)!;
-    }
+    // Handle planeswalker damage if applicable
+  }
 
+  private dealBlockedDamage(attack: AttackDeclaration, gameState: GameState): void {
+    const blockers = this.getBlockersFor(attack.attackerId);
+    const attackerPower = this.getCreaturePower(attack.attacker);
+    const attackerToughness = this.getCreatureToughness(attack.attacker);
+
+    // Assign damage to blockers (simplified - would need damage assignment UI)
+    let remainingDamage = attackerPower;
+    
+    for (const block of blockers) {
+      const blockerToughness = this.getCreatureToughness(block.blocker);
+      const damageToBlocker = Math.min(remainingDamage, blockerToughness);
+      
+      // Deal damage to blocker
+      this.dealDamageToCreature(block.blocker, damageToBlocker);
+      
+      // Deal damage back to attacker
+      const blockerPower = this.getCreaturePower(block.blocker);
+      this.dealDamageToCreature(attack.attacker, blockerPower);
+      
+      remainingDamage -= damageToBlocker;
+      
+      if (remainingDamage <= 0) break;
+    }
+  }
+
+  private checkCreatureDestruction(gameState: GameState): void {
+    // Check all creatures in combat for lethal damage
+    // Remove destroyed creatures and trigger death triggers
+  }
+
+  private findCardById(id: string, gameState: GameState): Card | null {
     // Find a card by ID in the game state
     for (const player of gameState.players) {
       const card = player.battlefield.find(c => c.id === id);
@@ -461,6 +463,9 @@ export class CombatPhase {
     // Mark damage on creature
   }
 
+  /**
+   * Update blocked and unblocked attackers
+   */
   private updateBlockedAttackers(): void {
     this.combatState.blocked = [];
     this.combatState.unblocked = [];
@@ -478,12 +483,18 @@ export class CombatPhase {
     }
   }
 
+  /**
+   * Assign damage for unblocked attacker
+   */
   private assignAttackerDamage(attacker: AttackDeclaration, gameState: GameState): void {
     // Assign damage to defending player or planeswalker
     const damage = this.calculateCombatDamage(attacker.attackerId, undefined, gameState);
     console.log(`Assigning ${damage} damage from ${attacker.attackerId} to ${attacker.target}`);
   }
 
+  /**
+   * Assign damage for blocked combat
+   */
   private assignBlockedCombatDamage(attacker: AttackDeclaration, gameState: GameState): void {
     const blockers = this.getBlockersFor(attacker.attackerId);
     const attackerDamage = this.calculateCombatDamage(attacker.attackerId, undefined, gameState);
@@ -491,12 +502,26 @@ export class CombatPhase {
     console.log(`Assigning blocked combat damage: ${attackerDamage} from ${attacker.attackerId}`);
   }
 
+  /**
+   * Get blockers for an attacker
+   */
   private getBlockersFor(attackerId: string): BlockDeclaration[] {
     return this.combatState.blockers.filter(blocker => blocker.attackerId === attackerId);
   }
 
+  /**
+   * Find creature by ID in game state
+   */
   private findCreatureById(creatureId: string, gameState: GameState): Card | null {
     return this.findCardById(creatureId, gameState);
+  }
+
+  /**
+   * Trigger end of combat effects
+   */
+  private triggerEndOfCombat(gameState: GameState): void {
+    // Trigger any end of combat abilities
+    console.log('End of combat triggered');
   }
 }
 

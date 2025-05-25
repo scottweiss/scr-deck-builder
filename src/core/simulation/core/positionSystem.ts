@@ -349,6 +349,107 @@ export class PositionSystem {
     return validation.valid;
   }
 
+  /**
+   * Check adjacency between two positions
+   */
+  checkAdjacency(position1: BoardPosition, position2: BoardPosition): boolean {
+    const rowDiff = Math.abs(position1.row - position2.row);
+    const colDiff = Math.abs(position1.col - position2.col);
+    
+    // Adjacent means exactly one step away (Manhattan distance = 1)
+    return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+  }
+
+  /**
+   * Check placement restrictions for a card at a position
+   */
+  checkPlacementRestrictions(
+    card: Card,
+    position: BoardPosition,
+    controller: Player,
+    gameState: GameState
+  ): PlacementRestriction[] {
+    const restrictions: PlacementRestriction[] = [];
+
+    // Check card type specific restrictions
+    switch (card.type) {
+      case 'Site':
+        const playerSites = this.getPlayerCards(controller.id)
+          .filter(pc => pc.card.type === 'Site');
+        
+        if (playerSites.length === 0) {
+          // First site must be at starting position
+          if (!this.isStartingPosition(position, controller.id)) {
+            restrictions.push({
+              type: 'site_required',
+              value: 'starting_position'
+            });
+          }
+        } else {
+          // Must be adjacent to existing site
+          const adjacentToSite = playerSites.some(site => 
+            this.checkAdjacency(position, site.position)
+          );
+          
+          if (!adjacentToSite) {
+            restrictions.push({
+              type: 'adjacent_to',
+              value: 'friendly_site'
+            });
+          }
+        }
+        break;
+
+      case 'Creature':
+        const friendlySites = this.getPlayerCards(controller.id)
+          .filter(pc => pc.card.type === 'Site');
+        
+        const nearSite = friendlySites.some(site => {
+          const distance = this.boardState.getDistance(position, site.position);
+          return distance <= 1;
+        });
+        
+        if (!nearSite) {
+          restrictions.push({
+            type: 'adjacent_to',
+            value: 'friendly_site'
+          });
+        }
+        break;
+
+      case 'Avatar':
+        // Must be placed on a site
+        const siteAtPosition = this.boardState.getCardAt(position, gameState.board);
+        if (!siteAtPosition || siteAtPosition.type !== 'Site') {
+          restrictions.push({
+            type: 'site_required'
+          });
+        } else {
+          // Must be friendly site
+          const siteController = this.positionedCards.get(siteAtPosition.id)?.controller;
+          if (siteController !== controller.id) {
+            restrictions.push({
+              type: 'site_required',
+              value: 'friendly'
+            });
+          }
+        }
+        break;
+    }
+
+    return restrictions;
+  }
+
+  /**
+   * Reset position system (for testing/cleanup)
+   */
+  reset(): void {
+    this.positionedCards.clear();
+    this.positionRules = [];
+    this.placementHistory = [];
+    this.initializePositionRules();
+  }
+
   // Private helper methods
 
   private initializePositionRules(): void {
@@ -516,6 +617,7 @@ export class PositionSystem {
     // Trigger "when removed" or "leaves the battlefield" effects
     // This would integrate with the effect parser
   }
+
 }
 
 export default PositionSystem;
