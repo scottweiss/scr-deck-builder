@@ -18,9 +18,11 @@ export function convertToPlayerDeck(cards: Card[]): PlayerDeck {
     while (sites.length < 30) {
         sites.push(createMockSite());
     }
-    // PlayerDeck: avatar is string (productId), cards is flat array
+    // PlayerDeck: avatar is Card, spells and sites are arrays
     return {
-        avatar: avatarCard.productId || avatarCard.name,
+        avatar: avatarCard,
+        spells,
+        sites,
         cards: [avatarCard, ...spells, ...sites]
     };
 }

@@ -10,7 +10,7 @@ import { MatchSimulator, SimulationConfig } from '../core/matchSimulator';
 import { AI_STRATEGIES } from '../ai/aiStrategies';
 import { DifficultyManager, AIDifficulty } from '../ai/difficultyManager';
 import { AIStrategy } from '../ai/aiStrategy';
-import { Card } from '../../../types/card-types';
+import { Card, CardType, CardRarity } from '../../../types/Card';
 
 export interface AIMatchResult {
     winner: 'player1' | 'player2' | 'draw';
@@ -506,10 +506,38 @@ export class AIVsAITestFramework {
             card: {
                 id: 'avatar_p1',
                 name: 'Test Avatar',
-                type: 'Avatar' as any,
+                type: CardType.Avatar,
                 cost: 0,
+                mana_cost: 0,
+                text: 'Test avatar',
+                elements: [],
+                power: 3,
                 life: 20,
-                power: 3
+                rarity: CardRarity.Unique,
+                baseName: 'Test Avatar',
+                imageUrl: '',
+                categoryId: '',
+                groupId: '',
+                url: '',
+                modifiedOn: '',
+                productId: 'avatar_p1',
+                cleanName: 'Test Avatar',
+                imageCount: '',
+                extRarity: '',
+                extDescription: '',
+                extCost: '',
+                extThreshold: '',
+                extElement: '',
+                extTypeLine: '',
+                extCardCategory: '',
+                extCardType: '',
+                subTypeName: '',
+                extPowerRating: '',
+                extCardSubtype: '',
+                extFlavorText: '',
+                extDefensePower: '',
+                extLife: '',
+                setName: 'Beta'
             },
             owner: 'player1' as const,
             position: { x: 2, y: 0 },
@@ -526,10 +554,38 @@ export class AIVsAITestFramework {
             card: {
                 id: 'avatar_p2',
                 name: 'Test Avatar',
-                type: 'Avatar' as any,
+                type: CardType.Avatar,
                 cost: 0,
+                mana_cost: 0,
+                text: 'Test avatar',
+                elements: [],
+                power: 3,
                 life: 20,
-                power: 3
+                rarity: CardRarity.Unique,
+                baseName: 'Test Avatar',
+                imageUrl: '',
+                categoryId: '',
+                groupId: '',
+                url: '',
+                modifiedOn: '',
+                productId: 'avatar_p2',
+                cleanName: 'Test Avatar',
+                imageCount: '',
+                extRarity: '',
+                extDescription: '',
+                extCost: '',
+                extThreshold: '',
+                extElement: '',
+                extTypeLine: '',
+                extCardCategory: '',
+                extCardType: '',
+                subTypeName: '',
+                extPowerRating: '',
+                extCardSubtype: '',
+                extFlavorText: '',
+                extDefensePower: '',
+                extLife: '',
+                setName: 'Beta'
             },
             owner: 'player2' as const,
             position: { x: 2, y: 3 },
@@ -639,30 +695,109 @@ export class AIVsAITestFramework {
     private createTestCards(): Card[] {
         return [
             {
-                id: 'test-minion-1',
+                productId: 'test-minion-1',
                 name: 'Swift Scout',
-                type: 'Minion',
+                type: CardType.Minion,
                 cost: 2,
-                subtypes: ['Scout'],
-                keywords: ['Swift'],
-                effect: 'When played, draw a card.'
+                mana_cost: 2,
+                text: 'When played, draw a card.',
+                elements: [],
+                power: 1,
+                life: 1,
+                rarity: CardRarity.Common,
+                baseName: 'Swift Scout',
+                imageUrl: '',
+                categoryId: '',
+                groupId: '',
+                url: '',
+                modifiedOn: '',
+                cleanName: 'Swift Scout',
+                imageCount: '',
+                extRarity: '',
+                extDescription: '',
+                extCost: '',
+                extThreshold: '',
+                extElement: '',
+                extTypeLine: '',
+                extCardCategory: '',
+                extCardType: '',
+                subTypeName: '',
+                extPowerRating: '',
+                extCardSubtype: '',
+                extFlavorText: '',
+                extDefensePower: '',
+                extLife: '',
+                setName: 'Beta'
             },
             {
-                id: 'test-magic-1',
+                productId: 'test-magic-1',
                 name: 'Lightning Bolt',
-                type: 'Magic',
+                type: CardType.Magic,
                 cost: 1,
-                subtypes: ['Magic'],
-                effect: 'Deal 3 damage to target minion or player.'
+                mana_cost: 1,
+                text: 'Deal 3 damage to target minion or player.',
+                elements: [],
+                power: 0,
+                life: 0,
+                rarity: CardRarity.Common,
+                baseName: 'Lightning Bolt',
+                imageUrl: '',
+                categoryId: '',
+                groupId: '',
+                url: '',
+                modifiedOn: '',
+                cleanName: 'Lightning Bolt',
+                imageCount: '',
+                extRarity: '',
+                extDescription: '',
+                extCost: '',
+                extThreshold: '',
+                extElement: '',
+                extTypeLine: '',
+                extCardCategory: '',
+                extCardType: '',
+                subTypeName: '',
+                extPowerRating: '',
+                extCardSubtype: '',
+                extFlavorText: '',
+                extDefensePower: '',
+                extLife: '',
+                setName: 'Beta'
             },
             {
-                id: 'test-minion-2',
+                productId: 'test-minion-2',
                 name: 'Shield Guardian',
-                type: 'Minion',
+                type: CardType.Minion,
                 cost: 4,
-                subtypes: ['Guardian'],
-                keywords: ['Defender'],
-                effect: 'Blocks for adjacent minions.'
+                mana_cost: 4,
+                text: 'Blocks for adjacent minions.',
+                elements: [],
+                power: 2,
+                life: 4,
+                rarity: CardRarity.Common,
+                baseName: 'Shield Guardian',
+                imageUrl: '',
+                categoryId: '',
+                groupId: '',
+                url: '',
+                modifiedOn: '',
+                cleanName: 'Shield Guardian',
+                imageCount: '',
+                extRarity: '',
+                extDescription: '',
+                extCost: '',
+                extThreshold: '',
+                extElement: '',
+                extTypeLine: '',
+                extCardCategory: '',
+                extCardType: '',
+                subTypeName: '',
+                extPowerRating: '',
+                extCardSubtype: '',
+                extFlavorText: '',
+                extDefensePower: '',
+                extLife: '',
+                setName: 'Beta'
             }
         ];
     }
@@ -677,7 +812,6 @@ export class AIVsAITestFramework {
         const deck: Card[] = [];
         for (let i = 0; i < 40; i++) {
             const card = { ...baseCards[i % baseCards.length] };
-            card.id = `${card.id}-${i}`;
             deck.push(card);
         }
         
@@ -770,7 +904,7 @@ export class QuickAITestRunner {
         try {
             // Run a subset of tests for quick validation
             const behaviorSuite = await framework.testAIBehaviors();
-            const quickBalance = await framework.runMatchupPublic('AGGRESSIVE', 'CONTROL', 'medium', 'medium', 5);
+            const quickBalance = await framework.runMatchupPublic('aggressive', 'control', 'medium', 'medium', 5);
             
             const allBehaviorsPassed = behaviorSuite.insights.every(insight => insight.includes('PASS'));
             const balanceReasonable = quickBalance.length > 0;

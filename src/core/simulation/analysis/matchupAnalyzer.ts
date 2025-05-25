@@ -1,4 +1,4 @@
-import { Card } from '../core/gameState';
+import { Card } from '../../../types/Card';
 import { SimulationConfig } from '../core/matchSimulator';
 import { AI_STRATEGIES } from '../ai/aiStrategies';
 import { convertToPlayerDeck } from '../testing/testDeckUtils';

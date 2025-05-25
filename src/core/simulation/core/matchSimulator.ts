@@ -1,6 +1,6 @@
-import { CardType } from '../../../types/Card';
+import { CardType, Card } from '../../../types/Card';
 
-import { GameState, Card, Player } from './gameState';
+import { GameState, Player } from './gameState';
 import { GameStateManager } from './gameState';
 import { TurnEngine } from './turnEngine';
 import { AIEngine } from './aiEngine';
@@ -284,13 +284,13 @@ export class MatchSimulator {
         }
 
         // Execute card effect based on type
-        if (card.type === 'Creature') {
+        if (card.type === CardType.Minion) {
             this.playUnit(gameState, card, playerId, decision.targetPosition);
             this.statistics.unitsPlayed++;
-        } else if (card.type === 'Instant' || card.type === 'Sorcery') {
+        } else if (card.type === CardType.Magic || card.type === CardType.Artifact || card.type === CardType.Aura) {
             this.playSpell(gameState, card, playerId, decision.targets || []);
             this.statistics.spellsCast++;
-        } else if (card.type === 'Site') {
+        } else if (card.type === CardType.Site) {
             this.playSite(gameState, card, playerId, decision.targetPosition);
         }
 

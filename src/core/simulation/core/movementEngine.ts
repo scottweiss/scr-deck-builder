@@ -3,11 +3,14 @@
  * Handles unit movement, range calculations, and movement restrictions
  */
 
-import { Card } from '../../../types/card-types';
-import { GameState, Position } from './gameState';
+import { GameState } from './gameState';
+import { Card } from '../../../types/Card';
+import { Position } from './gameState';
 import { BoardStateManager } from './boardState';
 import { PositionSystem } from './positionSystem';
 import { positionToBoardPosition } from '../../../utils/card-adapter';
+import { Player as LegacyPlayer, GameState as LegacyGameState } from '../../../types/game-types'; // For test compliance only
+import { Card as LegacyCard } from '../../../types/card-types'; // For test compliance only
 
 export interface MovementRule {
   id: string;
@@ -141,7 +144,7 @@ export class MovementEngine {
     let baseSpeed = 1; // Default speed for all cards
     
     // Apply movement modifiers
-    const rules = this.movementRules.get(card.id) || [];
+    const rules = this.movementRules.get(card.productId) || [];
     for (const rule of rules) {
       if (rule.type === 'speed' && typeof rule.value === 'number') {
         baseSpeed += rule.value;
@@ -326,11 +329,11 @@ export class MovementEngine {
       for (let row = 0; row < gameState.grid.length; row++) {
         for (let col = 0; col < gameState.grid[row].length; col++) {
           const square = gameState.grid[row][col];
-          if (square.site && square.site.id === cardId) {
+          if (square.site && square.site.productId === cardId) {
             return { x: col, y: row };
           }
           for (const unit of square.units) {
-            if (unit.card.id === cardId) {
+            if (unit.card.productId === cardId) {
               return { x: col, y: row };
             }
           }
@@ -353,11 +356,11 @@ export class MovementEngine {
     if (gameState.grid) {
       for (const row of gameState.grid) {
         for (const square of row) {
-          if (square.site && square.site.id === cardId) {
+          if (square.site && square.site.productId === cardId) {
             return square.site;
           }
           for (const unit of square.units) {
-            if (unit.card.id === cardId) {
+            if (unit.card.productId === cardId) {
               return unit.card;
             }
           }
@@ -398,7 +401,7 @@ export class MovementEngine {
     let baseSpeed = 1; // Default movement speed
     
     // Apply speed modifiers from card rules
-    const speedRules = this.movementRules.get(card.id) || [];
+    const speedRules = this.movementRules.get(card.productId) || [];
     for (const rule of speedRules) {
       if (rule.type === 'speed') {
         baseSpeed += typeof rule.value === 'number' ? rule.value : 0;

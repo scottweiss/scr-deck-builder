@@ -6,7 +6,7 @@ import { CombatSystem } from '../core/combatSystem';
 import { SpellEffectSystem } from '../core/spellEffectSystem';
 import { MatchSimulator } from '../core/matchSimulator';
 import { SimulationIntegration } from '../integration/simulationIntegration';
-import { Card, CardType } from '../../../types';
+import { Card, CardType } from '../../../types/Card';
 
 export interface TestResult {
   name: string;

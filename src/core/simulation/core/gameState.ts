@@ -3,11 +3,11 @@
  */
 
 import { Element } from '../../../types/Card';
-import { Card } from '../../../types/card-types';
+import { Card } from '../../../types/Card';
 import { isBaseCard, adaptBaseCardToSimCard } from '../../../utils/card-adapter';
 
 // Re-export Card type for use in other simulation modules
-export { Card } from '../../../types/card-types';
+export { Card } from '../../../types/Card';
 
 export interface Position {
   x: number; // 0-4 (5 columns)

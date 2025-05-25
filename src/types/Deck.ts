@@ -150,7 +150,8 @@ export interface PlayabilityFactor {
  * Player deck interface
  */
 export interface PlayerDeck {
-  avatar?: string;
-  cards: Card[];
-  // Add other player-specific deck properties here
+  avatar: import('./Card').Card;
+  cards: import('./Card').Card[];
+  spells: import('./Card').Card[];
+  sites: import('./Card').Card[];
 }

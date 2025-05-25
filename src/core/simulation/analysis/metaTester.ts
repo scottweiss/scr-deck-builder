@@ -1,6 +1,6 @@
-import { Card } from '../core/gameState';
+import { Card } from '../../../types/Card';
 import { BatchResult, SimulationConfig } from '../core/matchSimulator';
-import { AI_STRATEGIES } from '../core/aiEngine';
+import { AI_STRATEGIES } from '../ai/aiStrategies';
 import { convertToPlayerDeck } from '../testing/testDeckUtils';
 import {
     DeckTestResult,
