@@ -8,6 +8,7 @@ import { Player, GameState, BoardPosition } from '../../../types/game-types';
 import { BoardStateManager } from './boardState';
 import { Card as BaseCard } from '../../../types/Card';
 import { Position } from './gameState';
+import { boardPositionToPosition, positionToBoardPosition, convertSimpleBoardToGridSquare } from '../../../utils/card-adapter';
 
 export interface PositionRule {
   id: string;
@@ -84,7 +85,11 @@ export class PositionSystem {
     }
 
     // Check if position is occupied
-    if (this.boardState.isPositionOccupied(position, gameState.board)) {
+    // Convert BoardPosition to Position for boardState methods
+    const pos = boardPositionToPosition(position);
+    // Convert simple board format to GridSquare format for BoardStateManager
+    const gridBoard = convertSimpleBoardToGridSquare(gameState.board);
+    if (this.boardState.isPositionOccupied(pos, gridBoard)) {
       validation.valid = false;
       validation.errors.push('Position is already occupied');
       return validation;
@@ -155,37 +160,17 @@ export class PositionSystem {
   }
 
   /**
-   * Remove a card from the board
-   */
-  removeCard(cardId: string, gameState: GameState): boolean {
-    const positionedCard = this.positionedCards.get(cardId);
-    if (!positionedCard) {
-      return false;
-    }
-
-    // Remove from board
-    const removed = this.boardState.removeCard(positionedCard.position, gameState.board);
-    
-    if (removed) {
-      // Remove from tracking
-      this.positionedCards.delete(cardId);
-      
-      // Trigger removal effects
-      this.triggerRemovalEffects(positionedCard.card, positionedCard.position, gameState);
-    }
-
-    return removed !== null;
-  }
-
-  /**
    * Get all cards adjacent to a position
    */
   getAdjacentCards(position: BoardPosition, gameState: GameState): PositionedCard[] {
-    const adjacentPositions = this.boardState.getAdjacentPositions(position);
+    // Convert BoardPosition to Position
+    const pos = boardPositionToPosition(position);
+    const adjacentPositions = this.boardState.getAdjacentPositions(pos);
     const adjacentCards: PositionedCard[] = [];
 
     for (const adjPos of adjacentPositions) {
-      const card = this.boardState.getCardAt(adjPos, gameState.board);
+      const gridBoard = convertSimpleBoardToGridSquare(gameState.board);
+      const card = this.boardState.getCardAt(adjPos, gridBoard);
       if (card) {
         const positionedCard = this.positionedCards.get(card.id);
         if (positionedCard) {
@@ -207,14 +192,17 @@ export class PositionSystem {
     includeCenter: boolean = false
   ): PositionedCard[] {
     const cardsInRange: PositionedCard[] = [];
+    const centerPos = boardPositionToPosition(centerPosition);
 
     for (let row = 0; row < 4; row++) {
       for (let col = 0; col < 5; col++) {
         const position: BoardPosition = { row, col };
-        const distance = this.boardState.getDistance(centerPosition, position);
+        const pos = boardPositionToPosition(position);
+        const distance = this.boardState.getDistance(centerPos, pos);
 
         if (distance <= range && (includeCenter || distance > 0)) {
-          const card = this.boardState.getCardAt(position, gameState.board);
+          const gridBoard = convertSimpleBoardToGridSquare(gameState.board);
+          const card = this.boardState.getCardAt(pos, gridBoard);
           if (card) {
             const positionedCard = this.positionedCards.get(card.id);
             if (positionedCard) {
@@ -236,7 +224,10 @@ export class PositionSystem {
     position2: BoardPosition,
     gameState: GameState
   ): boolean {
-    return this.boardState.hasLineOfSight(position1, position2, gameState.board);
+    const pos1 = boardPositionToPosition(position1);
+    const pos2 = boardPositionToPosition(position2);
+    const gridBoard = convertSimpleBoardToGridSquare(gameState.board);
+    return this.boardState.hasLineOfSight(pos1, pos2, gridBoard);
   }
 
   /**
@@ -340,6 +331,122 @@ export class PositionSystem {
   }
 
   /**
+   * Apply card placement rules
+   */
+  private applyCardPlacementRules(
+    validation: PlacementValidation,
+    controller: Player,
+    gameState: GameState
+  ): void {
+    const card = validation.card;
+
+    switch (card.type) {
+      case 'Site':
+        this.applySitePlacementRules(validation, controller, gameState);
+        break;
+        
+      case 'Creature':
+        this.applyCreaturePlacementRules(validation, controller, gameState);
+        break;
+        
+      case 'Avatar':
+        this.applyAvatarPlacementRules(validation, controller, gameState);
+        break;
+        
+      default:
+        // No special placement rules for other card types
+        break;
+    }
+  }
+
+  /**
+   * Apply site placement rules
+   */
+  private applySitePlacementRules(
+    validation: PlacementValidation,
+    controller: Player,
+    gameState: GameState
+  ): void {
+    // Sites must be placed adjacent to existing sites or at starting positions
+    const playerSites = this.getPlayerCards(controller.id)
+      .filter(pc => pc.card.type === 'Site');
+
+    if (playerSites.length === 0) {
+      // First site - check starting positions
+      if (!this.isStartingPosition(validation.position, controller.id)) {
+        validation.valid = false;
+        validation.errors.push('First site must be placed at starting position');
+      }
+    } else {
+      // Additional sites must be adjacent to existing sites
+      const validationPos = boardPositionToPosition(validation.position);
+      
+      const adjacentToSite = playerSites.some(site => {
+        const sitePos = boardPositionToPosition(site.position);
+        return this.boardState.getDistance(validationPos, sitePos) === 1;
+      });
+      
+      if (!adjacentToSite) {
+        validation.valid = false;
+        validation.errors.push('Site must be adjacent to existing friendly site');
+      }
+    }
+  }
+
+  /**
+   * Apply creature placement rules
+   */
+  private applyCreaturePlacementRules(
+    validation: PlacementValidation,
+    controller: Player,
+    gameState: GameState
+  ): void {
+    // Creatures must be placed on or adjacent to friendly sites
+    const playerSites = this.getPlayerCards(controller.id)
+      .filter(pc => pc.card.type === 'Site');
+
+    const validationPos = boardPositionToPosition(validation.position);
+    
+    const validPlacement = playerSites.some(site => {
+      const sitePos = boardPositionToPosition(site.position);
+      const distance = this.boardState.getDistance(validationPos, sitePos);
+      return distance <= 1; // On the site or adjacent
+    });
+
+    if (!validPlacement) {
+      validation.valid = false;
+      validation.errors.push('Creature must be placed on or adjacent to friendly site');
+    }
+  }
+
+  /**
+   * Apply avatar placement rules
+   */
+  private applyAvatarPlacementRules(
+    validation: PlacementValidation,
+    controller: Player,
+    gameState: GameState
+  ): void {
+    // Avatars must be placed on friendly sites
+    const validationPos = boardPositionToPosition(validation.position);
+    const gridBoard = convertSimpleBoardToGridSquare(gameState.board);
+    const siteAtPosition = this.boardState.getCardAt(validationPos, gridBoard);
+    
+    if (!siteAtPosition || siteAtPosition.type !== 'Site') {
+      validation.valid = false;
+      validation.errors.push('Avatar must be placed on a site');
+      return;
+    }
+
+    // Check if site is controlled by the player
+    const siteController = this.positionedCards.get(siteAtPosition.id)?.controller;
+    if (siteController !== controller.id) {
+      validation.valid = false;
+      validation.errors.push('Avatar must be placed on friendly site');
+    }
+  }
+
+  /**
    * Check placement restrictions for a card at a position
    */
   checkPlacementRestrictions(
@@ -349,6 +456,7 @@ export class PositionSystem {
     gameState: GameState
   ): PlacementRestriction[] {
     const restrictions: PlacementRestriction[] = [];
+    const positionPos = boardPositionToPosition(position);
 
     // Check card type specific restrictions
     switch (card.type) {
@@ -366,9 +474,10 @@ export class PositionSystem {
           }
         } else {
           // Must be adjacent to existing site
-          const adjacentToSite = playerSites.some(site => 
-            this.checkAdjacency(position, site.position)
-          );
+          const adjacentToSite = playerSites.some(site => {
+            const sitePos = boardPositionToPosition(site.position);
+            return this.checkAdjacency(position, site.position);
+          });
           
           if (!adjacentToSite) {
             restrictions.push({
@@ -384,7 +493,8 @@ export class PositionSystem {
           .filter(pc => pc.card.type === 'Site');
         
         const nearSite = friendlySites.some(site => {
-          const distance = this.boardState.getDistance(position, site.position);
+          const sitePos = boardPositionToPosition(site.position);
+          const distance = this.boardState.getDistance(positionPos, sitePos);
           return distance <= 1;
         });
         
@@ -398,7 +508,8 @@ export class PositionSystem {
 
       case 'Avatar':
         // Must be placed on a site
-        const siteAtPosition = this.boardState.getCardAt(position, gameState.board);
+        const gridBoard2 = convertSimpleBoardToGridSquare(gameState.board);
+        const siteAtPosition = this.boardState.getCardAt(positionPos, gridBoard2);
         if (!siteAtPosition || siteAtPosition.type !== 'Site') {
           restrictions.push({
             type: 'site_required'
@@ -463,102 +574,6 @@ export class PositionSystem {
   private isValidBoardPosition(position: BoardPosition): boolean {
     return position.row >= 0 && position.row < 4 && 
            position.col >= 0 && position.col < 5;
-  }
-
-  private applyCardPlacementRules(
-    validation: PlacementValidation,
-    controller: Player,
-    gameState: GameState
-  ): void {
-    const card = validation.card;
-
-    switch (card.type) {
-      case 'Site':
-        this.applySitePlacementRules(validation, controller, gameState);
-        break;
-        
-      case 'Creature':
-        this.applyCreaturePlacementRules(validation, controller, gameState);
-        break;
-        
-      case 'Avatar':
-        this.applyAvatarPlacementRules(validation, controller, gameState);
-        break;
-        
-      default:
-        // No special placement rules for other card types
-        break;
-    }
-  }
-
-  private applySitePlacementRules(
-    validation: PlacementValidation,
-    controller: Player,
-    gameState: GameState
-  ): void {
-    // Sites must be placed adjacent to existing sites or at starting positions
-    const playerSites = this.getPlayerCards(controller.id)
-      .filter(pc => pc.card.type === 'Site');
-
-    if (playerSites.length === 0) {
-      // First site - check starting positions
-      if (!this.isStartingPosition(validation.position, controller.id)) {
-        validation.valid = false;
-        validation.errors.push('First site must be placed at starting position');
-      }
-    } else {
-      // Additional sites must be adjacent to existing sites
-      const adjacentToSite = playerSites.some(site => 
-        this.boardState.getDistance(validation.position, site.position) === 1
-      );
-      
-      if (!adjacentToSite) {
-        validation.valid = false;
-        validation.errors.push('Site must be adjacent to existing friendly site');
-      }
-    }
-  }
-
-  private applyCreaturePlacementRules(
-    validation: PlacementValidation,
-    controller: Player,
-    gameState: GameState
-  ): void {
-    // Creatures must be placed on or adjacent to friendly sites
-    const playerSites = this.getPlayerCards(controller.id)
-      .filter(pc => pc.card.type === 'Site');
-
-    const validPlacement = playerSites.some(site => {
-      const distance = this.boardState.getDistance(validation.position, site.position);
-      return distance <= 1; // On the site or adjacent
-    });
-
-    if (!validPlacement) {
-      validation.valid = false;
-      validation.errors.push('Creature must be placed on or adjacent to friendly site');
-    }
-  }
-
-  private applyAvatarPlacementRules(
-    validation: PlacementValidation,
-    controller: Player,
-    gameState: GameState
-  ): void {
-    // Avatars must be placed on friendly sites
-    const siteAtPosition = this.boardState.getCardAt(validation.position, gameState.board);
-    
-    if (!siteAtPosition || siteAtPosition.type !== 'Site') {
-      validation.valid = false;
-      validation.errors.push('Avatar must be placed on a site');
-      return;
-    }
-
-    // Check if site is controlled by the player
-    const siteController = this.positionedCards.get(siteAtPosition.id)?.controller;
-    if (siteController !== controller.id) {
-      validation.valid = false;
-      validation.errors.push('Avatar must be placed on friendly site');
-    }
   }
 
   private applyPositionRules(validation: PlacementValidation, gameState: GameState): void {

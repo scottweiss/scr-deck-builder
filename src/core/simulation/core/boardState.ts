@@ -700,12 +700,17 @@ export class BoardStateManager {
       return null;
     }
     
+    // Make sure the board and position are valid
+    if (!board || !board[position.y] || !board[position.y][position.x]) {
+      return null;
+    }
+    
     const square = board[position.y][position.x];
     
     // Return site if present, otherwise first unit if present
-    if (square.site) {
+    if (square && square.site) {
       return square.site;
-    } else if (square.units.length > 0) {
+    } else if (square && square.units && square.units.length > 0) {
       return square.units[0].card;
     }
     
@@ -753,27 +758,10 @@ export class BoardStateManager {
   }
 
   /**
-   * Get adjacent positions
+   * Get adjacent positions (implementation moved to public method)
+   * @deprecated Use the public method instead
    */
-  getAdjacentPositions(position: Position): Position[] {
-    const adjacentPositions: Position[] = [];
-    
-    const directions = [
-      { x: 0, y: -1 }, // Up
-      { x: 1, y: 0 },  // Right
-      { x: 0, y: 1 },  // Down
-      { x: -1, y: 0 }  // Left
-    ];
-    
-    for (const dir of directions) {
-      const newPos = { x: position.x + dir.x, y: position.y + dir.y };
-      if (this.isValidPosition(newPos)) {
-        adjacentPositions.push(newPos);
-      }
-    }
-    
-    return adjacentPositions;
-  }
+  /* Removed duplicate implementation - using public method */
 
   /**
    * Get the card's position on the board
@@ -802,9 +790,7 @@ export class BoardStateManager {
 
   /**
    * Check if a position is valid (within board bounds)
+   * @deprecated This method duplicates the public implementation and should be removed
    */
-  private isValidPosition(position: Position): boolean {
-    return position.x >= 0 && position.x < this.config.width &&
-           position.y >= 0 && position.y < this.config.height;
-  }
+  // Implementation has been moved to the public method
 }

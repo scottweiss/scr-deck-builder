@@ -280,13 +280,13 @@ export class MatchSimulator {
         }
 
         // Execute card effect based on type
-        if (card.type === CardType.Minion) {
+        if (card.type === 'Creature') {
             this.playUnit(gameState, card, playerId, decision.targetPosition);
             this.statistics.unitsPlayed++;
-        } else if (card.type === CardType.Magic) {
+        } else if (card.type === 'Instant' || card.type === 'Sorcery') {
             this.playSpell(gameState, card, playerId, decision.targets || []);
             this.statistics.spellsCast++;
-        } else if (card.type === CardType.Site) {
+        } else if (card.type === 'Site') {
             this.playSite(gameState, card, playerId, decision.targetPosition);
         }
 

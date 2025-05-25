@@ -7,10 +7,10 @@ import { PlayerDeck } from '../core/matchSimulator';
  */
 export function convertToPlayerDeck(cards: Card[]): PlayerDeck {
     // Separate cards by type
-    const avatar = cards.find(c => c.type === CardType.Avatar) || createMockAvatar();
-    const spells = cards.filter(c => c.type === CardType.Minion || c.type === CardType.Magic || 
-                                    c.type === CardType.Artifact || c.type === CardType.Aura);
-    const sites = cards.filter(c => c.type === CardType.Site);
+    const avatar = cards.find(c => c.type === 'Avatar') || createMockAvatar();
+    const spells = cards.filter(c => c.type === 'Creature' || c.type === 'Instant' || c.type === 'Sorcery' || 
+                                    c.type === 'Artifact' || c.type === 'Enchantment');
+    const sites = cards.filter(c => c.type === 'Site');
     
     // Ensure minimum deck requirements
     while (spells.length < 50) {
@@ -28,41 +28,13 @@ export function convertToPlayerDeck(cards: Card[]): PlayerDeck {
  */
 export function createMockAvatar(): Card {
     return {
-        productId: 'mock_avatar',
+        id: 'mock_avatar',
         name: 'Test Avatar',
-        cleanName: 'test_avatar',
-        imageUrl: '',
-        categoryId: '',
-        groupId: '',
-        url: '',
-        modifiedOn: '',
-        imageCount: '',
-        extRarity: 'Unique',
-        extDescription: '',
-        extCost: '0',
-        extThreshold: '',
-        extElement: 'Fire',
-        extTypeLine: 'Avatar',
-        extCardCategory: 'Avatar',
-        extCardType: 'Avatar',
-        subTypeName: '',
-        extPowerRating: '0',
-        extCardSubtype: '',
-        extFlavorText: '',
-        extDefensePower: '',
-        extLife: '20',
-        setName: 'Test',
-        type: CardType.Avatar,
-        mana_cost: 0,
-        text: 'Test avatar',
-        elements: [Element.Fire],
-        power: 0,
-        life: 20,
-        rarity: 'Unique' as any,
-        baseName: 'Test Avatar',
+        type: 'Avatar',
         cost: 0,
-        threshold: '',
-        subtype: ''
+        keywords: [],
+        subtypes: [],
+        effect: 'Test avatar with 20 life'
     };
 }
 
@@ -71,40 +43,13 @@ export function createMockAvatar(): Card {
  */
 export function createMockSpell(): Card {
     return {
-        productId: 'mock_spell',
+        id: 'mock_spell',
         name: 'Test Spell',
-        cleanName: 'test_spell',
-        imageUrl: '',
-        categoryId: '',
-        groupId: '',
-        url: '',
-        modifiedOn: '',
-        imageCount: '',
-        extRarity: 'Common',
-        extDescription: '',
-        extCost: '1',
-        extThreshold: '',
-        extElement: 'Fire',
-        extTypeLine: 'Magic',
-        extCardCategory: 'Magic',
-        extCardType: 'Magic',
-        subTypeName: '',
-        extPowerRating: '0',
-        extCardSubtype: '',
-        extFlavorText: '',
-        extDefensePower: '',
-        extLife: '',
-        setName: 'Test',
-        type: CardType.Magic,
-        mana_cost: 1,
-        text: 'Test spell',
-        elements: [Element.Fire],
-        power: 0,
-        rarity: 'Common' as any,
-        baseName: 'Test Spell',
+        type: 'Instant',
         cost: 1,
-        threshold: '',
-        subtype: ''
+        effect: 'Test spell',
+        keywords: [],
+        subtypes: []
     };
 }
 
@@ -113,40 +58,13 @@ export function createMockSpell(): Card {
  */
 export function createMockSite(): Card {
     return {
-        productId: 'mock_site',
+        id: 'mock_site',
         name: 'Test Site',
-        cleanName: 'test_site',
-        imageUrl: '',
-        categoryId: '',
-        groupId: '',
-        url: '',
-        modifiedOn: '',
-        imageCount: '',
-        extRarity: 'Common',
-        extDescription: '',
-        extCost: '0',
-        extThreshold: '',
-        extElement: 'Fire',
-        extTypeLine: 'Site',
-        extCardCategory: 'Site',
-        extCardType: 'Site',
-        subTypeName: '',
-        extPowerRating: '0',
-        extCardSubtype: '',
-        extFlavorText: '',
-        extDefensePower: '',
-        extLife: '',
-        setName: 'Test',
-        type: CardType.Site,
-        mana_cost: 0,
-        text: 'Test site',
-        elements: [Element.Fire],
-        power: 0,
-        rarity: 'Common' as any,
-        baseName: 'Test Site',
+        type: 'Site',
         cost: 0,
-        threshold: '',
-        subtype: ''
+        effect: 'Test site',
+        keywords: [],
+        subtypes: []
     };
 }
 
@@ -156,41 +74,13 @@ export function createMockSite(): Card {
 export function createBaselineDeck(): Card[] {
     // Create a balanced baseline deck for testing
     return Array(40).fill(null).map((_, i) => ({
-        productId: `baseline_${i}`,
+        id: `baseline_${i}`,
         name: `Baseline Card ${i}`,
-        cleanName: `baseline_card_${i}`,
-        imageUrl: '',
-        categoryId: '',
-        groupId: '',
-        url: '',
-        modifiedOn: '',
-        imageCount: '',
-        extRarity: 'Common',
-        extDescription: '',
-        extCost: (Math.floor(i / 8) + 1).toString(),
-        extThreshold: '',
-        extElement: 'Air',
-        extTypeLine: i % 3 === 0 ? 'Minion' : i % 3 === 1 ? 'Magic' : 'Site',
-        extCardCategory: i % 3 === 0 ? 'Minion' : i % 3 === 1 ? 'Magic' : 'Site',
-        extCardType: i % 3 === 0 ? 'Minion' : i % 3 === 1 ? 'Magic' : 'Site',
-        subTypeName: '',
-        extPowerRating: i % 3 === 0 ? (Math.floor(i / 10) + 1).toString() : '0',
-        extCardSubtype: '',
-        extFlavorText: '',
-        extDefensePower: '',
-        extLife: i % 3 === 0 ? (Math.floor(i / 10) + 1).toString() : '',
-        setName: 'Test',
-        type: i % 3 === 0 ? CardType.Minion : i % 3 === 1 ? CardType.Magic : CardType.Site,
-        mana_cost: Math.floor(i / 8) + 1,
-        text: 'Baseline test card',
-        elements: [Element.Air],
-        power: i % 3 === 0 ? Math.floor(i / 10) + 1 : 0,
-        life: i % 3 === 0 ? Math.floor(i / 10) + 1 : undefined,
-        rarity: 'Common' as any,
-        baseName: `Baseline Card ${i}`,
+        type: i % 3 === 0 ? 'Creature' : i % 3 === 1 ? 'Instant' : 'Site',
         cost: Math.floor(i / 8) + 1,
-        threshold: '',
-        subtype: ''
+        effect: 'Baseline test card',
+        keywords: [],
+        subtypes: []
     }));
 }
 
@@ -200,47 +90,15 @@ export function createBaselineDeck(): Card[] {
 export function createTestDeck(element: string, archetype: string): Card[] {
     // Create test decks for different archetypes
     const baseCost = archetype === 'aggro' ? 2 : archetype === 'control' ? 5 : 3;
-    const elementEnum = element === 'fire' ? Element.Fire : 
-                      element === 'water' ? Element.Water :
-                      element === 'earth' ? Element.Earth :
-                      element === 'air' ? Element.Air : Element.Air;
     
     return Array(40).fill(null).map((_, i) => ({
-        productId: `${element}_${archetype}_${i}`,
+        id: `${element}_${archetype}_${i}`,
         name: `${element} ${archetype} Card ${i}`,
-        cleanName: `${element}_${archetype}_card_${i}`,
-        imageUrl: '',
-        categoryId: '',
-        groupId: '',
-        url: '',
-        modifiedOn: '',
-        imageCount: '',
-        extRarity: 'Common',
-        extDescription: '',
-        extCost: (baseCost + Math.floor(i / 10)).toString(),
-        extThreshold: '',
-        extElement: element,
-        extTypeLine: i % 3 === 0 ? 'Minion' : i % 3 === 1 ? 'Magic' : 'Site',
-        extCardCategory: i % 3 === 0 ? 'Minion' : i % 3 === 1 ? 'Magic' : 'Site',
-        extCardType: i % 3 === 0 ? 'Minion' : i % 3 === 1 ? 'Magic' : 'Site',
-        subTypeName: '',
-        extPowerRating: i % 3 === 0 ? (baseCost + Math.floor(i / 15)).toString() : '0',
-        extCardSubtype: '',
-        extFlavorText: '',
-        extDefensePower: '',
-        extLife: i % 3 === 0 ? (baseCost + Math.floor(i / 15)).toString() : '',
-        setName: 'Test',
-        type: i % 3 === 0 ? CardType.Minion : i % 3 === 1 ? CardType.Magic : CardType.Site,
-        mana_cost: baseCost + Math.floor(i / 10),
-        text: `${archetype} ${element} card`,
-        elements: [elementEnum],
-        power: i % 3 === 0 ? baseCost + Math.floor(i / 15) : 0,
-        life: i % 3 === 0 ? baseCost + Math.floor(i / 15) : undefined,
-        rarity: 'Common' as any,
-        baseName: `${element} ${archetype} Card ${i}`,
+        type: i % 3 === 0 ? 'Creature' : i % 3 === 1 ? 'Instant' : 'Site',
         cost: baseCost + Math.floor(i / 10),
-        threshold: '',
-        subtype: ''
+        effect: `${archetype} ${element} card`,
+        keywords: [],
+        subtypes: []
     }));
 }
 

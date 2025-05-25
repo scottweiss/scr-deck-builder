@@ -2,13 +2,13 @@
  * Game-specific type definitions for the simulator
  */
 
-import { Card as BaseCard, Element } from './Card';
+import { Card as BaseCard, Element, CardType } from './Card';
 
 export interface Card extends BaseCard {
   id: string;
   name: string;
-  type: 'Creature' | 'Instant' | 'Sorcery' | 'Enchantment' | 'Artifact' | 'Site' | 'Avatar';
-  cost?: number;
+  type: CardType;
+  cost: number;
   effect?: string;
   keywords?: string[];
   subtypes?: string[];
