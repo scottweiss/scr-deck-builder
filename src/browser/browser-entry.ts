@@ -220,7 +220,7 @@ export class SorceryDeckBuilder extends BrowserDeckBuilder {
     return Array.from(keywords);
   }
 
-  private getSampleCardData(): any {
+  getSampleCardData(): any {
     // Fallback sample data for development/testing
     const sampleCards = [
       {

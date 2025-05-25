@@ -246,7 +246,7 @@ export function buildCompleteDeck(options: DeckBuildOptions): Deck {
   };
 
   return {
-    avatar: options.avatar,
+    avatar: options.avatar, // Avatar is now required by the DeckBuildOptions interface
     spellbook: spellbookResult.spells,
     sites,
     metadata

@@ -10,7 +10,7 @@ export class DeckValidator {
      * Validates an entire deck against all game rules
      */
     static validateDeck(
-        avatar: Card | undefined, 
+        avatar: Card, 
         sites: Card[], 
         spells: Card[]
     ): DeckValidationResult {
@@ -18,9 +18,7 @@ export class DeckValidator {
         const warnings: string[] = [];
 
         // Rule: Exactly one Avatar required
-        if (!avatar) {
-            errors.push("Deck must contain exactly one Avatar card");
-        }
+        // Avatar is now always required by type signature
 
         // Rule: Atlas must contain at least 30 site cards
         if (sites.length < 30) {

@@ -3,12 +3,13 @@ import * as utils from '../utils/utils';
 import * as cardAnalysis from '../core/cards/cardAnalysis';
 
 export interface AvatarSelectionResult {
-    selectedAvatar: Card | undefined;
+    selectedAvatar: Card;
     dominantElement: string;
 }
 
 /**
  * Select the best avatar based on element preferences and card synergies
+ * @throws Error when no avatars are available 
  */
 export function selectAvatar(
     avatars: Card[],
@@ -17,6 +18,10 @@ export function selectAvatar(
     uniqueCards: Card[],
     preferredElement?: string | null
 ): AvatarSelectionResult {
+    if (!avatars || avatars.length === 0) {
+        throw new Error("No avatars available in the card pool. Avatars are required.");
+    }
+
     const elementCounter = utils.countOccurrences(elements);
     const keywordCounter = utils.countOccurrences(keywords);
 
@@ -33,7 +38,7 @@ export function selectAvatar(
     }
 
     // Select Avatar based on keyword synergy
-    let selectedAvatar: Card | undefined = undefined;
+    let selectedAvatar: Card = avatars[0]; // Default to first avatar initially
     for (const avatar of avatars) {
         const avatarElements = avatar.elements;
         if (avatarElements && avatarElements.some((element: ElementEnum) => 
@@ -43,22 +48,14 @@ export function selectAvatar(
         }
     }
 
-    if (!selectedAvatar && avatars.length > 0) {
-        selectedAvatar = avatars[0];  // Default to first avatar if no match
-    } else if (!selectedAvatar) {
-        console.log("Warning: No avatars found in the card pool.");
-    }
+    console.log(`Selected Avatar: ${selectedAvatar.name}`);
 
-    if (selectedAvatar) {
-        console.log(`Selected Avatar: ${selectedAvatar.name}`);
-
-        // Check for and report any avatar-restricted cards in the pool
-        const restrictedCards = uniqueCards.filter(card => 
-            !cardAnalysis.canIncludeWithAvatar(card, selectedAvatar));
-        if (restrictedCards.length > 0) {
-            console.log(`Note: The following cards cannot be used with ${selectedAvatar.name} and will be excluded:`);
-            restrictedCards.forEach(card => console.log(`- ${card.name || "Unknown Card"}`));
-        }
+    // Check for and report any avatar-restricted cards in the pool
+    const restrictedCards = uniqueCards.filter(card => 
+        !cardAnalysis.canIncludeWithAvatar(card, selectedAvatar));
+    if (restrictedCards.length > 0) {
+        console.log(`Note: The following cards cannot be used with ${selectedAvatar.name} and will be excluded:`);
+        restrictedCards.forEach(card => console.log(`- ${card.name || "Unknown Card"}`));
     }
 
     return {

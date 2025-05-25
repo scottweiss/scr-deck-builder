@@ -2,22 +2,15 @@ import { defineConfig } from 'vite'
 import { resolve } from 'path'
 
 export default defineConfig({
-  // Development server configuration
-  server: {
-    port: 3000,
-    open: true,
-    cors: true
-  },
-
-  // Build configuration
+  // Library mode for browser bundle (separate from web app)
   build: {
-    // Multi-page application setup
+    lib: {
+      entry: resolve(__dirname, 'src/browser/browser-entry.ts'),
+      name: 'SorceryDeckBuilder',
+      fileName: (format) => `sorcery-deck-builder.${format}.js`,
+      formats: ['umd', 'es']
+    },
     rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-        // Keep the library build as well
-        lib: resolve(__dirname, 'src/browser/browser-entry.ts')
-      },
       external: [],
       output: {
         exports: 'named',
@@ -26,14 +19,12 @@ export default defineConfig({
     },
     sourcemap: true,
     target: 'es2020',
-    outDir: 'dist'
+    outDir: 'dist/lib'
   },
 
-  // Module resolution
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      // Browser polyfills for Node.js modules
       'path': 'path-browserify',
       'crypto': 'crypto-browserify',
       'stream': 'stream-browserify',
@@ -43,16 +34,11 @@ export default defineConfig({
     }
   },
 
-  // Plugins
-  plugins: [],
-
-  // Define global constants
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     'global': 'globalThis'
   },
 
-  // Optimization
   optimizeDeps: {
     include: [
       'path-browserify',

@@ -44,14 +44,14 @@ async function buildDeckInternal(): Promise<void> {
 
         // Select avatar using the modular function
         const avatarResult = selectAvatar(avatars, elements, keywords, uniqueCards, options.preferredElement);
+        
+        if (!avatarResult.selectedAvatar) {
+            throw new Error("No avatars found in the card pool. An avatar is required to build a deck.");
+        }
+        
         const selectedAvatar = avatarResult.selectedAvatar;
         const dominantElement = avatarResult.dominantElement;
-
-        if (selectedAvatar) {
-            console.log(`Selected Avatar: ${selectedAvatar.name}`);
-        } else {
-            console.log("Warning: No avatars found in the card pool.");
-        }
+        console.log(`Selected Avatar: ${selectedAvatar.name}`);
 
         // Choose sites using the site selector module
         const selectedSites: Card[] = siteSelector.selectSites(sites, dominantElement, 30);
@@ -65,7 +65,7 @@ async function buildDeckInternal(): Promise<void> {
             uniqueCards,
             sites: selectedSites, // Pass selected sites to calculate proper elemental affinity
             avatar: selectedAvatar,
-            preferredArchetype: options.preferredArchetype
+            preferredArchetype: options.preferredArchetype || undefined
         });
 
         // Log card distribution using the modular function
@@ -78,7 +78,12 @@ async function buildDeckInternal(): Promise<void> {
         const elementSynergies = deckStats.analyzeElementalSynergy(uniqueCards);
         let bestElementPair: [string, string];
         if (elementSynergies.length > 0) {
-            bestElementPair = elementSynergies[0][0];
+            const topPair = elementSynergies[0][0];
+            if (topPair.length >= 2) {
+                bestElementPair = [topPair[0], topPair[1]];
+            } else {
+                bestElementPair = [topPair[0] || dominantElement, ""];
+            }
         } else {
             bestElementPair = [dominantElement, ""];
         }

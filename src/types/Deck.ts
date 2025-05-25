@@ -26,7 +26,7 @@ export interface DeckBuildOptions {
   magics: Card[];
   sites?: Card[];
   uniqueCards: Card[];
-  avatar?: Card;
+  avatar: Card; // Required field - avatar is now mandatory
   allocation?: CardAllocation;
   preferredElement?: Element;
   preferredElements?: Element[];
@@ -39,7 +39,7 @@ export interface DeckBuildOptions {
  * Deck composition
  */
 export interface Deck {
-  avatar?: Card;
+  avatar: Card; // Required field - avatar is now mandatory
   spellbook: Card[];
   sites: Card[];
   metadata: DeckMetadata;

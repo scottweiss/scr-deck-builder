@@ -41,7 +41,7 @@ export default defineConfig({
     hookTimeout: 10000,
     
     // Reporter
-    reporter: ['verbose', 'html'],
+    reporters: ['verbose', 'html'],
     
     // Allow tests to run in parallel
     pool: 'threads',

@@ -14,7 +14,7 @@ export interface ValidationResult {
  * Validate deck according to official rules and generate improvement suggestions
  */
 export function validateDeck(
-    selectedAvatar: Card | undefined,
+    selectedAvatar: Card,
     selectedSites: Card[],
     selectedSpells: Card[]
 ): ValidationResult {
