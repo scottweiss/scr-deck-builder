@@ -3,7 +3,7 @@
  * Handles regional effects and terrain-based modifiers (void/surface/underground/underwater)
  */
 
-import { Card } from '../../../types/card-types';
+import { Card } from '../../../types/Card';
 import { GameState, Position } from './gameState';
 import { BoardStateManager } from './boardState';
 import { BoardPosition } from '../../../types/game-types';

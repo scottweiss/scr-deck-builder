@@ -290,6 +290,7 @@ export class BrowserDeckBuilder implements UnifiedDeckBuilder {
     const sampleCards: Card[] = [
       // Sample Avatars
       {
+        id: 'sample_avatar_1',
         productId: 'sample_avatar_1',
         name: 'Merlin',
         cleanName: 'merlin',
@@ -326,6 +327,7 @@ export class BrowserDeckBuilder implements UnifiedDeckBuilder {
         subtype: ''
       },
       {
+        id: 'sample_avatar_2',
         productId: 'sample_avatar_2',
         name: 'Arthur',
         cleanName: 'arthur',
@@ -363,6 +365,7 @@ export class BrowserDeckBuilder implements UnifiedDeckBuilder {
       },
       // Sample Sites
       {
+        id: 'sample_site_1',
         productId: 'sample_site_1',
         name: 'Mystical Springs',
         cleanName: 'mystical_springs',
@@ -399,6 +402,7 @@ export class BrowserDeckBuilder implements UnifiedDeckBuilder {
         subtype: ''
       },
       {
+        id: 'sample_site_2',
         productId: 'sample_site_2',
         name: 'Volcanic Peak',
         cleanName: 'volcanic_peak',
@@ -436,6 +440,7 @@ export class BrowserDeckBuilder implements UnifiedDeckBuilder {
       },
       // Sample Minions
       {
+        id: 'sample_minion_1',
         productId: 'sample_minion_1',
         name: 'Water Elemental',
         cleanName: 'water_elemental',
@@ -473,6 +478,7 @@ export class BrowserDeckBuilder implements UnifiedDeckBuilder {
         subtype: ''
       },
       {
+        id: 'sample_minion_2',
         productId: 'sample_minion_2',
         name: 'Fire Sprite',
         cleanName: 'fire_sprite',
@@ -511,6 +517,7 @@ export class BrowserDeckBuilder implements UnifiedDeckBuilder {
       },
       // Sample Artifacts
       {
+        id: 'sample_artifact_1',
         productId: 'sample_artifact_1',
         name: 'Crystal Orb',
         cleanName: 'crystal_orb',
@@ -548,6 +555,7 @@ export class BrowserDeckBuilder implements UnifiedDeckBuilder {
       },
       // Sample Auras
       {
+        id: 'sample_aura_1',
         productId: 'sample_aura_1',
         name: 'Blessing of Strength',
         cleanName: 'blessing_of_strength',
@@ -585,6 +593,7 @@ export class BrowserDeckBuilder implements UnifiedDeckBuilder {
       },
       // Sample Magics
       {
+        id: 'sample_magic_1',
         productId: 'sample_magic_1',
         name: 'Lightning Bolt',
         cleanName: 'lightning_bolt',
@@ -621,6 +630,7 @@ export class BrowserDeckBuilder implements UnifiedDeckBuilder {
         subtype: ''
       },
       {
+        id: 'sample_magic_2',
         productId: 'sample_magic_2',
         name: 'Healing Wave',
         cleanName: 'healing_wave',

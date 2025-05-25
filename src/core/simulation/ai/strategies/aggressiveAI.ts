@@ -1,7 +1,8 @@
 // aggressiveAI.ts
 // Aggressive AI strategy for Sorcery TCG
 
-import { GameState, Player, Unit, Position, Card } from '../../core/gameState';
+import { GameState, Player, Unit, Position } from '../../core/gameState';
+import { Card } from '../../../../types/Card';
 import { GameAction } from '../../core/gameState';
 import { BaseAIStrategy } from '../aiStrategy';
 

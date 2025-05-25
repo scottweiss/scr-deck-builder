@@ -3,8 +3,8 @@
  * Handles the complete combat phase with all timing and priority windows
  */
 
-import { Player, GameState, BoardPosition } from '../../../types/game-types';
-import { Card } from '../../../types/card-types';
+import { Player, GameState, Position } from './gameState';
+import { Card, CardType } from '../../../types/Card';
 import { ActionStack } from './actionStack';
 import { PrioritySystem } from './prioritySystem';
 import { BoardStateManager } from './boardState';
@@ -344,12 +344,12 @@ export class CombatPhase {
 
   private canAttack(creature: Card, gameState: GameState): boolean {
     // Check if creature can attack (not tapped, no summoning sickness, etc.)
-    return creature.type === 'Creature' || creature.type === 'Avatar';
+    return creature.type === CardType.Minion || creature.type === CardType.Avatar;
   }
 
   private canBlock(blocker: Card, attacker: Card, gameState: GameState): boolean {
     // Check if blocker can block the attacker
-    if (blocker.type !== 'Creature' && blocker.type !== 'Avatar') {
+    if (blocker.type !== CardType.Minion && blocker.type !== CardType.Avatar) {
       return false;
     }
 
@@ -388,15 +388,15 @@ export class CombatPhase {
     }
 
     // Find a card by ID in the game state
-    for (const player of gameState.players) {
-      const card = player.battlefield.find(c => c.id === id);
+    for (const player of Object.values(gameState.players)) {
+      const card = Array.from(gameState.units.values()).find(u => u.owner === player.id && u.card.id === id)?.card;
       if (card) return card;
     }
     return null;
   }
 
   private isPlayerTarget(targetId: string, gameState: GameState): boolean {
-    return gameState.players.some(p => p.id === targetId);
+    return Object.values(gameState.players).some((p: Player) => p.id === targetId);
   }
 
   private tapCreature(creature: Card, gameState: GameState): void {

@@ -4,7 +4,7 @@
  */
 
 import { GameState, Player, Unit, Position } from '../core/gameState';
-import { Card } from '../../../types/card-types';
+import { Card } from '../../../types/Card';
 
 export interface GameEvaluation {
   boardControl: number;        // 0-100, control of the board

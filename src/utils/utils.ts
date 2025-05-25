@@ -38,17 +38,18 @@ export function getCardDescription(card: RawCard | ProcessedCard): string {
     return getCardAttribute(card, "Description");
 }
 
-export function getCardElements(card: RawCard | ProcessedCard): Element[] {
+export function getCardElements(card: Card): Element[] {
     if ((card as any).elements && Array.isArray((card as any).elements)) {
-        return (card as any).elements; // Already ProcessedCard
+        return (card as any).elements; // Already Card
     }
-    const rawCard = card as RawCard;
+    // Fallback for legacy RawCard
+    const rawCard = card as any;
     if (rawCard.extElement) {
-        const elementStrings = rawCard.extElement.split(',').map(e => e.trim());
-        return elementStrings.map(elStr => {
+        const elementStrings = rawCard.extElement.split(',').map((e: string) => e.trim());
+        return elementStrings.map((elStr: string) => {
             const elKey = Object.keys(Element).find(key => key.toLowerCase() === elStr.toLowerCase());
             return elKey ? Element[elKey as keyof typeof Element] : undefined;
-        }).filter(el => el !== undefined) as Element[];
+        }).filter((el: Element | undefined) => el !== undefined) as Element[];
     }
     return [];
 }
@@ -155,7 +156,7 @@ export function parseThreshold(thresholdStr: string): Record<string, number> {
  * Parse elemental affinity from sites (what they provide)
  * Sites provide affinity through their elemental symbols
  */
-export function parseElementalAffinity(card: RawCard | Card): Record<string, number> {
+export function parseElementalAffinity(card: Card): Record<string, number> {
     const affinity: Record<string, number> = {};
     const elements = getCardElements(card);
     
@@ -172,14 +173,11 @@ export function parseElementalAffinity(card: RawCard | Card): Record<string, num
  * Parse threshold requirements from spells (what they need)
  * Spells require threshold to be cast
  */
-export function parseThresholdRequirements(card: RawCard | Card): Record<string, number> {
+export function parseThresholdRequirements(card: Card): Record<string, number> {
     let thresholdStr = '';
     if ((card as any).threshold) {
         thresholdStr = (card as any).threshold;
-    } else if ((card as RawCard).extThreshold) {
-        thresholdStr = (card as RawCard).extThreshold;
     }
-    
     return parseThreshold(thresholdStr);
 }
 
@@ -249,7 +247,8 @@ export function getCardManaGeneration(card: Card): number {
 export function transformRawCardToCard(rawCard: RawCard): Card {
     const manaCost = getCardCost(rawCard);
     const cardType = getCardType(rawCard);
-    const elements = getCardElements(rawCard);
+    // Use a minimal Card object for getCardElements
+    const elements = getCardElements({ ...rawCard, id: rawCard.productId || '', type: cardType, cost: manaCost } as Card);
     const power = getCardPower(rawCard);
     const rarity = getCardRarity(rawCard);
     const text = getCardDescription(rawCard);
@@ -274,14 +273,18 @@ export function transformRawCardToCard(rawCard: RawCard): Card {
 
     if (cardType === CardType.Site) {
         // Sites provide elemental affinity and mana generation
-        elementalAffinity = parseElementalAffinity(rawCard);
-        manaGeneration = getManaGeneration(rawCard);
+        // Convert RawCard to Card before calling parseElementalAffinity
+        const cardObj = { ...rawCard, id: rawCard.productId || '', type: cardType, cost: manaCost } as Card;
+        elementalAffinity = parseElementalAffinity(cardObj);
+        manaGeneration = getManaGeneration(cardObj);
     } else {
         // Spells (Minions, Magic, Artifacts, Auras) have threshold requirements
-        thresholdRequirements = parseThresholdRequirements(rawCard);
+        const cardObj = { ...rawCard, id: rawCard.productId || '', type: cardType, cost: manaCost } as Card;
+        thresholdRequirements = parseThresholdRequirements(cardObj);
     }
 
     const card: Card = {
+        id: rawCard.productId || `card-${rawCard.name?.replace(/\s+/g, '-').toLowerCase() || Math.random().toString(36).slice(2)}`,
         ...rawCard, // Spread all RawCard properties first
         type: cardType,
         mana_cost: manaCost,

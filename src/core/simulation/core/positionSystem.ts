@@ -3,11 +3,10 @@
  * Handles unit placement, positioning rules, and spatial mechanics
  */
 
-import { Card } from '../../../types/card-types';
+import { Card, CardType } from '../../../types/Card';
 import { Player, BoardPosition } from '../../../types/game-types';
 import { BoardStateManager } from './boardState';
-import { Card as BaseCard } from '../../../types/Card';
-import { GameState, Position } from './gameState';
+import { GameState, Position, GridSquare } from './gameState';
 import { boardPositionToPosition, positionToBoardPosition, convertSimpleBoardToGridSquare } from '../../../utils/card-adapter';
 
 export interface PositionRule {
@@ -88,7 +87,7 @@ export class PositionSystem {
     // Convert BoardPosition to Position for boardState methods
     const pos = boardPositionToPosition(position);
     // Convert simple board format to GridSquare format for BoardStateManager
-    const gridBoard = convertSimpleBoardToGridSquare(gameState.grid);
+    const gridBoard = gameState.grid;
     if (this.boardState.isPositionOccupied(pos, gridBoard)) {
       validation.valid = false;
       validation.errors.push('Position is already occupied');
@@ -224,7 +223,7 @@ export class PositionSystem {
         const distance = this.boardState.getDistance(centerPos, pos);
 
         if (distance <= range && (includeCenter || distance > 0)) {
-          const gridBoard = convertSimpleBoardToGridSquare(gameState.grid);
+          const gridBoard = gameState.grid;
           const card = this.boardState.getCardAt(pos, gridBoard);
           if (card) {
             const positionedCard = this.positionedCards.get(card.id);
@@ -249,7 +248,7 @@ export class PositionSystem {
   ): boolean {
     const pos1 = boardPositionToPosition(position1);
     const pos2 = boardPositionToPosition(position2);
-    const gridBoard = convertSimpleBoardToGridSquare(gameState.grid);
+    const gridBoard = gameState.grid;
     return this.boardState.hasLineOfSight(pos1, pos2, gridBoard);
   }
 
@@ -368,7 +367,7 @@ export class PositionSystem {
         this.applySitePlacementRules(validation, controller, gameState);
         break;
         
-      case 'Creature':
+      case CardType.Minion:
         this.applyCreaturePlacementRules(validation, controller, gameState);
         break;
         
@@ -452,7 +451,7 @@ export class PositionSystem {
   ): void {
     // Avatars must be placed on friendly sites
     const validationPos = boardPositionToPosition(validation.position);
-    const gridBoard = convertSimpleBoardToGridSquare(gameState.grid);
+    const gridBoard = gameState.grid;
     const siteAtPosition = this.boardState.getCardAt(validationPos, gridBoard);
     
     if (!siteAtPosition || siteAtPosition.type !== 'Site') {
@@ -511,7 +510,7 @@ export class PositionSystem {
         }
         break;
 
-      case 'Creature':
+      case CardType.Minion:
         const friendlySites = this.getPlayerCards(controller.id)
           .filter(pc => pc.card.type === 'Site');
         
@@ -531,7 +530,7 @@ export class PositionSystem {
 
       case 'Avatar':
         // Must be placed on a site
-        const gridBoard2 = convertSimpleBoardToGridSquare(gameState.grid);
+        const gridBoard2 = gameState.grid;
         const siteAtPosition = this.boardState.getCardAt(positionPos, gridBoard2);
         if (!siteAtPosition || siteAtPosition.type !== 'Site') {
           restrictions.push({

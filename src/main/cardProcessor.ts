@@ -1,4 +1,4 @@
-import { Card, RawCard, Element, CardType, CardRarity } from '../types/Card';
+import { Card, Element, CardType, CardRarity } from '../types/Card';
 import { parseThreshold } from '../utils/utils';
 import * as utils from '../utils/utils';
 
@@ -54,8 +54,13 @@ export async function processCardData(dataSets: string[]): Promise<ProcessedCard
             return 0;
         });
 
-        // Add the best version to our unique cards list, transformed to Card
-        uniqueCards.push(utils.transformRawCardToCard(versions[0]));
+        // If the card is already a canonical Card (has id and type), just push it; otherwise, transform from RawCard
+        const bestVersion = versions[0];
+        if (typeof bestVersion === 'object' && 'id' in bestVersion && 'type' in bestVersion) {
+            uniqueCards.push(bestVersion as Card);
+        } else {
+            uniqueCards.push(utils.transformRawCardToCard(bestVersion as any));
+        }
     }
 
     return categorizeCards(uniqueCards);
@@ -135,7 +140,7 @@ function toElementEnum(element: string): Element | undefined {
 }
 
 // If Card type cannot be changed, add parsedThreshold for analysis
-function transformRawCardToCard(raw: RawCard): Card & { parsedThreshold?: Record<string, number> } {
+function transformRawCardToCard(raw: Card): Card & { parsedThreshold?: Record<string, number> } {
     return {
         ...raw,
         type: raw.extCardType as CardType,

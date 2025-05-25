@@ -12,7 +12,8 @@ import {
     SpellExecutionResult
 } from '../types/spellEffectTypes';
 
-import { GameState, Card, Unit, Position, GameEvent, Player } from './gameState';
+import { GameState, Unit, Position, GameEvent, Player } from './gameState';
+import { Card } from '../../../types/Card';
 import { spellParser } from './spellParser';
 
 export class SpellEffectSystem {
@@ -238,7 +239,7 @@ export class SpellEffectSystem {
         
         for (let i = 0; i < amount; i++) {
             const deck = player.decks.spellbook.length > 0 ? player.decks.spellbook : 
-                        player.deck && player.deck.length > 0 ? player.deck : [];
+                        player.decks && player.decks.spellbook && player.decks.spellbook.length > 0 ? player.decks.spellbook : [];
             
             if (deck.length > 0) {
                 const drawnCard = deck.shift()!;
@@ -277,7 +278,7 @@ export class SpellEffectSystem {
                 
                 // Create a basic token card
                 const tokenCard: Card = {
-                    productId: unitId,
+                    id: 'token_' + Math.random().toString(36).substr(2, 9),
                     name: tokenName || 'Token',
                     cleanName: tokenName || 'Token',
                     imageUrl: '',
@@ -497,20 +498,16 @@ export class SpellEffectSystem {
             if (card) return card;
             
             // Search in deck (if exists)
-            if (player.deck && player.deck.length > 0) {
-                card = player.deck.find((c: Card) => c.name === cardId);
+            if (player.decks && player.decks.spellbook && player.decks.spellbook.length > 0) {
+                card = player.decks.spellbook.find((c: Card) => c.name === cardId);
                 if (card) return card;
             }
             
             // Search in graveyard (if exists)
-            if (player.graveyard && player.graveyard.length > 0) {
-                card = player.graveyard.find((c: Card) => c.name === cardId);
+            if (player.cemetery && player.cemetery.length > 0) {
+                card = player.cemetery.find((c: Card) => c.name === cardId);
                 if (card) return card;
             }
-            
-            // Search in cemetery
-            card = player.cemetery.find((c: Card) => c.name === cardId);
-            if (card) return card;
         }
         return null;
     }

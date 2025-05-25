@@ -38,4 +38,23 @@ export class DifficultyManager {
       default: return 4;
     }
   }
+
+  /**
+   * Configure an AI strategy with difficulty-based adjustments
+   */
+  configureStrategy(strategy: any, difficulty?: AIDifficulty): any {
+    const targetDifficulty = difficulty || this.difficulty;
+    
+    // Return a configured version of the strategy
+    return {
+      ...strategy,
+      difficulty: targetDifficulty,
+      randomness: this.getActionSelectionRandomness(),
+      searchDepth: this.getSearchDepth(),
+      // Add any other difficulty-based configurations
+      generateActions: strategy.generateActions?.bind(strategy) || (() => []),
+      evaluateGameState: strategy.evaluateGameState?.bind(strategy) || (() => 0),
+      selectAction: strategy.selectAction?.bind(strategy) || (() => null)
+    };
+  }
 }

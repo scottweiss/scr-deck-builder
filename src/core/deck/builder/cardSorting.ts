@@ -4,7 +4,7 @@ import { Card } from '../../../types/Card';
  * Helper function to identify combo cards
  */
 export function isComboCard(card: Card, comboPieces: Set<string>): boolean {
-  return comboPieces.has(card.baseName);
+  return card.baseName ? comboPieces.has(card.baseName) : false;
 }
 
 /**

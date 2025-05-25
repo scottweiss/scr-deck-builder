@@ -65,27 +65,30 @@ export interface RawCard {
 }
 
 /**
- * Processed card data with computed fields for easier usage
+ * Canonical Card type for all gameplay, deck building, simulation, and UI
  */
-export interface Card extends RawCard {
+export interface Card {
+  id: string; // unique id for simulation and gameplay
+  name: string;
   type: CardType;
-  mana_cost: number;
-  text: string;
-  elements: Element[];
-  power: number;
-  defense?: number;
-  life?: number;
-  rarity: CardRarity;
-  baseName: string;
   cost: number;
-  threshold?: string;
-  subtype?: CardSubtype;
-  // Parsed threshold requirements for spells (what's needed to cast)
-  thresholdRequirements?: Record<string, number>;
-  // Elemental affinity for sites (what's provided)
-  elementalAffinity?: Record<string, number>;
-  // Mana generation for sites
-  manaGeneration?: number;
+  effect?: string;
+  keywords?: string[];
+  subtypes?: string[];
+  power?: number;
+  life?: number;
+  defense?: number;
+  mana_cost?: number;
+  text?: string;
+  elements?: Element[];
+  rarity?: CardRarity | string;
+  baseName?: string;
+  // Optional UI/data fields
+  productId?: string;
+  imageUrl?: string;
+  cleanName?: string;
+  extDescription?: string;
+  [key: string]: any; // allow extra fields for UI/metadata
 }
 
 /**
@@ -165,3 +168,5 @@ export interface CardStats {
   bySet: Record<CardSet, number>;
   averageCost: number;
 }
+
+export type TargetType = 'player' | 'minion' | 'spell' | 'site' | 'position' | 'any';

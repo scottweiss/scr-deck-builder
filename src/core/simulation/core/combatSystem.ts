@@ -3,7 +3,8 @@
  * Handles combat resolution, intercept/defend mechanics, and damage calculation
  */
 
-import { GameState, Unit, Position, GameEvent, Card } from './gameState';
+import { GameState, Unit, Position, GameEvent } from './gameState';
+import { Card } from '../../../types/Card';
 
 export interface CombatModifier {
   type: 'power_bonus' | 'life_bonus' | 'damage_reduction' | 'critical_hit' | 'intercept_bonus';

@@ -2,12 +2,14 @@
  * Core game state management for Sorcery: Contested Realm match simulation
  */
 
-import { Element } from '../../../types/Card';
-import { Card } from '../../../types/Card';
-import { isBaseCard, adaptBaseCardToSimCard } from '../../../utils/card-adapter';
+import { Element, CardType, Card } from '../../../types/Card';
+
+// Remove import of isBaseCard and adaptBaseCardToSimCard
+// import { isBaseCard, adaptBaseCardToSimCard } from '../../../utils/card-adapter';
 
 // Re-export Card type for use in other simulation modules
-export { Card } from '../../../types/Card';
+// export { Card } from '../../../types/game-types';
+export { CardType } from '../../../types/Card';
 
 export interface Position {
   x: number; // 0-4 (5 columns)

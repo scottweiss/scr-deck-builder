@@ -227,9 +227,9 @@ export function removeCardsStrategically(
         .sort((a, b) => {
             // Preserve key combo pieces regardless of other factors
             const aIsCombo = combos.some((combo: any) => 
-                combo.cards.some((cardName: string) => cardName.toLowerCase() === a.card.baseName.toLowerCase()));
+                combo.cards.some((cardName: string) => a.card.baseName && cardName.toLowerCase() === a.card.baseName.toLowerCase()));
             const bIsCombo = combos.some((combo: any) => 
-                combo.cards.some((cardName: string) => cardName.toLowerCase() === b.card.baseName.toLowerCase()));
+                combo.cards.some((cardName: string) => b.card.baseName && cardName.toLowerCase() === b.card.baseName.toLowerCase()));
             
             if (aIsCombo && !bIsCombo) return 1; // Keep combo pieces
             if (!aIsCombo && bIsCombo) return -1;

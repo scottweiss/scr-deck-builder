@@ -32,7 +32,7 @@ export function sortArtifactsWithUtilityPriority(
     comboPieces: Set<string>,
     calculateSynergy: (card: Card, deck: Card[]) => number
 ): Card[] {
-    const isComboCard = (card: Card): boolean => comboPieces.has(card.baseName);
+    const isComboCard = (card: Card): boolean => card.baseName ? comboPieces.has(card.baseName) : false;
     
     return [...artifacts]
         .filter((card: Card) => !selectedSpells.some((s: Card) => s.baseName === card.baseName))

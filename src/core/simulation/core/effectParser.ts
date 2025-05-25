@@ -3,8 +3,9 @@
  * Handles parsing and execution of card effects with proper timing and resolution
  */
 
-import { Card, CardEffect, EffectType, TargetType, ConditionType } from '../../../types/card-types';
-import { GameState, Player } from '../../../types/game-types';
+import { Card, TargetType, CardType } from '../../../types/Card';
+import { CardEffect, EffectType, ConditionType } from '../../../types/card-types';
+import { GameState, Player } from '../core/gameState'; // <-- Use canonical types from simulation core
 import { TargetingSystem } from './targetingSystem';
 
 export interface ParsedEffect {
@@ -224,8 +225,8 @@ export class EffectParser {
     // Determine targeting
     let targets: TargetType[] = [];
     if (effectText.includes('target')) {
-      if (effectText.includes('creature')) {
-        targets = ['creature'];
+      if (effectText.includes('minion')) {
+        targets = ['minion'];
       } else if (effectText.includes('player')) {
         targets = ['player'];
       } else {
@@ -239,7 +240,7 @@ export class EffectParser {
       type: 'damage',
       targets,
       conditions: [],
-      timing: card.type === 'Instant' ? 'instant' : 'sorcery',
+      timing: card.type === CardType.Magic ? 'instant' : 'sorcery',
       priority: 1,
       duration: 'instant'
     };
@@ -255,9 +256,9 @@ export class EffectParser {
       id: `${card.id}-heal`,
       sourceCard: card,
       type: 'heal',
-      targets: effectText.includes('target') ? ['creature', 'player'] : [],
+      targets: effectText.includes('target') ? ['minion', 'player'] : [],
       conditions: [],
-      timing: card.type === 'Instant' ? 'instant' : 'sorcery',
+      timing: card.type === CardType.Magic ? 'instant' : 'sorcery',
       priority: 1,
       duration: 'instant'
     };
@@ -287,9 +288,9 @@ export class EffectParser {
       id: `${card.id}-move`,
       sourceCard: card,
       type: 'move',
-      targets: ['creature'],
+      targets: ['minion'],
       conditions: [],
-      timing: card.type === 'Instant' ? 'instant' : 'sorcery',
+      timing: card.type === CardType.Magic ? 'instant' : 'sorcery',
       priority: 1,
       duration: 'instant'
     };

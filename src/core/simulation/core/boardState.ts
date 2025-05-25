@@ -3,8 +3,8 @@
  * Part of Phase 1: Core Engine Foundation
  */
 
-import { Position, Unit, GridSquare, Card } from './gameState';
-import { isBaseCard, adaptBaseCardToSimCard } from '../../../utils/card-adapter';
+import { Position, Unit, GridSquare } from './gameState';
+import { Card } from '../../../types/Card';
 
 export interface BoardConfiguration {
   width: number;
@@ -463,12 +463,12 @@ export class BoardStateManager {
    * @param board Optional board state override
    * @returns true if card was placed successfully, false otherwise
    */
-  public placeCard(card: any, position: Position, board?: GridSquare[][]): boolean {
+  public placeCard(card: Card, position: Position, board?: GridSquare[][]): boolean {
     const square = this.getSquare(position);
     if (!square) return false;
     
-    // Convert to simulation Card type if it's not already in the correct format
-    const simulationCard: Card = isBaseCard(card) ? adaptBaseCardToSimCard(card) : card;
+    // Use the card directly (already canonical type)
+    const simulationCard: Card = card;
 
     // Check if card is a Site
     if (simulationCard.type === 'Site') {

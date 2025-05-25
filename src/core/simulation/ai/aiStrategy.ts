@@ -1,8 +1,7 @@
 // aiStrategy.ts
 // Defines the interface and base for AI strategies in Sorcery TCG
 
-import { GameState, Player } from '../../types/game-types';
-import { GameAction } from '../core/gameState';
+import { GameState, Player, GameAction } from '../core/gameState';
 
 export interface AIStrategy {
   evaluateGameState(gameState: GameState, player: Player): number;

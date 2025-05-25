@@ -1,7 +1,7 @@
 // actionEvaluator.ts
 // Utility for evaluating and scoring possible actions for AI
 
-import { GameState, Player } from '../../types/game-types';
+import { GameState, Player } from '../core/gameState';
 import { GameAction } from '../core/gameState';
 
 export class ActionEvaluator {

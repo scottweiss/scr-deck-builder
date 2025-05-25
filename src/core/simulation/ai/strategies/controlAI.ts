@@ -1,7 +1,8 @@
 // controlAI.ts
 // Control AI strategy for Sorcery TCG
 
-import { GameState, Player, Unit, Position, Card } from '../../core/gameState';
+import { GameState, Player, Unit, Position, CardType } from '../../core/gameState';
+import { Card } from '../../../../types/Card';
 import { GameAction } from '../../core/gameState';
 import { BaseAIStrategy } from '../aiStrategy';
 
@@ -214,7 +215,7 @@ export class ControlAIStrategy extends BaseAIStrategy {
 
   private isDefensiveCard(card: Card): boolean {
     // Look for defensive creatures or protective spells
-    if (card.type === 'Creature') {
+    if (card.type === CardType.Minion) {
       // Defensive creatures typically have higher life than power
       const power = card.power || 0;
       const life = card.life || 0;

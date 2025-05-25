@@ -1,7 +1,8 @@
 // midrangeAI.ts
 // Midrange AI strategy for Sorcery TCG
 
-import { GameState, Player, Unit, Position, Card } from '../../core/gameState';
+import { GameState, Player, Unit, Position, CardType } from '../../core/gameState';
+import { Card } from '../../../../types/Card';
 import { GameAction } from '../../core/gameState';
 import { BaseAIStrategy } from '../aiStrategy';
 
@@ -176,7 +177,7 @@ export class MidrangeAIStrategy extends BaseAIStrategy {
     // Prefer efficient, versatile cards
     const cost = card.cost || 0;
     
-    if (card.type === 'Creature') {
+    if (card.type === CardType.Minion) {
       return cost >= 2 && cost <= 5; // Mid-cost creatures
     }
     

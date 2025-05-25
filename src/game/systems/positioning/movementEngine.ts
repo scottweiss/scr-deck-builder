@@ -3,10 +3,12 @@
  * Handles creature movement, path calculation, and movement validation
  */
 
-import { Card } from '../../../types/card-types';
-import { Player, GameState, BoardPosition } from '../../../types/game-types';
+import { Card } from '../../../types/Card';
+import { Player, GameState } from '../../../core/simulation/core/gameState';
 import { PositionSystem } from '../../../core/simulation/core/positionSystem';
 import { BoardStateManager } from '../../../core/simulation/core/boardState';
+import { CardType } from '../../../types/Card';
+import { BoardPosition } from '../../../types/game-types';
 
 export interface MovementRule {
   id: string;
@@ -505,27 +507,23 @@ export class MovementEngine {
   }
 
   private findCreatureById(creatureId: string, gameState: GameState): Card | null {
-    // Check if the card exists in the position system (where cards are actually placed)
-    const position = this.positionSystem.getCardPosition(creatureId);
-    if (!position) {
-      return null;
+    // Use the board grid to find the creature by ID
+    if (!gameState.grid) return null;
+    for (let y = 0; y < gameState.grid.length; y++) {
+      for (let x = 0; x < gameState.grid[y].length; x++) {
+        const square = gameState.grid[y][x];
+        for (const unit of square.units) {
+          if (unit.card.id === creatureId) {
+            return unit.card;
+          }
+        }
+      }
     }
-    
-    // Since we found a position, the card exists. We need to get it from the position system.
-    // For now, we'll search through the position system's internal data.
-    // This is a workaround until we have a proper getCard method in PositionSystem.
-    for (const player of gameState.players) {
-      const creature = player.battlefield.find(c => c.id === creatureId);
-      if (creature) return creature;
-    }
-    
-    // If not found in battlefield, create a minimal card object for testing
-    // This handles the case where cards are placed via positionSystem.placeCard() 
-    // but not added to player.battlefield
+    // If not found, create a minimal card object for testing
     return {
       id: creatureId,
       name: 'Test Creature',
-      type: 'Creature',
+      type: CardType.Minion,
       cost: 1,
       keywords: [],
       subtypes: []

@@ -3,10 +3,9 @@
  * Handles target validation, selection, and legal targeting rules
  */
 
-import { Card as SimulationCard, TargetType } from '../../../types/card-types';
-import { GameState, Player, Position } from './gameState';
-import { BoardPosition, Card as GameCard } from '../../../types/game-types';
-import { CardType } from '../../../types/Card';
+import { BoardPosition } from '../../../types/game-types';
+import { Card, TargetType, CardType } from '../../../types/Card';
+import { GameState, Position, GridSquare, Player } from './gameState';
 import { BoardStateManager } from './boardState';
 import { boardPositionToPosition, positionToBoardPosition, convertSimpleBoardToGridSquare } from '../../../utils/card-adapter';
 
@@ -52,7 +51,7 @@ export class TargetingSystem {
     targetTypes: TargetType[],
     gameState: GameState,
     controller: Player,
-    sourceCard: SimulationCard,
+    sourceCard: Card,
     additionalRestrictions?: TargetRestriction[]
   ): Promise<TargetCandidate[]> {
     const candidates: TargetCandidate[] = [];
@@ -100,7 +99,7 @@ export class TargetingSystem {
     targetDescriptor: TargetDescriptor,
     gameState: GameState,
     controller: Player,
-    sourceCard: SimulationCard
+    sourceCard: Card
   ): TargetingResult {
     const result: TargetingResult = {
       valid: true,
@@ -162,7 +161,7 @@ export class TargetingSystem {
   ): boolean {
     const fromPos = boardPositionToPosition(from);
     const toPos = boardPositionToPosition(to);
-    const gridBoard = convertSimpleBoardToGridSquare(gameState.grid);
+    const gridBoard = gameState.grid;
     return this.boardState.hasLineOfSight(fromPos, toPos, gridBoard);
   }
 
@@ -172,12 +171,12 @@ export class TargetingSystem {
   private getPlayerTargets(
     gameState: GameState,
     controller: Player,
-    sourceCard: SimulationCard
+    sourceCard: Card
   ): TargetCandidate[] {
     const candidates: TargetCandidate[] = [];
-    // Use object-based player structure
+    // Use canonical player structure (object with player1/player2)
     const players = [gameState.players.player1, gameState.players.player2];
-    players.forEach((player: Player) => {
+    for (const player of players) {
       candidates.push({
         id: player.id,
         type: 'player',
@@ -185,7 +184,7 @@ export class TargetingSystem {
         controller: player,
         valid: true
       });
-    });
+    }
     return candidates;
   }
 
@@ -195,27 +194,30 @@ export class TargetingSystem {
   private getMinionTargets(
     gameState: GameState,
     controller: Player,
-    sourceCard: SimulationCard
+    sourceCard: Card
   ): TargetCandidate[] {
     const candidates: TargetCandidate[] = [];
-    // Use gameState.units to find all minions and avatars
-    const units = Object.values(gameState.units || {});
-    units.forEach((unit: GameCard & { owner: string }) => {
-      if (unit.type === CardType.Minion || unit.type === CardType.Avatar) {
-        const owner = this.getPlayerById(gameState, unit.owner);
-        const gridBoard = convertSimpleBoardToGridSquare(gameState.grid);
-        const position = this.boardState.getCardPosition(unit.id, gridBoard);
-        const boardPos = position ? positionToBoardPosition(position) : undefined;
-        candidates.push({
-          id: unit.id,
-          type: 'minion',
-          object: unit,
-          position: boardPos,
-          controller: owner,
-          valid: true
-        });
+    // Iterate over the board grid to find all minions and avatars
+    const gridBoard: GridSquare[][] = gameState.grid;
+    for (let y = 0; y < gridBoard.length; y++) {
+      for (let x = 0; x < gridBoard[y].length; x++) {
+        const square = gridBoard[y][x];
+        for (const unit of square.units) {
+          if (unit.card.type === CardType.Minion || unit.card.type === CardType.Avatar) {
+            const owner = this.getPlayerById(gameState, unit.owner);
+            const boardPos = positionToBoardPosition({ x, y });
+            candidates.push({
+              id: unit.card.id,
+              type: 'minion',
+              object: unit.card,
+              position: boardPos,
+              controller: owner,
+              valid: true
+            });
+          }
+        }
       }
-    });
+    }
     return candidates;
   }
 
@@ -225,28 +227,28 @@ export class TargetingSystem {
   private getSiteTargets(
     gameState: GameState,
     controller: Player,
-    sourceCard: SimulationCard
+    sourceCard: Card
   ): TargetCandidate[] {
     const candidates: TargetCandidate[] = [];
-
-    // Use gameState.units to find all sites, filter by owner
-    const units = Object.values(gameState.units || {});
-    units.forEach((unit: GameCard & { owner: string }) => {
-      if (unit.type === CardType.Site) {
-        const owner = this.getPlayerById(gameState, unit.owner);
-        const gridBoard = convertSimpleBoardToGridSquare(gameState.grid);
-        const position = this.boardState.getCardPosition(unit.id, gridBoard);
-        const boardPos = position ? positionToBoardPosition(position) : undefined;
-        candidates.push({
-          id: unit.id,
-          type: 'site',
-          object: unit,
-          position: boardPos,
-          controller: owner,
-          valid: true
-        });
+    // Iterate over the board grid to find all sites
+    const gridBoard: GridSquare[][] = gameState.grid;
+    for (let y = 0; y < gridBoard.length; y++) {
+      for (let x = 0; x < gridBoard[y].length; x++) {
+        const square = gridBoard[y][x];
+        if (square.site) {
+          // Ownership of sites may be determined by control, here we set controller to undefined
+          const boardPos = positionToBoardPosition({ x, y });
+          candidates.push({
+            id: square.site.id,
+            type: 'site',
+            object: square.site,
+            position: boardPos,
+            controller: undefined, // Could be set if ownership logic is available
+            valid: true
+          });
+        }
       }
-    });
+    }
     return candidates;
   }
 
@@ -254,12 +256,8 @@ export class TargetingSystem {
    * Helper to get player by id from gameState
    */
   private getPlayerById(gameState: GameState, id: string): Player | undefined {
-    if (Array.isArray(gameState.players)) {
-      return gameState.players.find(p => p.id === id);
-    } else {
-      if (gameState.players.player1.id === id) return gameState.players.player1;
-      if (gameState.players.player2.id === id) return gameState.players.player2;
-    }
+    if (gameState.players.player1.id === id) return gameState.players.player1;
+    if (gameState.players.player2.id === id) return gameState.players.player2;
     return undefined;
   }
 
@@ -269,7 +267,7 @@ export class TargetingSystem {
   private getSpellTargets(
     gameState: GameState,
     controller: Player,
-    sourceCard: SimulationCard
+    sourceCard: Card
   ): TargetCandidate[] {
     const candidates: TargetCandidate[] = [];
     // Use stack from gameState if available
@@ -295,7 +293,7 @@ export class TargetingSystem {
   private getPositionTargets(
     gameState: GameState,
     controller: Player,
-    sourceCard: SimulationCard
+    sourceCard: Card
   ): TargetCandidate[] {
     const candidates: TargetCandidate[] = [];
     // Use gameState.grid for board positions
@@ -303,7 +301,7 @@ export class TargetingSystem {
       for (let col = 0; col < 5; col++) {
         const position: BoardPosition = { row, col };
         const pos = boardPositionToPosition(position);
-        const gridBoard = convertSimpleBoardToGridSquare(gameState.grid);
+        const gridBoard = gameState.grid;
         const occupied = this.boardState.isPositionOccupied(pos, gridBoard);
         candidates.push({
           id: `${row}-${col}`,
@@ -380,7 +378,7 @@ export class TargetingSystem {
     candidate: TargetCandidate,
     descriptor: TargetDescriptor,
     controller: Player,
-    sourceCard: SimulationCard,
+    sourceCard: Card,
     gameState: GameState
   ): boolean {
     if (descriptor.restrictions) {
@@ -401,7 +399,7 @@ export class TargetingSystem {
   getTargetableCreatures(
     gameState: GameState,
     controller: Player,
-    sourceCard: SimulationCard,
+    sourceCard: Card,
     includeUntargetable: boolean = false
   ): TargetCandidate[] {
     // For backward compatibility, alias to getMinionTargets
@@ -424,7 +422,7 @@ export class TargetingSystem {
   canTargetPlayer(
     player: Player,
     controller: Player,
-    sourceCard: SimulationCard,
+    sourceCard: Card,
     gameState: GameState
   ): boolean {
     return true;
@@ -437,7 +435,7 @@ export class TargetingSystem {
     targetDescriptor: TargetDescriptor,
     gameState: GameState,
     controller: Player,
-    sourceCard: SimulationCard
+    sourceCard: Card
   ): Promise<TargetCandidate[]> {
     const validTargets = await this.getValidTargets(
       [targetDescriptor.type],

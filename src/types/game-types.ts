@@ -2,25 +2,20 @@
  * Game-specific type definitions for the simulator
  */
 
-import { Card as BaseCard, Element, CardType } from './Card';
+import { Card as CanonicalCard, Element, CardType } from './Card';
 
-export interface Card extends BaseCard {
-  id: string;
-  name: string;
-  type: CardType;
-  cost: number;
-  effect?: string;
-  keywords?: string[];
-  subtypes?: string[];
-}
+export type GameCard = CanonicalCard;
 
 export interface Player {
   id: string;
   name: string;
   health: number;
-  hand: Card[];
-  battlefield: Card[];
-  graveyard: Card[];
+  hand: {
+    spells: CanonicalCard[];
+  };
+  battlefield: CanonicalCard[];
+  deck: CanonicalCard[];
+  graveyard: CanonicalCard[];
   manaPool: ManaPool;
   statistics: PlayerStatistics;
   continuousEffects: ContinuousEffect[];
@@ -47,7 +42,7 @@ export interface PlayerStatistics {
 
 export interface ContinuousEffect {
   id: string;
-  source: Card;
+  source: CanonicalCard;
   type: string;
   duration: 'turn' | 'permanent' | 'until-removed';
   layerPriority: number;
@@ -70,7 +65,7 @@ export interface GameState {
   currentPlayer: string;
   turnNumber: number;
   phase: string;
-  board: (Card | null)[][];
+  board: (CanonicalCard | null)[][];
   stack?: any[];
   winner?: string;
   gameEnded: boolean;

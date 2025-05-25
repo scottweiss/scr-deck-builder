@@ -1,4 +1,5 @@
-import { GameState, Player, Card, Position, Unit, GameEvent } from './gameState';
+import { GameState, Player, Position, Unit, GameEvent } from './gameState';
+import { Card } from '../../../types/Card';
 import { TurnEngine } from './turnEngine';
 import { AIStrategy as StrategyInterface, BaseAIStrategy } from '../ai/aiStrategy';
 import { ActionEvaluator } from '../ai/actionEvaluator';

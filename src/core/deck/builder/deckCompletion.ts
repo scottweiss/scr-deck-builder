@@ -40,7 +40,9 @@ export function completeDeckWithSynergyCards(options: DeckCompletionOptions): De
         for (let i = 0; i < Math.min(remainingSlots, sortedAvailable.length); i++) {
             const card = sortedAvailable[i];
             currentDeck.push(card);
-            currentCopies[card.baseName] = (currentCopies[card.baseName] || 0) + 1;
+            if (card.baseName) {
+                currentCopies[card.baseName] = (currentCopies[card.baseName] || 0) + 1;
+            }
             addedCards.push(card);
         }
     }
@@ -72,7 +74,9 @@ export function addElementalFixingCards(
         const elementContribution = calculateElementalDeficitContribution(card, elementalAnalysis);
         if (elementContribution > 0) {
             updatedDeck.push(card);
-            updatedCopies[card.baseName] = (updatedCopies[card.baseName] || 0) + 1;
+            if (card.baseName) {
+                updatedCopies[card.baseName] = (updatedCopies[card.baseName] || 0) + 1;
+            }
             addedCount++;
         }
     }

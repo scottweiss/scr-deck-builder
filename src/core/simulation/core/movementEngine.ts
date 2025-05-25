@@ -10,7 +10,6 @@ import { BoardStateManager } from './boardState';
 import { PositionSystem } from './positionSystem';
 import { positionToBoardPosition } from '../../../utils/card-adapter';
 import { Player as LegacyPlayer, GameState as LegacyGameState } from '../../../types/game-types'; // For test compliance only
-import { Card as LegacyCard } from '../../../types/card-types'; // For test compliance only
 
 export interface MovementRule {
   id: string;
@@ -144,7 +143,7 @@ export class MovementEngine {
     let baseSpeed = 1; // Default speed for all cards
     
     // Apply movement modifiers
-    const rules = this.movementRules.get(card.productId) || [];
+    const rules = card.productId !== undefined ? this.movementRules.get(card.productId) || [] : [];
     for (const rule of rules) {
       if (rule.type === 'speed' && typeof rule.value === 'number') {
         baseSpeed += rule.value;
@@ -401,11 +400,13 @@ export class MovementEngine {
     let baseSpeed = 1; // Default movement speed
     
     // Apply speed modifiers from card rules
-    const speedRules = this.movementRules.get(card.productId) || [];
-    for (const rule of speedRules) {
-      if (rule.type === 'speed') {
-        baseSpeed += typeof rule.value === 'number' ? rule.value : 0;
-      }
+    const speedRules = card.productId ? this.movementRules.get(card.productId) || [] : [];
+    if (speedRules) {
+        for (const rule of speedRules) {
+          if (rule.type === 'speed') {
+            baseSpeed += typeof rule.value === 'number' ? rule.value : 0;
+          }
+        }
     }
     
     return Math.max(1, baseSpeed);

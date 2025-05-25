@@ -180,10 +180,35 @@ This document outlines the comprehensive plan for building a complete game simul
 - `src/core/simulation/ai/strategies/midrangeAI.ts` ✅ (created)
 - `src/core/simulation/ai/strategies/comboAI.ts` ✅ (created)
 
-### Phase 3 Deliverables
-- Challenging AI opponents
-- Configurable difficulty settings
-- AI vs AI testing framework
+### 3.3 AI vs AI Testing & Analysis
+**Priority: Medium**
+- [ ] Automated AI vs AI match simulation
+- [ ] Statistical analysis of AI performance
+- [ ] Logging and replay of AI games
+
+**Files to Create/Modify:**
+- `src/core/simulation/testing/aiVsAiTests.ts` (exists, needs enhancement)
+- `src/core/simulation/analysis/metaTester.ts` (exists)
+- `src/core/simulation/analysis/matchupAnalyzer.ts` (exists)
+
+### 3.4 AI Engine Next Steps & Milestones
+**Immediate Next Steps:**
+- [ ] Finalize and tune all strategic AI personalities (Aggressive, Control, Midrange, Combo)
+- [ ] Expand AI action evaluation for advanced tactics (bluffing, multi-turn planning)
+- [ ] Integrate AI difficulty scaling and user configuration
+- [ ] Complete AI vs AI batch simulation and statistical reporting
+- [ ] Enhance logging and replay for AI decision transparency
+
+**Milestones:**
+- [ ] All AI personalities pass scenario-based integration tests
+- [ ] AI vs AI test suite produces actionable performance metrics
+- [ ] User-selectable AI difficulty and personality in UI
+- [ ] Documentation for AI engine and strategy design
+
+**Phase 3 Status Update:**
+- Core AI framework and basic personalities are implemented and tested
+- Strategic tuning, advanced tactics, and analysis tools are in progress
+- AI vs AI simulation and reporting are the final deliverables for this phase
 
 ---
 
@@ -232,6 +257,8 @@ This document outlines the comprehensive plan for building a complete game simul
 - Basic gameplay controls
 - Card visualization system
 
+**Phase 4 Status**: NOT STARTED
+
 ---
 
 ## Phase 5: Advanced UI Features (Weeks 12-14)
@@ -277,6 +304,8 @@ This document outlines the comprehensive plan for building a complete game simul
 - Deck testing workflow
 - Educational features
 
+**Phase 5 Status**: NOT STARTED
+
 ---
 
 ## Phase 6: Integration & Polish (Weeks 15-16)
@@ -307,294 +336,28 @@ This document outlines the comprehensive plan for building a complete game simul
 - Complete documentation
 - Deployment pipeline
 
----
-
-## 🛠️ Technical Implementation Details
-
-### Core Technologies
-- **Frontend**: TypeScript, Web Components, CSS3, Canvas/WebGL
-- **Game Engine**: TypeScript with modular architecture
-- **Build System**: Vite for fast development and building
-- **Testing**: Vitest for unit and integration tests
-- **Styling**: Modern CSS with CSS Custom Properties
-
-### Key Architectural Decisions
-
-#### 1. Modular Game Engine
-```typescript
-// Core engine interface
-interface GameEngine {
-  readonly state: GameState;
-  readonly turnEngine: TurnEngine;
-  readonly combatSystem: CombatSystem;
-  readonly aiEngine: AIEngine;
-  
-  executeAction(action: GameAction): ActionResult;
-  simulateToEnd(): GameResult;
-  getValidActions(): GameAction[];
-}
-```
-
-#### 2. Event-Driven Architecture
-```typescript
-// Game events for UI synchronization
-interface GameEvent {
-  type: GameEventType;
-  playerId: string;
-  timestamp: number;
-  data: any;
-}
-
-// Event types
-enum GameEventType {
-  CARD_PLAYED,
-  UNIT_MOVED,
-  COMBAT_DECLARED,
-  EFFECT_TRIGGERED,
-  TURN_ENDED
-}
-```
-
-#### 3. State Management
-```typescript
-// Immutable game state
-interface GameState {
-  readonly gameId: string;
-  readonly turn: number;
-  readonly phase: GamePhase;
-  readonly activePlayer: string;
-  readonly players: ReadonlyMap<string, PlayerState>;
-  readonly board: BoardState;
-  readonly stack: ActionStack;
-}
-```
-
-### Performance Requirements
-- **Simulation Speed**: 1000+ games per second for batch testing
-- **UI Responsiveness**: 60fps during animations
-- **Memory Usage**: <500MB for typical gameplay session
-- **Load Time**: <3 seconds initial load
+**Phase 6 Status**: NOT STARTED
 
 ---
 
-## 🎨 UI/UX Design Specifications
+## Phase 7: Future Enhancements (Post-MVP)
 
-### Visual Design Principles
-1. **Clarity**: Game state should be immediately understandable
-2. **Accessibility**: Support for screen readers and keyboard navigation
-3. **Responsiveness**: Work on desktop, tablet, and mobile
-4. **Performance**: Smooth animations and transitions
-
-### Color Scheme
-- **Primary**: Deep blue (#1a365d) for UI chrome
-- **Secondary**: Gold (#d4af37) for highlights and accents
-- **Elements**: 
-  - Fire: #e53e3e (red)
-  - Water: #3182ce (blue)  
-  - Earth: #38a169 (green)
-  - Air: #805ad5 (purple)
-  - Void: #2d3748 (dark gray)
-
-### Layout Specifications
-- **Game Board**: Central 5x4 grid taking 60% of screen width
-- **Side Panels**: Player info, hand, and controls (20% each side)
-- **Bottom Bar**: Action buttons and phase indicators
-- **Mobile**: Stacked layout with collapsible panels
-
----
-
-## 🧪 Testing Strategy
-
-### Unit Testing (Target: 90% Coverage)
-- [ ] Game engine components
-- [ ] Card effect parsing
-- [ ] AI decision algorithms
-- [ ] UI component rendering
-
-### Integration Testing
-- [ ] Complete game simulations
-- [ ] AI vs AI matches
-- [ ] Deck validation workflows
-- [ ] Browser compatibility
-
-### Performance Testing
-- [ ] Simulation benchmarks
-- [ ] Memory leak detection
-- [ ] UI responsiveness metrics
-- [ ] Mobile performance validation
-
-### User Acceptance Testing
-- [ ] Gameplay accuracy verification
-- [ ] Usability testing sessions
-- [ ] Accessibility compliance
-- [ ] Cross-browser validation
-
----
-
-## 📦 Deliverables & Milestones
-
-### Week 4 Milestone: Core Engine
-- ✅ Basic game simulation working
-- ✅ Rules engine 80% complete
-- ✅ Unit tests for core components
-
-### Week 8 Milestone: Complete Game Logic
-- ✅ Full combat system
-- ✅ AI opponents functional
-- ✅ Positioning mechanics accurate
-
-### Week 12 Milestone: Basic UI
-- ✅ Playable web interface
-- ✅ Game visualization working
-- ✅ Core user interactions
-
-### Week 16 Milestone: Production Release
-- ✅ Complete feature set
-- ✅ Performance optimized
-- ✅ Documentation complete
-- ✅ Ready for public use
-
----
-
-## 🔧 Development Setup
-
-### Prerequisites
-- Node.js 18+
-- TypeScript 5.0+
-- Modern web browser
-- Git
-
-### Initial Setup
-```bash
-# Clone and setup project
-cd /Users/scott/dev/scr
-npm install
-
-# Install additional dependencies for simulation
-npm install --save-dev @types/canvas jsdom
-
-# Run tests to verify setup
-npm run test
-
-# Start development server
-npm run dev:browser
-```
-
-### Development Workflow
-1. **Feature Development**: Work in feature branches
-2. **Testing**: Write tests before implementation (TDD)
-3. **Code Review**: All changes require review
-4. **Integration**: Continuous integration with automated testing
-
----
-
-## 📚 Documentation Plan
-
-### Technical Documentation
-- [ ] API reference for game engine
-- [ ] Component documentation for UI
-- [ ] Architecture decision records
-- [ ] Performance optimization guides
-
-### User Documentation
-- [ ] Quick start guide
-- [ ] Gameplay tutorials
-- [ ] Deck building strategies
-- [ ] Troubleshooting guide
-
-### Developer Documentation
-- [ ] Contributing guidelines
-- [ ] Code style standards
-- [ ] Testing procedures
-- [ ] Deployment instructions
-
----
-
-## 🚀 Deployment Strategy
-
-### Development Environment
-- Local development with hot reload
-- Automated testing on every commit
-- Preview deployments for feature branches
-
-### Staging Environment
-- Integration testing with full dataset
-- Performance benchmarking
-- User acceptance testing
-
-### Production Environment
-- CDN deployment for optimal performance
-- Monitoring and error tracking
-- Automated backup and recovery
-
----
-
-## 🔮 Future Enhancements
-
-### Phase 7: Advanced Features (Post-MVP)
+### 7.1 Multiplayer & Community Features
 - [ ] Multiplayer online gameplay
 - [ ] Tournament bracket system
-- [ ] Advanced AI with machine learning
-- [ ] Custom card creation tools
 - [ ] Community deck sharing
 - [ ] Statistical analysis dashboard
 - [ ] Mobile native apps
 - [ ] VR/AR experimental interface
 
-### Integration Opportunities
-- [ ] Official Sorcery tournament data
+### 7.2 Advanced AI & Data Integration
+- [ ] Advanced AI with machine learning
+- [ ] Official Sorcery tournament data integration
 - [ ] Card price tracking APIs
-- [ ] Community forums integration
-- [ ] Social media sharing
+- [ ] Social media and community integration
 - [ ] Video replay export
 
 ---
 
-## ⚠️ Risks & Mitigation
-
-### Technical Risks
-1. **Performance Issues**: Mitigate with profiling and optimization
-2. **Rules Complexity**: Extensive testing and validation
-3. **Browser Compatibility**: Progressive enhancement approach
-4. **AI Quality**: Iterative improvement with testing
-
-### Project Risks
-1. **Scope Creep**: Strict adherence to phase deliverables
-2. **Timeline Delays**: Regular milestone reviews and adjustments
-3. **Resource Constraints**: Prioritize core features first
-4. **User Adoption**: Early feedback and iteration
-
----
-
-## 📊 Success Metrics
-
-### Technical Metrics
-- **Test Coverage**: >90% for core components
-- **Performance**: <100ms simulation per turn
-- **Uptime**: >99.9% availability
-- **Load Time**: <3 seconds initial load
-
-### User Metrics
-- **Engagement**: Average session >10 minutes
-- **Retention**: >50% return within 7 days
-- **Satisfaction**: >4.5/5 user rating
-- **Adoption**: 1000+ active users within 3 months
-
----
-
-## 🏁 Conclusion
-
-This build plan provides a comprehensive roadmap for creating a world-class Sorcery: Contested Realm game simulator. The phased approach ensures steady progress while maintaining quality and allowing for iterative improvement based on user feedback.
-
-The combination of accurate game simulation, intelligent AI, and intuitive UI will create a valuable tool for players to learn, practice, and enjoy the game. The modular architecture ensures maintainability and extensibility for future enhancements.
-
-**Next Steps:**
-1. Review and approve this build plan
-2. Set up development environment
-3. Begin Phase 1 implementation
-4. Establish regular progress reviews
-
----
-
-*Last Updated: May 24, 2025*
-*Version: 1.0*
+*Last Updated: May 25, 2025*
+*Version: 1.1*

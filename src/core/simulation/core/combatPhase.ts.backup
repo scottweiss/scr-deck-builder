@@ -4,7 +4,7 @@
  */
 
 import { Player, GameState, BoardPosition } from '../../../types/game-types';
-import { Card } from '../../../types/card-types';
+import { Card } from '../../../types/Card';
 import { ActionStack } from './actionStack';
 import { PrioritySystem } from './prioritySystem';
 import { BoardStateManager } from './boardState';

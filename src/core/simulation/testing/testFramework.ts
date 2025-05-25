@@ -516,6 +516,7 @@ export class SimulationTestFramework {
   // Helper methods
   private createMockPlayerDeck(): { avatar: Card; spells: Card[]; sites: Card[] } {
     const mockCard: Card = {
+      id: 'mock-card-1',
       productId: 'mock',
       name: 'Mock Card',
       cleanName: 'mock_card',

@@ -18,6 +18,29 @@ import {
     generateRecommendations
 } from './deckAnalyzer';
 
+/**
+ * Convert Card to simulation Card interface
+ */
+function convertToSimCard(card: Card) {
+    return {
+        id: card.productId || card.name,
+        name: card.name,
+        type: card.type,
+        cost: card.cost || card.mana_cost || 0,
+        effect: card.text || card.extDescription,
+        keywords: [],
+        subtypes: card.subTypeName ? [card.subTypeName] : [],
+        power: card.power || 0,
+        life: card.life,
+        defense: card.defense,
+        mana_cost: card.mana_cost,
+        text: card.text,
+        elements: card.elements,
+        rarity: card.rarity,
+        baseName: card.baseName
+    };
+}
+
 
 /**
  * Test a deck against the meta
@@ -61,10 +84,13 @@ export function analyzeTestResults(
     const overallWinRate = results.reduce((sum, r) => sum + r.player1WinRate, 0) / results.length;
     const averageTurns = results.reduce((sum, r) => sum + r.averageTurns, 0) / results.length;
 
+    // Convert to simulation cards for analysis
+    const simTestDeck = testDeck.map(convertToSimCard);
+
     const performance = classifyPerformance(overallWinRate);
-    const strengths = identifyStrengths(testDeck, results);
-    const weaknesses = identifyWeaknesses(testDeck, results);
-    const recommendations = generateRecommendations(testDeck, results);
+    const strengths = identifyStrengths(simTestDeck, results);
+    const weaknesses = identifyWeaknesses(simTestDeck, results);
+    const recommendations = generateRecommendations(simTestDeck, results);
 
     return {
         deckName: 'Test Deck',

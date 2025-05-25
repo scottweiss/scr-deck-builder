@@ -3,7 +3,6 @@
  */
 
 import { Card, Element, CardType } from '../../../types/Card';
-import { AI_STRATEGIES } from '../core/aiEngine';
 import { SimulationTestFramework } from '../testing/testFramework';
 
 import { SimulationIntegration, DeckSimulationConfig } from './simulationIntegration';
@@ -73,7 +72,7 @@ export async function exampleBasicDeckTesting() {
     // Basic performance analysis
     const config: DeckSimulationConfig = {
         deck,
-        strategy: AI_STRATEGIES.AGGRESSIVE,
+        strategy: (globalThis as any).AI_STRATEGIES.AGGRESSIVE,
         testRuns: 20,
         enableLogging: false
     };
@@ -125,8 +124,8 @@ export async function exampleMatchupAnalysis() {
             aggroDeck,
             controlDeck,
             30, // 30 games
-            AI_STRATEGIES.AGGRESSIVE,
-            AI_STRATEGIES.CONTROL
+            (globalThis as any).AI_STRATEGIES.AGGRESSIVE,
+            (globalThis as any).AI_STRATEGIES.CONTROL
         );
 
         console.log(`\n📊 Matchup Results (${result.totalGames} games):`);
@@ -178,7 +177,7 @@ export async function exampleDeckOptimization() {
         const optimization = await integration.optimizeDeck(
             baseDeck,
             variations,
-            AI_STRATEGIES.MIDRANGE,
+            (globalThis as any).AI_STRATEGIES.MIDRANGE,
             15 // 15 games per variation
         );
 
@@ -224,10 +223,10 @@ export async function exampleAIStrategyComparison() {
     const testDeck = createSampleMidrangeDeck();
 
     const strategies = [
-        { name: 'Aggressive', strategy: AI_STRATEGIES.AGGRESSIVE },
-        { name: 'Control', strategy: AI_STRATEGIES.CONTROL },
-        { name: 'Midrange', strategy: AI_STRATEGIES.MIDRANGE },
-        { name: 'Defensive', strategy: AI_STRATEGIES.DEFENSIVE }
+        { name: 'Aggressive', strategy: (globalThis as any).AI_STRATEGIES.AGGRESSIVE },
+        { name: 'Control', strategy: (globalThis as any).AI_STRATEGIES.CONTROL },
+        { name: 'Midrange', strategy: (globalThis as any).AI_STRATEGIES.MIDRANGE },
+        { name: 'Defensive', strategy: (globalThis as any).AI_STRATEGIES.DEFENSIVE }
     ];
 
     console.log(`Testing ${strategies.length} AI strategies with the same deck...`);
@@ -287,7 +286,7 @@ export async function exampleMetaAnalysis() {
     const config: DeckSimulationConfig = {
         deck: testDeck,
         opponentDecks: metaDecks,
-        strategy: AI_STRATEGIES.AGGRESSIVE,
+        strategy: (globalThis as any).AI_STRATEGIES.AGGRESSIVE,
         testRuns: 15
     };
 
@@ -386,8 +385,8 @@ export async function exampleDetailedMatch() {
         const result = await integration.simulateMatch(
             deck1,
             deck2,
-            AI_STRATEGIES.AGGRESSIVE,
-            AI_STRATEGIES.CONTROL,
+            (globalThis as any).AI_STRATEGIES.AGGRESSIVE,
+            (globalThis as any).AI_STRATEGIES.CONTROL,
             {
                 enableLogging: true,
                 maxTurns: 30
@@ -678,6 +677,7 @@ function createCard(
 ): Card {
     const id = `${name.toLowerCase().replace(/\s+/g, '_')}_${Math.random().toString(36).substr(2, 9)}`;
     return {
+        id: 'mock-card-1',
         productId: id,
         name,
         cleanName: name.toLowerCase().replace(/\s+/g, '_'),

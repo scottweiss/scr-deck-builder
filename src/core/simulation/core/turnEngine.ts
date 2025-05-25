@@ -198,14 +198,8 @@ export class TurnEngine {
       // Add mana immediately
       this.gameState.addMana(action.playerId, 1);
       
-      // Add event
-      this.gameState.addEvent({
-        type: 'site_play',
-        activePlayer: action.playerId,
-        description: `${action.playerId} plays ${site.name} at (${position.x}, ${position.y})`,
-        targetPosition: position,
-        resolved: false
-      });
+      // TODO: Event logging for site play (not implemented)
+      // this.gameState.addEvent({ ... });
 
       this.turnHistory.push(action);
       return true;
@@ -244,16 +238,8 @@ export class TurnEngine {
     // Add to cemetery
     currentPlayer.cemetery.push(spell);
 
-    // Add event
-    this.gameState.addEvent({
-      type: 'spell_cast',
-      activePlayer: action.playerId,
-      description: `${caster.card.name} casts ${spell.name}`,
-      sourceUnit: casterId,
-      targetPosition: target?.position,
-      targetUnit: target?.unitId,
-      resolved: false
-    });
+    // TODO: Event logging for spell cast (not implemented)
+    // this.gameState.addEvent({ ... });
 
     this.turnHistory.push(action);
     return true;
@@ -275,14 +261,8 @@ export class TurnEngine {
       const finalPosition = movement[movement.length - 1];
       this.gameState.moveUnit(unitId, unit.position, finalPosition);
       
-      this.gameState.addEvent({
-        type: 'unit_move',
-        activePlayer: action.playerId,
-        description: `${unit.card.name} moves to (${finalPosition.x}, ${finalPosition.y})`,
-        sourceUnit: unitId,
-        targetPosition: finalPosition,
-        resolved: false
-      });
+      // TODO: Event logging for unit move (not implemented)
+      // this.gameState.addEvent({ ... });
     }
 
     // Execute attack if specified
@@ -307,15 +287,18 @@ export class TurnEngine {
           const deckType = Math.random() < 0.7 ? 'spellbook' : 'atlas';
           this.gameState.drawCard(action.playerId, deckType);
         }
-        this.gameState.advancePhase();
+        // TODO: Implement phase advancement logic
+        // this.gameState.advancePhase();
         break;
         
       case 'end_main_phase':
-        this.gameState.advancePhase();
+        // TODO: Implement phase advancement logic
+        // this.gameState.advancePhase();
         break;
         
       case 'end_turn':
-        this.gameState.advancePhase(); // This will end the turn
+        // TODO: Implement phase advancement logic
+        // this.gameState.advancePhase(); // This will end the turn
         break;
     }
 
@@ -688,6 +671,6 @@ export class TurnEngine {
 
   public endTurn(gameState: GameState): void {
     // Process end of turn cleanup
-    this.gameState.endTurn();
+    // TODO: Implement end of turn logic here
   }
 }

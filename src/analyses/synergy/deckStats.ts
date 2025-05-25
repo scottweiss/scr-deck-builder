@@ -33,8 +33,10 @@ export function getDeckStats(deck: Card[]): DeckStats {
 
     for (const card of deck) {
         // Count elements
-        for (const element of card.elements) {
-            stats.elements[element] = (stats.elements[element] || 0) + 1;
+        if (card.elements) {
+            for (const element of card.elements) {
+                stats.elements[element] = (stats.elements[element] || 0) + 1;
+            }
         }
 
         // Count card types
@@ -52,11 +54,13 @@ export function getDeckStats(deck: Card[]): DeckStats {
 
         // Track mana cost
         const cost = card.mana_cost;
-        stats.mana_curve[cost] = (stats.mana_curve[cost] || 0) + 1;
+        const safeCost = cost ?? 0;
+        stats.mana_curve[safeCost] = (stats.mana_curve[safeCost] || 0) + 1;
 
         // Track rarities
         const rarity = card.rarity;
-        stats.rarities[rarity] = (stats.rarities[rarity] || 0) + 1;
+        const safeRarity = rarity ?? 'Unknown';
+        stats.rarities[safeRarity] = (stats.rarities[safeRarity] || 0) + 1;
     }
 
     return stats;

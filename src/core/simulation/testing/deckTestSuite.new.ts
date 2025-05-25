@@ -1,5 +1,5 @@
 import { MatchSimulator, SimulationBatch } from '../core/matchSimulator';
-import { Card } from '../core/gameState';
+import { Card } from '../../../types/Card';
 import { Element, CardType } from '../../../types/Card';
 import {
     testDeckAgainstMeta,

@@ -4,7 +4,7 @@
  */
 
 import { Player, GameState, BoardPosition } from '../../../types/game-types';
-import { Card } from '../../../types/card-types';
+import { Card } from '../../../types/Card';
 
 export interface DamageSource {
   type: 'creature' | 'spell' | 'ability' | 'burn' | 'combat';

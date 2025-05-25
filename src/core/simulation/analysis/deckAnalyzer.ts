@@ -1,4 +1,4 @@
-import { Card } from '../core/gameState';
+import { Card } from '../../../types/Card';
 import { BatchResult } from '../core/matchSimulator';
 import { Element } from '../../../types/Card';
 

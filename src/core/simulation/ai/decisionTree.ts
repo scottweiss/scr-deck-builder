@@ -1,6 +1,7 @@
 // Decision tree algorithms for AI strategic decision making
 
-import { GameState, Player, Unit, Position, Card, GameAction } from '../core/gameState';
+import { GameState, Player, Unit, Position, CardType, GameAction } from '../core/gameState';
+import { Card } from '../../../types/Card';
 import { GameStateEvaluator } from './gameStateEvaluator';
 
 export interface DecisionNode {
@@ -327,7 +328,7 @@ export class DecisionTree {
 
     if (card) {
       value += (card.cost || 0) * 5; // Higher cost cards tend to be more valuable
-      if (card.type === 'Creature') {
+      if (card.type === CardType.Minion) {
         value += 10; // Creatures provide board presence
       }
     }
@@ -353,7 +354,7 @@ export class DecisionTree {
     player.mana -= card.cost || 0;
 
     // Add unit to board if it's a creature
-    if (card.type === 'Creature') {
+    if (card.type === CardType.Minion) {
       const unitId = `sim_unit_${Date.now()}_${Math.random()}`;
       const unit: Unit = {
         id: unitId,

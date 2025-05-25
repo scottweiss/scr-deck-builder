@@ -1,4 +1,4 @@
-import { Card } from '../core/gameState';
+import { Card } from '../../../types/Card';
 import { getMetaDecks } from '../testing/testDeckUtils';
 import { DeckOptimizationResult } from '../types/deckTestTypes';
 

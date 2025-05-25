@@ -36,6 +36,10 @@ export interface SimulationResult {
     gameLog: GameLogEntry[];
     statistics: GameStatistics;
     duration: number; // milliseconds
+    // Additional properties for AI vs AI testing
+    finalState?: GameState;
+    totalTurns?: number;
+    winCondition?: 'life' | 'timeout' | 'deck' | 'concede';
 }
 
 export interface GameLogEntry {

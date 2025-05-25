@@ -1,7 +1,8 @@
 // comboAI.ts
 // Combo AI strategy for Sorcery TCG
 
-import { GameState, Player, Unit, Position, Card } from '../../core/gameState';
+import { GameState, Player, Unit, Position } from '../../core/gameState';
+import { Card, CardType, Element } from '../../../../types/Card';
 import { GameAction } from '../../core/gameState';
 import { BaseAIStrategy } from '../aiStrategy';
 
@@ -253,7 +254,7 @@ export class ComboAIStrategy extends BaseAIStrategy {
     
     for (const card of allCards) {
       if (card.elements) {
-        card.elements.forEach(element => elements.add(element));
+        card.elements.forEach((element: Element) => elements.add(element));
       }
     }
     
@@ -329,7 +330,7 @@ export class ComboAIStrategy extends BaseAIStrategy {
            text.includes('heal') ||
            text.includes('shield') ||
            text.includes('protection') ||
-           card.type === 'Minion' && (card.cost || 0) >= 3; // Defensive minions
+           card.type === CardType.Minion && (card.cost || 0) >= 3; // Defensive creatures
   }
 
   private hasExpensiveComboCards(hand: Card[]): boolean {
@@ -373,10 +374,47 @@ export class ComboAIStrategy extends BaseAIStrategy {
     return positions;
   }
 
+  // Missing methods that are called by the strategy
+  private getValidPlayPositions(gameState: GameState, player: Player): Position[] {
+    const positions: Position[] = [];
+    
+    for (let x = 0; x < 5; x++) {
+      for (let y = 0; y < 4; y++) {
+        const square = gameState.grid[y][x];
+        if (square.units.length === 0 && !square.site) {
+          positions.push({ x, y });
+        }
+      }
+    }
+    
+    return positions;
+  }
+
+  private getUnitsInRange(gameState: GameState, pos: Position, range: number): Unit[] {
+    const units: Unit[] = [];
+    
+    for (let x = pos.x - range; x <= pos.x + range; x++) {
+      for (let y = pos.y - range; y <= pos.y + range; y++) {
+        if (x >= 0 && x < 5 && y >= 0 && y < 4) {
+          const square = gameState.grid[y][x];
+          units.push(...square.units);
+        }
+      }
+    }
+    
+    return units;
+  }
+
+  private canMoveToPosition(gameState: GameState, unit: Unit, pos: Position): boolean {
+    if (pos.x < 0 || pos.x >= 5 || pos.y < 0 || pos.y >= 4) {
+      return false;
+    }
+    
+    const square = gameState.grid[pos.y][pos.x];
+    return square.units.length === 0 && !square.site;
+  }
+
   private canPlayCard(card: Card, player: Player, gameState: GameState): boolean {
-    // Check mana cost
-    if ((card.cost || 0) > player.mana) return false;
-    // TODO: Add elemental affinity and other Sorcery-specific checks if needed
-    return true;
+    return (card.cost || 0) <= player.mana;
   }
 }
