@@ -7,6 +7,7 @@ import { Card } from '../../../types/card-types';
 import { Player, GameState, BoardPosition } from '../../../types/game-types';
 import { BoardStateManager } from './boardState';
 import { Card as BaseCard } from '../../../types/Card';
+import { Position } from './gameState';
 
 export interface PositionRule {
   id: string;
@@ -568,12 +569,6 @@ export class PositionSystem {
   private applyRegionalRestrictions(validation: PlacementValidation, gameState: GameState): void {
     // Apply restrictions based on board regions (void, surface, underground, underwater)
     // This would integrate with the region manager
-  }
-
-  private isStartingPosition(position: BoardPosition, playerId: string): boolean {
-    // Define starting positions for each player
-    // This is game-specific and would depend on the setup rules
-    return position.row === 0 || position.row === 3; // Simplified: top and bottom rows
   }
 
   private triggerPlacementEffects(card: Card, position: BoardPosition, gameState: GameState): void {

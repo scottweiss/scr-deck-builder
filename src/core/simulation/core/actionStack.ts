@@ -193,7 +193,7 @@ export class ActionStack {
    * Resolve a single action
    */
   private resolveAction(action: GameAction): ActionResult {
-    const result: ActionResult = {
+    let result: ActionResult = {
       success: false,
       effects: [],
       triggeredAbilities: []

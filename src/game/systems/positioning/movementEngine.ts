@@ -538,13 +538,36 @@ export class MovementEngine {
   }
 
   private getCardAt(position: BoardPosition, gameState: GameState): Card | null {
-    // Simple stub implementation - return null
-    return null;
+    // Convert BoardPosition to Position for boardState
+    const adaptedPosition = this.toBoardStatePosition(position);
+    
+    // Simple implementation for testing
+    return null; // Stub for testing purposes
   }
 
   private hasLineOfSight(from: BoardPosition, to: BoardPosition, gameState: GameState): boolean {
-    // Simple stub implementation - always return true for tests
-    return true;
+    // Simple implementation for testing
+    return true; // Stub for testing purposes
+  }
+
+  /**
+   * Convert BoardPosition (row, col) to Position (x, y) for BoardStateManager
+   */
+  private toBoardStatePosition(boardPos: BoardPosition): { x: number, y: number } {
+    return { 
+      x: boardPos.col, 
+      y: boardPos.row 
+    };
+  }
+
+  /**
+   * Convert Position (x, y) to BoardPosition (row, col) 
+   */
+  private fromBoardStatePosition(pos: { x: number, y: number }): BoardPosition {
+    return { 
+      row: pos.y, 
+      col: pos.x 
+    };
   }
 }
 
