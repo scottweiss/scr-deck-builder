@@ -26,4 +26,5 @@ temp/
 # Generated output
 dist/
 build/
+docs/
 .cache/

@@ -2,6 +2,8 @@
 
 A comprehensive deck building and simulation system for Sorcery: Contested Realm trading card game.
 
+🌐 **Live Demo**: [https://scottweiss.github.io/scr-deck-builder/](https://scottweiss.github.io/scr-deck-builder/)
+
 ## Features
 
 - 🎯 **Smart Deck Building**: AI-powered deck construction with element and archetype optimization
@@ -22,6 +24,9 @@ npm run dev
 
 # Build for production
 npm run build
+
+# Build for GitHub Pages
+npm run build:pages
 
 # Run tests
 npm test
@@ -85,6 +90,26 @@ npm test phase1-core
 # Run with UI
 npm run test:ui
 ```
+
+## Deployment
+
+### GitHub Pages
+
+The project is automatically deployed to GitHub Pages when changes are pushed to the main branch. The deployment process:
+
+1. GitHub Actions builds the project using `npm run build:pages`
+2. Static files are deployed to GitHub Pages from the `docs/` directory
+3. The site is available at: https://scottweiss.github.io/scr-deck-builder/
+
+### Manual Deployment
+
+To build for GitHub Pages locally:
+
+```bash
+npm run build:pages
+```
+
+This will create a `docs/` directory with the static site ready for deployment.
 
 ## License
 
