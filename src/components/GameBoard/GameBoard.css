@@ -1,0 +1,57 @@
+.game-board {
+  display: flex;
+  height: 100vh;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+}
+
+.game-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.board-separator {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 2px solid #444;
+  border-bottom: 2px solid #444;
+  margin: 20px 0;
+}
+
+.turn-indicator {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffcc00;
+}
+
+.game-sidebar {
+  width: 300px;
+  background: #2a2a2a;
+  padding: 20px;
+  border-left: 1px solid #444;
+}
+
+.game-over-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.game-over-message {
+  font-size: 48px;
+  font-weight: bold;
+  color: #ffcc00;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}

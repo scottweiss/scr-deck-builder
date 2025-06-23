@@ -4,6 +4,9 @@
 
 export * from './Card';
 export * from './Deck';
+export * from './GameEvent';
+export * from './game-types';
+export * from './card-types';
 
 /**
  * Common utility types

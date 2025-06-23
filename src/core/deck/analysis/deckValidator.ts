@@ -1,228 +1,103 @@
+import { Deck, DeckValidation } from '../../../types';
 import { Card, CardRarity } from '../../../types/Card';
-import { DeckValidationResult } from '../../../types/Deck';
-import { getMaxCopiesForRarity } from '../optimization/deckOptimizer';
 
 /**
  * Validates a complete deck according to official Sorcery: Contested Realm rules
  */
 export class DeckValidator {
-    /**
-     * Validates an entire deck against all game rules
-     */
-    static validateDeck(
-        avatar: Card, 
-        sites: Card[], 
-        spells: Card[]
-    ): DeckValidationResult {
-        const errors: string[] = [];
-        const warnings: string[] = [];
+  private static readonly SITE_COUNT = 30;
+  private static readonly SPELLBOOK_COUNT = 50;
+  private static readonly MAX_COPIES_ORDINARY = 4;
+  private static readonly MAX_COPIES_UNIQUE = 1;
 
-        // Rule: Avatar does not count toward deck totals per official rules
-        // Avatar is validated separately and is not part of Atlas or Spellbook
+  /**
+   * Validates an entire deck against all game rules
+   */
+  static validate(
+    deck: Deck
+  ): DeckValidation {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const suggestions: string[] = [];
 
-        // Rule: Atlas must contain at least 30 site cards
-        if (sites.length < 30) {
-            errors.push(`Atlas must contain at least 30 sites (currently has ${sites.length})`);
-        }
-
-        // Rule: Spellbook must contain at least 50 spell cards
-        if (spells.length < 50) {
-            errors.push(`Spellbook must contain at least 50 spells (currently has ${spells.length})`);
-        }
-
-        // Rule: Maximum deck size should be reasonable for shuffling
-        if (sites.length > 100) {
-            warnings.push(`Atlas is very large (${sites.length} cards) - may be difficult to shuffle`);
-        }
-        if (spells.length > 100) {
-            warnings.push(`Spellbook is very large (${spells.length} cards) - may be difficult to shuffle`);
-        }
-
-        // Validate rarity limits for sites
-        const siteRarityErrors = this.validateRarityLimits(sites, "sites");
-        errors.push(...siteRarityErrors);
-
-        // Validate rarity limits for spells
-        const spellRarityErrors = this.validateRarityLimits(spells, "spells");
-        errors.push(...spellRarityErrors);
-
-        // Validate elemental threshold requirements
-        const thresholdWarnings = this.validateElementalThresholds(sites, spells);
-        warnings.push(...thresholdWarnings);
-
-        // Validate spellcaster restrictions and support
-        const spellcasterWarnings = this.validateSpellcasterRestrictions(spells);
-        warnings.push(...spellcasterWarnings);
-
-        // Validate regional strategy consistency
-        const regionalWarnings = this.validateRegionalStrategy(sites, spells);
-        warnings.push(...regionalWarnings);
-
-        // Validate avatar compatibility
-        if (avatar) {
-            const avatarWarnings = this.validateAvatarCompatibility(avatar, [...sites, ...spells]);
-            warnings.push(...avatarWarnings);
-        }
-
-        return {
-            isValid: errors.length === 0,
-            errors,
-            warnings,
-            totalCards: sites.length + spells.length + (avatar ? 1 : 0),
-            spellbookSize: spells.length,
-            siteCount: sites.length
-        };
+    // Validate avatar
+    if (!deck.avatar) {
+      errors.push('Deck must have an avatar');
     }
 
-    /**
-     * Validates rarity limits for a group of cards
-     */
-    private static validateRarityLimits(cards: Card[], groupName: string): string[] {
-        const errors: string[] = [];
-        const cardCounts = new Map<string, number>();
-
-        // Count copies of each card
-        for (const card of cards) {
-            const key = card.baseName || card.name;
-            if (key) {
-                cardCounts.set(key, (cardCounts.get(key) || 0) + 1);
-            }
-        }
-
-        // Check copy limits based on rarity
-        for (const [cardName, count] of cardCounts.entries()) {
-            const card = cards.find(c => (c.baseName || c.name) === cardName);
-            if (card) {
-                const maxCopies = getMaxCopiesForRarity(card.rarity as CardRarity);
-                if (count > maxCopies) {
-                    errors.push(
-                        `${groupName} contains ${count}x "${cardName}" - maximum of ${maxCopies} allowed for ${card.rarity} cards`
-                    );
-                }
-            }
-        }
-
-        return errors;
+    // Validate site count
+    if (deck.sites.length !== this.SITE_COUNT) {
+      errors.push(`Deck must have exactly ${this.SITE_COUNT} sites (has ${deck.sites.length})`);
     }
 
-    /**
-     * Validates elemental thresholds are achievable
-     */
-    private static validateElementalThresholds(sites: Card[], spells: Card[]): string[] {
-        const warnings: string[] = [];
-        const elementCounts: Record<string, number> = {};
-
-        // Count elements from both sites and spells
-        for (const card of [...sites, ...spells]) {
-            const elements = card.elements || [];
-            for (const element of elements) {
-                elementCounts[element] = (elementCounts[element] || 0) + 1;
-            }
-        }
-
-        // Check each card's threshold requirements
-        for (const card of spells) {
-            const threshold = card.threshold;
-            if (threshold) {
-                const matches = threshold.match(/(\d+)\s+(Water|Fire|Earth|Air|Void)/gi);
-                if (matches) {
-                    for (const match of matches) {
-                        const [_, count, element] = match.match(/(\d+)\s+(Water|Fire|Earth|Air|Void)/i)!;
-                        const required = parseInt(count);
-                        const available = elementCounts[element] || 0;
-
-                        if (available < required) {
-                            warnings.push(
-                                `Deck may struggle to meet ${element} threshold (${required}) for "${card.name}" - only ${available} sources available`
-                            );
-                        }
-                    }
-                }
-            }
-        }
-
-        return warnings;
+    // Validate spellbook count
+    if (deck.spellbook.length !== this.SPELLBOOK_COUNT) {
+      errors.push(`Spellbook must have exactly ${this.SPELLBOOK_COUNT} cards (has ${deck.spellbook.length})`);
     }
 
-    /**
-     * Validates spellcaster support and restrictions
-     */
-    private static validateSpellcasterRestrictions(spells: Card[]): string[] {
-        const warnings: string[] = [];
-        const spellcasterMinionCount = spells.filter(card => 
-            (card.text || "").toLowerCase().includes("spellcaster") && card.type === "Minion"
-        ).length;
-
-        const spellCount = spells.filter(card => 
-            card.type === "Magic"
-        ).length;
-
-        // Note: All Avatars are inherently Spellcasters per official rules
-        // Only warn about minion spellcasters if there are many spells requiring specific casting
-        const totalSpellcasters = spellcasterMinionCount + 1; // +1 for Avatar which is always a spellcaster
-
-        // Only warn if there are many magic spells but very few total spellcasters
-        if (spellCount > 20 && totalSpellcasters < 3) {
-            warnings.push(
-                `Deck contains ${spellCount} magic spells but only ${totalSpellcasters} total spellcasters (including Avatar) - consider adding spellcaster minions`
-            );
+    // Validate card copies
+    const cardCounts = this.countCards([...deck.sites, ...deck.spellbook]);
+    for (const [cardName, count] of Object.entries(cardCounts)) {
+      const card = [...deck.sites, ...deck.spellbook].find(c => c.name === cardName);
+      if (card) {
+        const maxCopies = card.rarity === CardRarity.Unique ? this.MAX_COPIES_UNIQUE : this.MAX_COPIES_ORDINARY;
+        if (count > maxCopies) {
+          errors.push(`Too many copies of "${cardName}": ${count} (max: ${maxCopies})`);
         }
-
-        return warnings;
+      }
     }
 
-    /**
-     * Validates regional strategy consistency
-     */
-    private static validateRegionalStrategy(sites: Card[], spells: Card[]): string[] {
-        const warnings: string[] = [];
-        
-        // Count cards with different regional mechanics
-        const underground = spells.filter(card => 
-            (card.text || "").toLowerCase().includes("underground") ||
-            (card.text || "").toLowerCase().includes("burrowing")
-        ).length;
-
-        const underwater = spells.filter(card => 
-            (card.text || "").toLowerCase().includes("underwater") ||
-            (card.text || "").toLowerCase().includes("submerge")
-        ).length;
-
-        const airborne = spells.filter(card => 
-            (card.text || "").toLowerCase().includes("airborne") ||
-            (card.text || "").toLowerCase().includes("flying")
-        ).length;
-
-        // Warn about mixed strategies if multiple are present in significant numbers
-        if ((underground > 5 && underwater > 5) || 
-            (underground > 5 && airborne > 5) || 
-            (underwater > 5 && airborne > 5)) {
-            warnings.push(
-                "Deck mixes multiple positional strategies - consider focusing on one primary position"
-            );
-        }
-
-        return warnings;
+    // Check mana curve
+    const manaCurve = this.calculateManaCurve(deck.spellbook);
+    const lowCostCards = (manaCurve[1] || 0) + (manaCurve[2] || 0);
+    if (lowCostCards < 10) {
+      warnings.push('Deck has few low-cost cards, may have slow starts');
     }
 
-    /**
-     * Validates avatar compatibility with deck contents
-     */
-    private static validateAvatarCompatibility(avatar: Card, allCards: Card[]): string[] {
-        const warnings: string[] = [];
-        
-        // Check for avatar-specific restrictions
-        const avatarText = (avatar.text || "").toLowerCase();
-        
-        // Some avatars may have restrictions on card types or elements
-        if (avatarText.includes("cannot") || avatarText.includes("may not") || avatarText.includes("only")) {
-            // This would need to be expanded based on specific avatar restrictions
-            // For now, just flag that manual review may be needed
-            warnings.push(
-                `Avatar "${avatar.name}" may have deck building restrictions - manual review recommended`
-            );
-        }
-
-        return warnings;
+    // Check element consistency
+    const avatarElements = deck.avatar?.elements || [];
+    const elementMatch = this.checkElementConsistency(deck, avatarElements);
+    if (elementMatch < 0.5) {
+      warnings.push('Many cards don\'t match avatar\'s elements');
     }
+
+    // Generate suggestions
+    if (Object.keys(manaCurve).length < 4) {
+      suggestions.push('Consider diversifying your mana curve');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      suggestions
+    };
+  }
+
+  private static countCards(cards: Card[]): { [cardName: string]: number } {
+    const counts: { [cardName: string]: number } = {};
+    cards.forEach(card => {
+      counts[card.name] = (counts[card.name] || 0) + 1;
+    });
+    return counts;
+  }
+
+  private static calculateManaCurve(cards: Card[]): { [cost: number]: number } {
+    const curve: { [cost: number]: number } = {};
+    cards.forEach(card => {
+      const cost = Math.min(card.mana_cost || 0, 7);
+      curve[cost] = (curve[cost] || 0) + 1;
+    });
+    return curve;
+  }
+
+  private static checkElementConsistency(deck: Deck, avatarElements: string[]): number {
+    if (avatarElements.length === 0) return 1;
+    
+    const matchingCards = deck.spellbook.filter(card =>
+      card.elements.some(element => avatarElements.includes(element))
+    );
+    
+    return matchingCards.length / deck.spellbook.length;
+  }
 }

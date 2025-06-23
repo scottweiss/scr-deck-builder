@@ -1,262 +1,212 @@
-import { Card, CardAllocation, Element } from '../../../types/Card';
-import { DeckBuildOptions, Deck, DeckMetadata } from '../../../types/Deck';
-import * as synergyCalculator from '../../../analyses/synergy/synergyCalculator';
-import * as deckOptimizer from '../optimization/deckOptimizer';
-import * as elementAnalyzer from '../../../analyses/position/elementRequirementAnalyzer';
-import * as deckPlayability from '../../../analyses/playability/deckPlayability';
-import { calculateCardAllocation } from '../allocation/cardAllocation';
-import { analyzeCardCombos } from '../analysis/comboDetection';
-import { isUtilityArtifact, sortArtifactsWithUtilityPriority } from '../allocation/utilityArtifactPrioritizer';
-import { Combo } from '../../cards/cardCombos';
+import { Card, CardType, Element, Avatar, Site } from '../../../types';
+import { Deck } from '../../../types/Deck';
+import { DeckValidator } from '../analysis/deckValidator';
 
-import { completeDeckWithSynergyCards, addElementalFixingCards } from './deckCompletion';
-import { isComboCard, sortMinions, sortAuras, sortMagics } from './cardSorting';
-import { selectMinions, selectAuras, selectMagics } from './cardSelection';
-
-// Re-export functions for backward compatibility
-export { calculateCardAllocation } from '../allocation/cardAllocation';
-export { analyzeCardCombos } from '../analysis/comboDetection';
-export { isUtilityArtifact, sortArtifactsWithUtilityPriority } from '../allocation/utilityArtifactPrioritizer';
-export { completeDeckWithSynergyCards, addElementalFixingCards } from './deckCompletion';
-export { isComboCard, sortMinions, sortAuras, sortMagics } from './cardSorting';
-export { selectMinions, selectAuras, selectMagics } from './cardSelection';
-
-interface SpellbookResult {
-  spells: Card[];
-  playabilityScore: number;
-  playabilityIssues: string[];
-  totalSynergy: number;
-  copiesInDeck: Record<string, number>; // Added this line
+export interface DeckBuildOptions {
+  avatar?: Avatar;
+  preferredElements?: Element[];
+  archetype?: string;
+  maxCards?: number;
+  sites: Site[];
+  spellbook: Card[];
 }
 
-interface ComboPiece {
-  card: Card;
-  importance: number;
-}
-
-interface CardCombo {
-  name: string;
-  description: string;
-  synergisticScore: number;
-  percentComplete: number;
-  pieces: ComboPiece[];
-}
-
-/**
- * Build a spellbook deck with the given card pool
- */
-export function buildSpellbook(options: DeckBuildOptions): SpellbookResult {
-  const {
-    minions,
-    artifacts,
-    auras,
-    magics,
-    uniqueCards,
-    avatar,
-    allocation = {} as CardAllocation,
-    sites = [] // Extract sites, default to empty array if not provided
-  } = options;
-
-  // Set default allocations if not provided
-  const defaultAllocation: CardAllocation = {
-    minions: 24,  // ~45%
-    artifacts: 10, // ~20%
-    auras: 6,     // ~12%
-    magics: 15,   // ~30%
-  };
-  
-  let selectedSpells: Card[] = [];
-  const copiesInDeck: Record<string, number> = {};
-  
-  // Start with default or provided allocations  
-  let finalAllocation = {
-    minions: allocation.minions ?? defaultAllocation.minions,
-    artifacts: allocation.artifacts ?? defaultAllocation.artifacts,
-    auras: allocation.auras ?? defaultAllocation.auras,
-    magics: allocation.magics ?? defaultAllocation.magics,
+export class DeckBuilder {
+  private deck: Partial<Deck> = {
+    name: 'New Deck',
+    sites: [],
+    spellbook: []
   };
 
-  // Identify available combos in the card pool and adjust allocations
-  const comboAnalysis = analyzeCardCombos(minions, artifacts, auras, magics, uniqueCards);
-  const { availableCombos, comboPieces, hasUtilityCombo } = comboAnalysis;
-  
-  // Calculate card allocation based on combo analysis
-  const allocationResult = calculateCardAllocation(availableCombos, finalAllocation);
-  const cardAllocation: CardAllocation = allocationResult.allocation;
-  
-  if (allocationResult.adjustmentReason) {
-    console.log(allocationResult.adjustmentReason);
+  static create(): DeckBuilder {
+    return new DeckBuilder();
   }
 
-  // Add minions
-  const sortedMinions = sortMinions(
-    minions, 
-    selectedSpells, 
-    comboPieces, 
-    (synergyCalculator as any).calculateSynergy
-  );
-
-  const minionResult = selectMinions(
-    sortedMinions,
-    selectedSpells,
-    cardAllocation.minions,
-    copiesInDeck,
-    (deckOptimizer as any).addCardWithCopies,
-    avatar
-  );
-  selectedSpells = minionResult.updatedDeck;
-
-  // Add artifacts with utility prioritization
-  console.log(`Selecting ${cardAllocation.artifacts} artifacts...`);
-  
-  const sortedArtifacts = sortArtifactsWithUtilityPriority(
-    artifacts, 
-    selectedSpells, 
-    hasUtilityCombo,
-    comboPieces,
-    (synergyCalculator as any).calculateSynergy
-  );
-
-  let addedArtifactCount = 0;
-  for (const artifact of sortedArtifacts) {
-    const remaining = cardAllocation.artifacts - addedArtifactCount;
-    if (remaining <= 0) break;
-
-    const before = selectedSpells.length;
-    selectedSpells = (deckOptimizer as any).addCardWithCopies(artifact, selectedSpells, remaining, copiesInDeck, avatar);
-    addedArtifactCount += (selectedSpells.length - before);
+  withName(name: string): DeckBuilder {
+    this.deck.name = name;
+    return this;
   }
 
-  // Add auras
-  const sortedAuras = sortAuras(
-    auras, 
-    selectedSpells, 
-    comboPieces, 
-    (synergyCalculator as any).calculateSynergy
-  );
+  withAvatar(avatar: Avatar): DeckBuilder {
+    this.deck.avatar = avatar;
+    return this;
+  }
 
-  const auraResult = selectAuras(
-    sortedAuras,
-    selectedSpells,
-    cardAllocation.auras,
-    copiesInDeck,
-    (deckOptimizer as any).addCardWithCopies,
-    avatar
-  );
-  selectedSpells = auraResult.updatedDeck;
+  addSite(site: Site): DeckBuilder {
+    if (!this.deck.sites) this.deck.sites = [];
+    this.deck.sites.push(site);
+    return this;
+  }
 
-  // Add magic spells
-  const sortedMagics = sortMagics(
-    magics, 
-    selectedSpells, 
-    comboPieces, 
-    (synergyCalculator as any).calculateSynergy
-  );
+  addSites(sites: Site[]): DeckBuilder {
+    if (!this.deck.sites) this.deck.sites = [];
+    this.deck.sites.push(...sites);
+    return this;
+  }
 
-  const magicResult = selectMagics(
-    sortedMagics,
-    selectedSpells,
-    cardAllocation.magics,
-    copiesInDeck,
-    (deckOptimizer as any).addCardWithCopies,
-    avatar
-  );
-  selectedSpells = magicResult.updatedDeck;
+  addSpell(card: Card): DeckBuilder {
+    if (!this.deck.spellbook) this.deck.spellbook = [];
+    this.deck.spellbook.push(card);
+    return this;
+  }
 
-  // ENHANCEMENT: Analyze elemental requirements and add fixing cards if needed
-  const elementalAnalysis = (elementAnalyzer as any).analyzeElementalRequirements(selectedSpells, sites); // Pass actual sites to calculate elemental affinity
-  const hasElementDeficiencies = Object.keys(elementalAnalysis.elementDeficiencies || {}).length > 0;
+  addSpells(cards: Card[]): DeckBuilder {
+    if (!this.deck.spellbook) this.deck.spellbook = [];
+    this.deck.spellbook.push(...cards);
+    return this;
+  }
 
-  if (hasElementDeficiencies) {
-    // Find cards that could address this elemental deficiency
-    const allAvailableCards = [...minions, ...artifacts, ...auras, ...magics]
-      .filter((card: Card) => !selectedSpells.some((s: Card) => s.baseName === card.baseName));
-      
-    const recommendations = (elementAnalyzer as any).getElementalRecommendations(
-      allAvailableCards, elementalAnalysis
+  build(): Deck {
+    if (!this.deck.avatar) {
+      throw new Error('Deck must have an avatar');
+    }
+
+    const deck: Deck = {
+      name: this.deck.name || 'New Deck',
+      avatar: this.deck.avatar,
+      sites: this.deck.sites || [],
+      spellbook: this.deck.spellbook || []
+    };
+
+    const validation = DeckValidator.validate(deck);
+    if (!validation.isValid) {
+      console.warn('Deck validation failed:', validation.errors);
+    }
+
+    return deck;
+  }
+
+  static buildOptimizedDeck(options: {
+    availableCards: Card[];
+    avatar: Avatar;
+    preferredElements?: Element[];
+    archetype?: string;
+  }): Deck {
+    const builder = new DeckBuilder();
+    builder.withAvatar(options.avatar);
+
+    // Filter cards by type
+    const sites = options.availableCards.filter(card => card.type === CardType.Site) as Site[];
+    const spells = options.availableCards.filter(card => 
+      card.type !== CardType.Site && card.type !== CardType.Avatar
     );
-    
-    // Add recommended cards using the modular function
-    const elementalResult = addElementalFixingCards(
-      selectedSpells, 
-      recommendations, 
-      elementalAnalysis,
-      copiesInDeck,
-      (elementAnalyzer as any).calculateElementalDeficitContribution
-    );
-    
-    selectedSpells = elementalResult.updatedDeck;
-    Object.assign(copiesInDeck, elementalResult.updatedCopies);
+
+    // Build sites deck (30 cards)
+    const selectedSites = this.selectSites(sites, options.avatar.elements, 30);
+    builder.addSites(selectedSites);
+
+    // Build spellbook (50 cards)
+    const selectedSpells = this.selectSpells(spells, options.avatar.elements, options.archetype, 50);
+    builder.addSpells(selectedSpells);
+
+    return builder.build();
   }
 
-  // ENHANCEMENT: Fill remaining slots with high-synergy cards
-  const targetDeckSize = 55; // Target deck size
-  const allAvailableCards = [...minions, ...artifacts, ...auras, ...magics];
-  
-  const completionResult = completeDeckWithSynergyCards({
-    selectedSpells,
-    allAvailableCards,
-    targetDeckSize,
-    copiesInDeck,
-    calculateSynergy: (synergyCalculator as any).calculateSynergy
-  });
-  
-  selectedSpells = completionResult.completedDeck;
-  Object.assign(copiesInDeck, completionResult.copiesInDeck);
+  private static selectSites(availableSites: Site[], avatarElements: Element[], count: number): Site[] {
+    const sites: Site[] = [];
+    const maxCopies = 4;
 
-  // Optimize the deck
-  console.log("Running deck optimization...");
-  selectedSpells = (deckOptimizer as any).optimizeDeck(selectedSpells, minions, artifacts, auras, magics, options.preferredArchetype, sites);
+    // Prioritize sites matching avatar elements
+    const matchingSites = availableSites.filter(site =>
+      site.elements.some(element => avatarElements.includes(element))
+    );
+    const otherSites = availableSites.filter(site =>
+      !site.elements.some(element => avatarElements.includes(element))
+    );
 
-  // Calculate final synergy
-  const totalSynergy = selectedSpells.reduce((sum: number, card: Card) => 
-    sum + (synergyCalculator as any).calculateSynergy(card, selectedSpells), 0
-  );
+    // Add matching sites first
+    for (const site of matchingSites) {
+      const copies = Math.min(maxCopies, count - sites.length);
+      for (let i = 0; i < copies && sites.length < count; i++) {
+        sites.push(site);
+      }
+    }
 
-  // Analyze deck playability
-  const playabilityAnalysis = (deckPlayability as any).analyzeDeckPlayability(selectedSpells);
+    // Fill with other sites if needed
+    for (const site of otherSites) {
+      const currentCount = sites.filter(s => s.name === site.name).length;
+      const copies = Math.min(maxCopies - currentCount, count - sites.length);
+      for (let i = 0; i < copies && sites.length < count; i++) {
+        sites.push(site);
+      }
+    }
 
-  console.log(`Built deck with ${selectedSpells.length} cards, total synergy: ${totalSynergy.toFixed(2)}`);
-  console.log(`Playability score: ${playabilityAnalysis.playabilityScore.toFixed(2)}/10`);
-  
-  return {
-    spells: selectedSpells,
-    playabilityScore: playabilityAnalysis.playabilityScore,
-    playabilityIssues: playabilityAnalysis.issues,
-    totalSynergy: totalSynergy,
-    copiesInDeck: copiesInDeck // Added this line
-  };
+    return sites.slice(0, count);
+  }
+
+  private static selectSpells(
+    availableSpells: Card[],
+    avatarElements: Element[],
+    archetype: string | undefined,
+    count: number
+  ): Card[] {
+    const spells: Card[] = [];
+    const targetCurve = this.getTargetManaCurve(archetype);
+    
+    // Group spells by mana cost
+    const spellsByCost: { [cost: number]: Card[] } = {};
+    availableSpells.forEach(spell => {
+      const cost = Math.min(spell.mana_cost || 0, 7);
+      if (!spellsByCost[cost]) spellsByCost[cost] = [];
+      spellsByCost[cost].push(spell);
+    });
+
+    // Sort spells within each cost by element match
+    Object.values(spellsByCost).forEach(costGroup => {
+      costGroup.sort((a, b) => {
+        const aMatch = a.elements.some(e => avatarElements.includes(e)) ? 1 : 0;
+        const bMatch = b.elements.some(e => avatarElements.includes(e)) ? 1 : 0;
+        return bMatch - aMatch;
+      });
+    });
+
+    // Build deck following target curve
+    for (const [costStr, targetCount] of Object.entries(targetCurve)) {
+      const cost = parseInt(costStr);
+      const availableAtCost = spellsByCost[cost] || [];
+      let addedAtCost = 0;
+
+      for (const spell of availableAtCost) {
+        if (addedAtCost >= targetCount || spells.length >= count) break;
+        
+        const currentCopies = spells.filter(s => s.name === spell.name).length;
+        const maxCopies = spell.rarity === 'Unique' ? 1 : 4;
+        
+        if (currentCopies < maxCopies) {
+          spells.push(spell);
+          addedAtCost++;
+        }
+      }
+    }
+
+    // Fill remaining slots
+    while (spells.length < count) {
+      for (const spell of availableSpells) {
+        if (spells.length >= count) break;
+        
+        const currentCopies = spells.filter(s => s.name === spell.name).length;
+        const maxCopies = spell.rarity === 'Unique' ? 1 : 4;
+        
+        if (currentCopies < maxCopies) {
+          spells.push(spell);
+        }
+      }
+      break; // Prevent infinite loop
+    }
+
+    return spells.slice(0, count);
+  }
+
+  private static getTargetManaCurve(archetype?: string): { [cost: number]: number } {
+    switch (archetype?.toLowerCase()) {
+      case 'aggro':
+        return { 1: 12, 2: 14, 3: 10, 4: 8, 5: 4, 6: 2, 7: 0 };
+      case 'control':
+        return { 1: 6, 2: 8, 3: 8, 4: 10, 5: 8, 6: 6, 7: 4 };
+      case 'combo':
+        return { 1: 8, 2: 10, 3: 12, 4: 10, 5: 6, 6: 3, 7: 1 };
+      default: // midrange
+        return { 1: 8, 2: 12, 3: 10, 4: 8, 5: 6, 6: 4, 7: 2 };
+    }
+  }
 }
-
-/**
- * Build a complete deck including sites
- */
-export function buildCompleteDeck(options: DeckBuildOptions): Deck {
-  const spellbookResult = buildSpellbook(options);
-  
-  // Use provided sites or default to empty array
-  const sites: Card[] = options.sites || [];
-  
-  const metadata: DeckMetadata = {
-    name: `Generated Deck`,
-    description: `Auto-generated deck with ${spellbookResult.spells.length} cards`,
-    createdAt: new Date(),
-    totalSynergy: spellbookResult.totalSynergy,
-    playabilityScore: spellbookResult.playabilityScore
-  };
-
-  return {
-    avatar: options.avatar, // Avatar is now required by the DeckBuildOptions interface
-    spellbook: spellbookResult.spells,
-    sites,
-    metadata
-  };
-}
-
-/**
- * DeckBuilder object containing all deck building functions
- */
-export const DeckBuilder = {
-  buildSpellbook,
-  buildCompleteDeck
-};

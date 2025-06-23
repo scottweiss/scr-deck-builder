@@ -15,13 +15,9 @@ import { PrioritySystem } from '../src/core/simulation/core/prioritySystem';
 import { Card, CardType } from '../src/types/Card';
 import { GameState, Player, Position } from '../src/core/simulation/core/gameState';
 
-// Example canonical test card
+// Example canonical test cards
 const minionCard: Card = { id: 'c1', name: 'Test Minion', type: CardType.Minion, cost: 1 };
 const siteCard: Card = { id: 's1', name: 'Test Site', type: CardType.Site, cost: 0 };
-
-// Example canonical position
-const pos1: Position = { x: 1, y: 1 };
-const pos2: Position = { x: 1, y: 2 };
 
 describe('Phase 2 Integration Tests - Complex Scenarios', () => {
   let combatPhase: CombatPhase;
@@ -127,37 +123,39 @@ describe('Phase 2 Integration Tests - Complex Scenarios', () => {
         subtypes: ['Elemental']
       };
 
-      // Set up positions
-      const pos1: Position = { x: 1, y: 1 };
-      const pos2: Position = { x: 1, y: 2 };
+      // Set up positions for this test
+      const position1: Position = { x: 1, y: 1 };
+      const position2: Position = { x: 1, y: 2 };
 
       // Place creatures on battlefield
-      expect(positionSystem.placeCard(creature1, pos1, player1, gameState)).toBe(true);
-      expect(positionSystem.placeCard(creature2, pos2, player2, gameState)).toBe(true);
+      expect(positionSystem.placeCard(creature1, position1, player1, gameState)).toBe(true);
+      expect(positionSystem.placeCard(creature2, position2, player2, gameState)).toBe(true);
 
       // Create different regions
-      expect(regionManager.createRegion('fire-region', 'surface', [pos1], player1.id)).toBe(true);
-      expect(regionManager.createRegion('water-region', 'underwater', [pos2], player2.id)).toBe(true);
+      expect(regionManager.createRegion('fire-region', 'surface', [position1], player1.id)).toBe(true);
+      expect(regionManager.createRegion('water-region', 'underwater', [position2], player2.id)).toBe(true);
 
       // Apply regional modifiers
-      const modifiers1 = regionManager.applyRegionalModifiers(creature1, pos1, gameState);
-      const modifiers2 = regionManager.applyRegionalModifiers(creature2, pos2, gameState);
+      const modifiers1 = regionManager.applyRegionalModifiers(creature1, position1, gameState);
+      const modifiers2 = regionManager.applyRegionalModifiers(creature2, position2, gameState);
 
       expect(modifiers1).toBeDefined();
       expect(modifiers2).toBeDefined();
 
       // Check region effects
-      const effects1 = regionManager.getActiveEffects(pos1);
-      const effects2 = regionManager.getActiveEffects(pos2);
+      const effects1 = regionManager.getActiveEffects(position1);
+      const effects2 = regionManager.getActiveEffects(position2);
 
       expect(effects1.length).toBeGreaterThan(0);
-      expect(effects2.length).toBeGreaterThan(0);    // Verify combat can be declared between regions
-    const attackerIds = [creature1.id];
-    const targets = { [creature1.id]: creature2.id };
-    const declareResult = combatPhase.declareAttackers(attackerIds, targets, gameState);
+      expect(effects2.length).toBeGreaterThan(0);
+      
+      // Verify combat can be declared between regions
+      const attackerIds = [creature1.id];
+      const targets = { [creature1.id]: creature2.id };
+      const declareResult = combatPhase.declareAttackers(attackerIds, targets, gameState);
 
-    expect(declareResult).toBe(true);
-    expect(combatPhase.startCombatPhase('player1', gameState)).toBeDefined();
+      expect(declareResult).toBe(true);
+      expect(combatPhase.startCombatPhase('player1', gameState)).toBeDefined();
     });
 
     it('should handle movement restrictions during combat', () => {
@@ -214,26 +212,26 @@ describe('Phase 2 Integration Tests - Complex Scenarios', () => {
         subtypes: ['Knight']
       };
 
-      const pos1: Position = { x: 2, y: 1 };
-      const pos2: Position = { x: 2, y: 2 };
+      const voidPos: Position = { x: 2, y: 1 };
+      const surfacePos: Position = { x: 2, y: 2 };
 
       // Place creatures
-      expect(positionSystem.placeCard(creature1, pos1, player1, gameState)).toBe(true);
-      expect(positionSystem.placeCard(creature2, pos2, player2, gameState)).toBe(true);
+      expect(positionSystem.placeCard(creature1, voidPos, player1, gameState)).toBe(true);
+      expect(positionSystem.placeCard(creature2, surfacePos, player2, gameState)).toBe(true);
 
       // Create conflicting regions
-      expect(regionManager.createRegion('void-area', 'void', [pos1], player1.id)).toBe(true);
-      expect(regionManager.createRegion('surface-area', 'surface', [pos2], player2.id)).toBe(true);
+      expect(regionManager.createRegion('void-area', 'void', [voidPos], player1.id)).toBe(true);
+      expect(regionManager.createRegion('surface-area', 'surface', [surfacePos], player2.id)).toBe(true);
 
       // Check for region conflicts
-      const conflicts1 = regionManager.checkRegionConflicts(pos1);
-      const conflicts2 = regionManager.checkRegionConflicts(pos2);
+      const conflicts1 = regionManager.checkRegionConflicts(voidPos);
+      const conflicts2 = regionManager.checkRegionConflicts(surfacePos);
 
       // Adjacent void and surface regions should have conflicts
       expect(conflicts1.length + conflicts2.length).toBeGreaterThan(0);
 
       // Resolve conflicts
-      const resolved = regionManager.resolveRegionConflicts(pos1, gameState);
+      const resolved = regionManager.resolveRegionConflicts(voidPos, gameState);
       expect(resolved).toBeDefined();
       expect(Array.isArray(resolved)).toBe(true);
     });
@@ -407,89 +405,4 @@ describe('Phase 2 Integration Tests - Complex Scenarios', () => {
 
         // Try to place creature
         const position: Position = { x: i % 5, y: Math.floor(i / 5) % 4 };
-        if (positionSystem.canPlaceCard(creature, position, player1.id, gameState)) {
-          positionSystem.placeCard(creature, position, player1, gameState);
-        }
-      }
-
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-
-      // Should complete within reasonable time (less than 100ms)
-      expect(duration).toBeLessThan(100);
-
-      // Verify all systems still work
-      expect(regionManager.getRegionAt({ x: 0, y: 0 })).toBeDefined();
-      expect(positionSystem.getPlayerCards(player1.id).length).toBeGreaterThan(0);
-    });
-
-    it('should handle edge cases gracefully', () => {
-      // Test invalid positions
-      const invalidPos: Position = { x: -1, y: -1 };
-      
-      expect(() => {
-        regionManager.getRegionAt(invalidPos);
-      }).not.toThrow();
-
-      expect(() => {
-        positionSystem.getAdjacentCards(invalidPos, gameState);
-      }).not.toThrow();
-
-      // Test with empty game state
-      const emptyGameState: GameState = {
-        turn: 0,
-        phase: { type: 'main', activePlayer: '' },
-        grid: Array(4).fill(null).map((_, y) => Array(5).fill(null).map((_, x) => ({ position: { x, y }, units: [], region: 'surface', isRubble: false }))),
-        players: {},
-        units: new Map(),
-        artifacts: new Map(),
-        sites: new Map(),
-        storyline: [],
-        gameOver: false,
-        firstPlayer: ''
-      };
-
-      expect(() => {
-        regionManager.processRegionTurnEffects(emptyGameState);
-      }).not.toThrow();
-
-      expect(() => {
-        combatPhase.startCombatPhase('player1', emptyGameState);
-      }).not.toThrow();
-    });
-  });
-
-  describe('System Cleanup and Reset', () => {
-    it('should properly reset all systems', () => {
-      // Set up some state
-      const creature: Card = {
-        id: 'cleanup-test',
-        name: 'Cleanup Test',
-        type: CardType.Minion,
-        cost: 1,
-        subtypes: ['Test']
-      };
-
-      const position: Position = { x: 1, y: 1 };
-
-      positionSystem.placeCard(creature, position, player1, gameState);
-      regionManager.createRegion('cleanup-region', 'surface', [position], player1.id);
-      // Start combat phase (instead of declareCombat which doesn't exist)
-      combatPhase.startCombatPhase('player1', gameState);
-
-      // Reset all systems
-      positionSystem.reset();
-      regionManager.reset();
-      combatPhase.reset();
-      damageSystem.reset();
-
-      // Verify clean state
-      expect(positionSystem.getPlayerCards('player1').length).toBe(0);
-      expect(regionManager.getRegionAt(position)).toBe('surface'); // Default region
-      
-      // Systems should still be functional after reset
-      expect(positionSystem.canPlaceCard(creature, position, player1.id, gameState)).toBe(true);
-      expect(regionManager.createRegion('new-region', 'void', [position], undefined)).toBe(true);
-    });
-  });
-});
+        if

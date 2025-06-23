@@ -2,6 +2,15 @@
  * Core type definitions for Sorcery: Contested Realm card game
  */
 
+export enum CardType {
+  Avatar = 'Avatar',
+  Site = 'Site',
+  Minion = 'Minion',
+  Magic = 'Magic',
+  Artifact = 'Artifact',
+  Aura = 'Aura'
+}
+
 export enum Element {
   Water = 'Water',
   Fire = 'Fire',
@@ -10,163 +19,55 @@ export enum Element {
   Void = 'Void'
 }
 
-export enum CardType {
-  Minion = 'Minion',
-  Magic = 'Magic',
-  Artifact = 'Artifact',
-  Aura = 'Aura',
-  Site = 'Site',
-  Avatar = 'Avatar',
-  Unknown = 'Unknown'
-}
-
 export enum CardRarity {
   Ordinary = 'Ordinary',
   Exceptional = 'Exceptional',
   Elite = 'Elite',
-  Unique = 'Unique',
-  Common = 'Common'
+  Unique = 'Unique'
 }
 
-export type CardSet = 'Beta' | 'ArthurianLegends';
-
-export type CardSubtype = 'Mortal' | 'Beast' | 'Demon' | 'Spirit' | 'Undead' | 'Angel' | 
-                         'Faerie' | 'Giant' | 'Gnome' | 'Dwarf' | 'Monster' | 'Relic' | 
-                         'Armor' | 'Weapon' | 'Document' | 'Monument' | 'Instruments' | string;
-
-/**
- * Raw card data structure as it comes from the CSV/processed data
- */
-export interface RawCard {
-  productId: string;
-  name: string;
-  cleanName: string;
-  imageUrl: string;
-  categoryId: string;
-  groupId: string;
-  url: string;
-  modifiedOn: string;
-  imageCount: string;
-  extRarity: string;
-  extDescription: string;
-  extCost: string;
-  extThreshold: string;
-  extElement: string;
-  extTypeLine: string;
-  extCardCategory: string;
-  extCardType: string;
-  subTypeName: string;
-  extPowerRating: string;
-  extCardSubtype: string;
-  extFlavorText: string;
-  extDefensePower: string;
-  extLife: string;
-  setName: string;
-}
-
-/**
- * Canonical Card type for all gameplay, deck building, simulation, and UI
- */
 export interface Card {
-  id: string; // unique id for simulation and gameplay
+  id: string;
   name: string;
   type: CardType;
-  cost: number;
-  effect?: string;
-  keywords?: string[];
-  subtypes?: string[];
-  power?: number;
-  life?: number;
-  defense?: number;
-  mana_cost?: number;
-  text?: string;
-  elements?: Element[];
-  rarity?: CardRarity | string;
-  baseName?: string;
-  // Optional UI/data fields
-  productId?: string;
-  imageUrl?: string;
-  cleanName?: string;
-  extDescription?: string;
-  [key: string]: any; // allow extra fields for UI/metadata
-}
-
-/**
- * Processed card with computed properties added
- */
-export interface ProcessedCard extends RawCard {
-  type: CardType;
-  mana_cost: number;
-  text: string;
   elements: Element[];
-  power: number;
+  mana_cost: number;
+  text?: string;
+  rule_text?: string;
+  power?: number;
+  defense?: number;
+  life?: number;
   rarity: CardRarity;
-  baseName: string;
+  set?: string;
+  threshold?: { [key in Element]?: number };
+  subtype?: string;
+  image_url?: string;
 }
 
-/**
- * Card mechanics analysis result
- */
-export interface CardMechanics {
-  // Region-specific mechanics
-  operatesUnderground: boolean;
-  operatesUnderwater: boolean;
-  operatesVoid: boolean;
-  
-  // Combat mechanics
-  dealsAOEDamage: boolean;
-  drawsCards: boolean;
-  dealsDirectDamage: boolean;
-  producesResources: boolean;
-  controlsMinions: boolean;
-  enhancesMinions: boolean;
-  triggersOnSpells: boolean;
-  
-  // Movement and positioning
-  hasAirborne: boolean;
-  hasBurrowing: boolean;
-  hasCharge: boolean;
-  supportsDefense: boolean;
-  
-  // Advanced combat
-  hasStrikeFirst: boolean;
-  hasLethal: boolean;
-  hasInterceptAdvantage: boolean;
+export interface Avatar extends Card {
+  type: CardType.Avatar;
+  life: number;
 }
 
-/**
- * Card allocation for deck building
- */
-export interface CardAllocation {
-  minions: number;
-  artifacts: number;
-  auras: number;
-  magics: number;
+export interface Site extends Card {
+  type: CardType.Site;
+  mana_generation?: number;
 }
 
-/**
- * Card filtering options
- */
-export interface CardFilter {
-  element?: Element | Element[];
-  type?: CardType | CardType[];
-  rarity?: CardRarity | CardRarity[];
-  set?: CardSet | CardSet[];
-  minCost?: number;
-  maxCost?: number;
-  hasText?: string;
+export interface Minion extends Card {
+  type: CardType.Minion;
+  power: number;
+  defense: number;
 }
 
-/**
- * Card statistics
- */
-export interface CardStats {
-  total: number;
-  byType: Record<CardType, number>;
-  byElement: Record<Element, number>;
-  byRarity: Record<CardRarity, number>;
-  bySet: Record<CardSet, number>;
-  averageCost: number;
+export interface Magic extends Card {
+  type: CardType.Magic;
 }
 
-export type TargetType = 'player' | 'minion' | 'spell' | 'site' | 'position' | 'any';
+export interface Artifact extends Card {
+  type: CardType.Artifact;
+}
+
+export interface Aura extends Card {
+  type: CardType.Aura;
+}

@@ -2,7 +2,7 @@
  * Type definitions for deck building and deck management
  */
 
-import { Card, Element, CardAllocation } from './Card';
+import { Card, Element, CardAllocation, Avatar, Site } from './Card';
 
 /**
  * Deck validation result
@@ -39,10 +39,15 @@ export interface DeckBuildOptions {
  * Deck composition
  */
 export interface Deck {
-  avatar: Card; // Required field - avatar is now mandatory
+  id?: string;
+  name: string;
+  avatar: Avatar;
+  sites: Site[];
   spellbook: Card[];
-  sites: Card[];
-  metadata: DeckMetadata;
+  sideboard?: Card[];
+  format?: string;
+  created?: Date;
+  updated?: Date;
 }
 
 /**
@@ -154,4 +159,28 @@ export interface PlayerDeck {
   cards: import('./Card').Card[];
   spells: import('./Card').Card[];
   sites: import('./Card').Card[];
+}
+
+/**
+ * Deck validation
+ */
+export interface DeckValidation {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  suggestions: string[];
+}
+
+/**
+ * Deck stats
+ */
+export interface DeckStats {
+  totalCards: number;
+  siteCount: number;
+  spellbookCount: number;
+  averageManaCost: number;
+  manaCurve: { [cost: number]: number };
+  elementDistribution: { [element: string]: number };
+  typeDistribution: { [type: string]: number };
+  rarityDistribution: { [rarity: string]: number };
 }

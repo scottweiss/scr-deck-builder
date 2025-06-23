@@ -40,3 +40,14 @@ export default {
     isOptimized: () => true,
     getPaths: () => SYSTEM_PATHS
 };
+
+// Re-exporting from other modules
+export * from './types';
+export * from './core/deck';
+export * from './core/cards/cardAnalysis';
+export * from './core/simulation';
+
+// Re-export main classes for easy access
+export { DeckBuilder } from './core/deck/builder/deckBuilder';
+export { DeckValidator } from './core/deck/analysis/deckValidator';
+export { BrowserDeckBuilder } from './browser/unified-deck-builder';

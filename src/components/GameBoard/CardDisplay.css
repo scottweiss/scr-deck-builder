@@ -1,0 +1,145 @@
+.card-display {
+  width: 150px;
+  height: 200px;
+  background: #333;
+  border: 2px solid #555;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.card-display:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.card-display.selected {
+  border-color: #ffcc00;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
+}
+
+.card-display.tapped {
+  transform: rotate(90deg);
+  margin: 0 20px;
+}
+
+.card-display.playable {
+  border-color: #4a90e2;
+  animation: pulse 2s infinite;
+}
+
+.card-display.can-attack {
+  border-color: #e74c3c;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 5px rgba(74, 144, 226, 0.5); }
+  50% { box-shadow: 0 0 15px rgba(74, 144, 226, 0.8); }
+  100% { box-shadow: 0 0 5px rgba(74, 144, 226, 0.5); }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.card-name {
+  font-size: 12px;
+  font-weight: bold;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-cost {
+  background: #4a90e2;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.card-image {
+  height: 60px;
+  background: #222;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-type {
+  font-size: 10px;
+  color: #999;
+  margin-bottom: 5px;
+}
+
+.card-text {
+  font-size: 9px;
+  color: #ccc;
+  flex: 1;
+  overflow: hidden;
+  line-height: 1.2;
+}
+
+.card-stats {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: #222;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.card-stats .attack {
+  color: #e74c3c;
+}
+
+.card-stats .defense {
+  color: #3498db;
+}
+
+.card-stats .separator {
+  margin: 0 2px;
+  color: #666;
+}
+
+.card-elements {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 2px;
+}
+
+.element {
+  font-size: 9px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+
+.element-fire { background: #e74c3c; color: white; }
+.element-water { background: #3498db; color: white; }
+.element-earth { background: #8b6914; color: white; }
+.element-air { background: #ecf0f1; color: #333; }
+.element-mind { background: #9b59b6; color: white; }

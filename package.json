@@ -1,73 +1,37 @@
 {
-  "name": "scr-deck-builder",
+  "name": "sorcery-deck-builder",
   "version": "1.0.0",
-  "description": "Deck building system for Sorcery: Contested Realm card game",
+  "description": "Sorcery: Contested Realm deck builder and simulator",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc && mkdir -p dist/data && cp -R src/data/raw dist/data/ && node dist/data/processed/processCards.js",
-    "build:force": "tsc --skipLibCheck || true; mkdir -p dist/data && cp -R src/data/raw dist/data/ && node dist/data/processed/processCards.js",
-    "build:nocheck": "tsc --skipLibCheck --noEmitOnError false && mkdir -p dist/data && cp -R src/data/raw dist/data/ && node dist/data/processed/processCards.js",
-    "build:browser": "vite build",
-    "build:unified": "npm run build && npm run build:browser",
-    "dev": "tsc --watch",
-    "dev:browser": "vite",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "build:lib": "vite build --config vite.lib.config.ts",
     "preview": "vite preview",
-    "type-check": "tsc --noEmit",
-    "lint": "eslint \"src/**/*.ts\" --fix",
-    "lint:check": "eslint \"src/**/*.ts\"",
-    "prepare": "npm run build:force && node dist/data/processed/processCards.js",
-    "start": "node dist/index.js",
-    "start:js": "npx ts-node index.ts",
-    "build-deck": "npm run build && node dist/main/build-deck.js",
-    "build-deck:quick": "node dist/main/build-deck.js",
-    "test:playability": "npx ts-node src/tests/test-playability.ts",
-    "test:imports": "npx ts-node src/tests/test-imports.ts",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test": "vitest",
     "test:ui": "vitest --ui",
-    "process-cards": "npx ts-node src/data/processed/processCards.ts",
-    "system:status": "node -e \"const config = require('./dist/config'); console.log('Using optimized system')\"",
-    "serve": "node tools/server.js",
-    "web": "npm run build && node tools/server.js",
-    "server:start": "npm run build && node tools/server.js",
-    "server:dev": "node tools/server.js",
-    "server:stop": "pkill -f 'node tools/server.js' || echo 'No server process found'",
-    "server:restart": "npm run server:stop && sleep 2 && npm run server:start",
-    "server:status": "pgrep -f 'node tools/server.js' > /dev/null && echo '✅ Server is running' || echo '❌ Server is not running'",
-    "server:logs": "ps aux | grep 'node server.js' | grep -v grep",
-    "cleanup": "npm run server:stop && npm run build:force",
-    "reset": "npm run server:stop && rm -rf dist/ && npm run build && npm run server:start"
+    "lint": "eslint src --ext .ts,.tsx",
+    "type-check": "tsc --noEmit"
   },
-  "keywords": [
-    "sorcery",
-    "contested-realm",
-    "deck-builder",
-    "card-game"
-  ],
-  "author": "",
-  "license": "UNLICENSED",
   "dependencies": {
-    "@types/csv-parse": "^1.2.5",
-    "csv-parse": "^5.6.0",
-    "express": "^4.18.2"
+    "csv-parse": "^5.5.0"
   },
   "devDependencies": {
-    "@types/node": "^22.15.21",
-    "@vitejs/plugin-legacy": "^6.1.1",
-    "@vitest/coverage-v8": "^3.1.4",
-    "@vitest/ui": "^3.1.4",
-    "buffer": "^6.0.3",
-    "crypto-browserify": "^3.12.1",
-    "path-browserify": "^1.0.1",
-    "process": "^0.11.10",
-    "stream-browserify": "^3.0.0",
-    "ts-loader": "^9.5.1",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.8.3",
-    "util": "^0.12.5",
-    "vite": "^6.3.5",
-    "vitest": "^3.1.4"
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
