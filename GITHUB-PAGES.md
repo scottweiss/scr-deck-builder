@@ -5,7 +5,7 @@ This repository is configured with GitHub Pages to automatically deploy the deck
 ## Automatic Deployment
 
 - **Trigger**: Pushes to the `main` branch
-- **Build**: Uses the existing `html/` directory with pre-built assets  
+- **Build**: Builds the web application from `src/web/` using Vite  
 - **Deploy**: Static files are deployed to GitHub Pages
 - **URL**: https://scottweiss.github.io/scr-deck-builder/
 
@@ -14,7 +14,7 @@ This repository is configured with GitHub Pages to automatically deploy the deck
 1. GitHub Actions runs on push to main
 2. Installs dependencies with `npm ci`
 3. Builds static files with `npm run build:pages`
-4. Copies and processes assets from `html/` to `docs/`
+4. Uses Vite to build the web application from `src/web/` to `docs/`
 5. Deploys `docs/` directory to GitHub Pages
 
 ## Local Testing
@@ -38,7 +38,8 @@ python -m http.server 8000
 ## Configuration
 
 The build process:
-- Updates page title to "Sorcery: Contested Realm - Deck Builder"
+- Builds the web application using Vite from `src/web/` directory
+- Ensures page title is "Sorcery: Contested Realm - Deck Builder"
 - Creates `.nojekyll` file to prevent Jekyll processing
-- Preserves all asset paths as relative URLs
-- Copies favicons and other static assets
+- Generates optimized assets with proper base path for GitHub Pages
+- Outputs to `docs/` directory for deployment
